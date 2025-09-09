@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Doctors collection - read access for all authenticated users, write access for admin/doctor
+    match /doctors/{doctorId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        (request.auth.uid == doctorId || 
+         resource.data.adminIds.hasAny([request.auth.uid]));
+    }
+    
+    // Appointments - users can read/write their own appointments
+    match /appointments/{appointmentId} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == resource.data.patientId || 
+         request.auth.uid == resource.data.doctorId);
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.patientId;
+    }
+    
+    // Medical records - only accessible by patient and their doctors
+    match /medical_records/{recordId} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == resource.data.patientId || 
+         resource.data.authorizedDoctors.hasAny([request.auth.uid]));
+    }
+    
+    // Prescriptions - accessible by patient and prescribing doctor
+    match /prescriptions/{prescriptionId} {
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.patientId || 
+         request.auth.uid == resource.data.doctorId);
+      allow write: if request.auth != null && 
+        request.auth.uid == resource.data.doctorId;
+    }
+    
+    // Reviews - users can read all, write their own
+    match /reviews/{reviewId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        request.auth.uid == resource.data.patientId;
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.patientId;
+    }
+    
+    // Chat messages - accessible by participants
+    match /chats/{chatId}/messages/{messageId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid in resource.data.participants;
+    }
+    
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

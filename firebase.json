@@ -1,0 +1,26 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "curevia-f31a8",
+          "appId": "1:197242003907:android:bd006352771a99e9cf1d76",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "curevia-f31a8",
+          "configurations": {
+            "android": "1:197242003907:android:bd006352771a99e9cf1d76",
+            "ios": "1:197242003907:ios:5eb98205fc7070cecf1d76"
+          }
+        }
+      }
+    }
+  }
+}

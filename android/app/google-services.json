@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "197242003907",
+    "project_id": "curevia-f31a8",
+    "storage_bucket": "curevia-f31a8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:197242003907:android:bd006352771a99e9cf1d76",
+        "android_client_info": {
+          "package_name": "com.example.curevia"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "197242003907-liqg29jp8ojak2h1riuc6q8ei92tscl0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.curevia",
+            "certificate_hash": "1086ad69541c39bb493c8c1aa375defe66dd51e3"
+          }
+        },
+        {
+          "client_id": "197242003907-8rns9ff873t9h5e1oqv7onuts6djtv3g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuuZ-1XoYOyskbs66BhIYC7SlWqwcnKq0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "197242003907-8rns9ff873t9h5e1oqv7onuts6djtv3g.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "197242003907-stprgkmlou1h6k8q8t2p9sb0k2mt70lq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.curevia"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

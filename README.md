@@ -1,4 +1,4 @@
-# 💖 Curevia --- Smart Health & Wellness App
+# 💖 Curevia --- Smart Health & Wellness App (Under Dev)
 
 > 🩺 **Curevia** is a next-generation **health & wellness super app**
 > that connects **patients, doctors, fitness, and lifestyle** under one
@@ -97,5 +97,6 @@ flutter run
 ## 📜 License
 
 This project is licensed under the **MIT License**.
+
 
 

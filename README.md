@@ -8,7 +8,7 @@
 > alerts** --- ensuring **health, convenience, and holistic care**.
 
 <p align="center">
-  <a href="" download>
+  <a href="https://curevia-download.vercel.app" download>
     <img src="https://img.shields.io/badge/⬇_Download_Curevia_BETA_APK-blue?style=for-the-badge&logo=android" alt="Download Curevia APK">
   </a>
 </p>
@@ -97,6 +97,7 @@ flutter run
 ## 📜 License
 
 This project is licensed under the **MIT License**.
+
 
 
 

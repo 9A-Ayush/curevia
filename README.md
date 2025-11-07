@@ -97,6 +97,7 @@ flutter run
 ## 📜 License
 
 This project is licensed under the **MIT License**.
+------------------------------------------------------------------------
 
 ## ☕ Support My Work  
 
@@ -104,6 +105,7 @@ This project is licensed under the **MIT License**.
  
 
 _"Code. Secure. Innovate."_  
+
 
 
 

@@ -167,19 +167,25 @@ class AuthService {
   /// Get user document from Firestore
   static Future<UserModel?> getUserDocument(String uid) async {
     try {
+      print('Attempting to fetch user document for uid: $uid');
       final doc = await _firestore
           .collection(AppConstants.usersCollection)
           .doc(uid)
           .get();
 
       if (doc.exists) {
+        print('User document found in Firestore');
         return UserModel.fromMap(doc.data()!);
       }
+      print('User document does not exist in Firestore');
       return null;
     } catch (e) {
       // If Firestore API is not enabled, return null instead of throwing
-      if (e.toString().contains('Cloud Firestore API has not been used')) {
-        print('Firestore API not enabled, returning null user document');
+      print('Error fetching user document: $e');
+      if (e.toString().contains('Cloud Firestore API has not been used') ||
+          e.toString().contains('PERMISSION_DENIED') ||
+          e.toString().contains('not found')) {
+        print('Firestore API not enabled or permission denied, returning null user document');
         return null;
       }
       throw Exception('Failed to get user document: $e');

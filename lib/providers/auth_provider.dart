@@ -54,16 +54,52 @@ class AuthNotifier extends StateNotifier<AuthState> {
             error: null,
           );
           final userModel = await AuthService.getUserDocument(user.uid);
-          state = state.copyWith(
-            isLoading: false,
-            userModel: userModel,
-            error: null,
-          );
+          
+          // If userModel is null, create a fallback from Firebase Auth data
+          if (userModel == null) {
+            final fallbackUserModel = UserModel(
+              uid: user.uid,
+              email: user.email ?? '',
+              fullName: user.displayName ?? 'User',
+              role: 'patient', // Default role
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              isActive: true,
+              isVerified: user.emailVerified,
+              profileImageUrl: user.photoURL,
+            );
+            
+            state = state.copyWith(
+              isLoading: false,
+              userModel: fallbackUserModel,
+              error: null,
+            );
+          } else {
+            state = state.copyWith(
+              isLoading: false,
+              userModel: userModel,
+              error: null,
+            );
+          }
         } catch (e) {
-          // If Firestore fails, still allow login with basic user info
+          // If Firestore fails, create fallback user model from Firebase Auth
+          print('Firestore error, creating fallback user model: $e');
+          final fallbackUserModel = UserModel(
+            uid: user.uid,
+            email: user.email ?? '',
+            fullName: user.displayName ?? 'User',
+            role: 'patient', // Default role
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            isActive: true,
+            isVerified: user.emailVerified,
+            profileImageUrl: user.photoURL,
+          );
+          
           state = state.copyWith(
             isLoading: false,
             firebaseUser: user,
+            userModel: fallbackUserModel,
             error: null, // Don't show error for Firestore issues
           );
         }

@@ -12,6 +12,7 @@ import 'services/weather/weather_service.dart';
 import 'services/auth/app_lifecycle_biometric_service.dart';
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
+import 'firebase_options.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Main entry point of the Curevia app
@@ -26,8 +27,10 @@ void main() async {
     print('Warning: Some required environment variables are missing');
   }
 
-  // Initialize Firebase
-  await Firebase.initializeApp();
+  // Initialize Firebase with proper options
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Initialize Hive for local storage
   await Hive.initFlutter();

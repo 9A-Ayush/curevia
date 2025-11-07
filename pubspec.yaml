@@ -57,8 +57,7 @@ dependencies:
   # Two-Factor Authentication
   otp: ^3.1.4
 
-  # Payments
-  flutter_stripe: ^11.1.0
+  
 
   # HTTP & API
   http: ^1.2.2

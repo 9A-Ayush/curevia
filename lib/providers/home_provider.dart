@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/appointment_model.dart';
 import '../models/doctor_model.dart';
 import '../services/weather/weather_service.dart';
+import '../services/health/health_metrics_service.dart';
+import '../services/activity/activity_stats_service.dart';
 
 /// Home screen state
 class HomeState {
@@ -13,6 +15,8 @@ class HomeState {
   final List<HealthTip> healthTips;
   final List<RecentActivity> recentActivities;
   final WeatherInfo? weatherInfo;
+  final HealthMetrics? healthMetrics;
+  final ActivityStats? activityStats;
 
   const HomeState({
     this.isLoading = false,
@@ -22,6 +26,8 @@ class HomeState {
     this.healthTips = const [],
     this.recentActivities = const [],
     this.weatherInfo,
+    this.healthMetrics,
+    this.activityStats,
   });
 
   HomeState copyWith({
@@ -32,6 +38,8 @@ class HomeState {
     List<HealthTip>? healthTips,
     List<RecentActivity>? recentActivities,
     WeatherInfo? weatherInfo,
+    HealthMetrics? healthMetrics,
+    ActivityStats? activityStats,
   }) {
     return HomeState(
       isLoading: isLoading ?? this.isLoading,
@@ -41,6 +49,8 @@ class HomeState {
       healthTips: healthTips ?? this.healthTips,
       recentActivities: recentActivities ?? this.recentActivities,
       weatherInfo: weatherInfo ?? this.weatherInfo,
+      healthMetrics: healthMetrics ?? this.healthMetrics,
+      activityStats: activityStats ?? this.activityStats,
     );
   }
 }
@@ -175,6 +185,8 @@ class HomeNotifier extends StateNotifier<HomeState> {
         _loadNearbyDoctors(),
         _loadHealthTips(),
         _loadRecentActivities(),
+        _loadHealthMetrics(),
+        _loadActivityStats(),
       ]);
 
       state = state.copyWith(
@@ -183,6 +195,8 @@ class HomeNotifier extends StateNotifier<HomeState> {
         nearbyDoctors: futures[1] as List<DoctorModel>,
         healthTips: futures[2] as List<HealthTip>,
         recentActivities: futures[3] as List<RecentActivity>,
+        healthMetrics: futures[4] as HealthMetrics?,
+        activityStats: futures[5] as ActivityStats?,
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -285,6 +299,9 @@ class HomeNotifier extends StateNotifier<HomeState> {
   /// Load recent activities
   Future<List<RecentActivity>> _loadRecentActivities() async {
     try {
+      // TODO: Backend Integration - Replace with real data from Firestore
+      // Query user's recent activities from 'activities' collection
+      // Order by timestamp descending, limit to 5-10 items
       return [
         RecentActivity(
           id: '1',
@@ -310,6 +327,26 @@ class HomeNotifier extends StateNotifier<HomeState> {
       ];
     } catch (e) {
       return [];
+    }
+  }
+
+  /// Load health metrics
+  Future<HealthMetrics?> _loadHealthMetrics() async {
+    try {
+      return await HealthMetricsService.getCurrentUserMetrics();
+    } catch (e) {
+      debugPrint('Error loading health metrics: $e');
+      return null;
+    }
+  }
+
+  /// Load activity stats
+  Future<ActivityStats?> _loadActivityStats() async {
+    try {
+      return await ActivityStatsService.getTodayStats();
+    } catch (e) {
+      debugPrint('Error loading activity stats: $e');
+      return null;
     }
   }
 

@@ -557,10 +557,57 @@ class _MedicineDetailScreenState extends ConsumerState<MedicineDetailScreen>
             child: CustomButton(
               text: 'Find Nearby Pharmacy',
               onPressed: () {
-                // TODO: Navigate to pharmacy finder
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Pharmacy finder coming soon!'),
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Row(
+                      children: [
+                        Icon(Icons.local_pharmacy, color: AppColors.secondary),
+                        const SizedBox(width: 8),
+                        const Text('Find Pharmacy'),
+                      ],
+                    ),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Find pharmacies near you that stock this medicine.'),
+                        const SizedBox(height: 16),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(Icons.location_on, color: AppColors.primary),
+                          title: const Text('Nearby Pharmacies'),
+                          subtitle: const Text('Within 5 km radius'),
+                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                          onTap: () {
+                            Navigator.pop(context);
+                            // TODO: Implement map view with pharmacies
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Opening pharmacy map...')),
+                            );
+                          },
+                        ),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(Icons.phone, color: AppColors.success),
+                          title: const Text('Call Pharmacy'),
+                          subtitle: const Text('Get availability info'),
+                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                          onTap: () {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Calling pharmacy...')),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                      ),
+                    ],
                   ),
                 );
               },

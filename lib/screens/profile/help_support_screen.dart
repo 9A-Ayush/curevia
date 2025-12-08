@@ -417,8 +417,63 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen>
   }
 
   void _startLiveChat() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Live chat feature coming soon!')),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.chat, color: AppColors.primary),
+            const SizedBox(width: 8),
+            const Text('Live Chat Support'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Connect with our support team for immediate assistance.',
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.access_time, color: AppColors.info),
+              title: const Text('Available Hours'),
+              subtitle: const Text('Mon-Fri: 9 AM - 6 PM\nSat: 10 AM - 4 PM'),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.language, color: AppColors.success),
+              title: const Text('Languages'),
+              subtitle: const Text('English, Hindi, Regional'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implement actual chat integration
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Connecting to support team...'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            icon: const Icon(Icons.chat_bubble),
+            label: const Text('Start Chat'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

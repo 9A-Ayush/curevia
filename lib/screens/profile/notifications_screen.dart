@@ -27,16 +27,15 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   void _loadNotifications() {
-    final user = ref.read(authProvider).userModel;
-    if (user != null) {
-      ref.read(notificationProvider.notifier).loadNotifications(user.uid);
-    }
+    // Notifications are loaded via stream provider automatically
   }
 
   @override
   Widget build(BuildContext context) {
-    final notificationState = ref.watch(notificationProvider);
     final user = ref.watch(authProvider).userModel;
+    final notificationsAsync = user != null 
+        ? ref.watch(notificationsProvider(user.uid))
+        : const AsyncValue<List<NotificationModel>>.data([]);
 
     return Scaffold(
       backgroundColor: ThemeUtils.getPrimaryColor(context),
@@ -55,11 +54,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     top: Radius.circular(30),
                   ),
                 ),
-                child: notificationState.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : notificationState.error != null
-                    ? _buildErrorState(notificationState.error!)
-                    : _buildNotificationsList(notificationState.notifications),
+                child: notificationsAsync.when(
+                  data: (notifications) => _buildNotificationsList(notifications),
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (error, _) => _buildErrorState(error.toString()),
+                ),
               ),
             ),
           ],
@@ -69,7 +68,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   Widget _buildCustomAppBar(BuildContext context) {
-    final unreadCount = ref.watch(unreadNotificationsCountProvider);
+    final user = ref.watch(authProvider).userModel;
+    final unreadCount = user != null 
+        ? ref.watch(unreadNotificationsCountProvider(user.uid))
+        : const AsyncValue.data(0);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -91,36 +93,46 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (unreadCount > 0)
-                  Text(
-                    '$unreadCount unread notifications',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
+                unreadCount.when(
+                  data: (count) => count > 0 
+                      ? Text(
+                          '$count unread notifications',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
               ],
             ),
           ),
           Row(
             children: [
-              if (unreadCount > 0)
-                TextButton(
-                  onPressed: () {
-                    final user = ref.read(authProvider).userModel;
-                    if (user != null) {
-                      ref
-                          .read(notificationProvider.notifier)
-                          .markAllAsRead(user.uid);
-                    }
-                  },
-                  child: Text(
-                    'Mark All Read',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
+              unreadCount.when(
+                data: (count) => count > 0
+                    ? TextButton(
+                        onPressed: () {
+                          final user = ref.read(authProvider).userModel;
+                          if (user != null) {
+                            ref
+                                .read(notificationActionsProvider)
+                                .markAllAsRead(user.uid);
+                          }
+                        },
+                        child: Text(
+                          'Mark All Read',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
               // Debug button to create sample notifications
               IconButton(
                 onPressed: () async {
@@ -131,10 +143,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     await NotificationService.createSampleNotifications(
                       user.uid,
                     );
-                    // Reload notifications
-                    ref
-                        .read(notificationProvider.notifier)
-                        .loadNotifications(user.uid);
+                    // Notifications reload automatically via stream
 
                     if (mounted) {
                       scaffoldMessenger.showSnackBar(
@@ -321,7 +330,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ),
         onTap: () {
           if (!notification.isRead) {
-            ref.read(notificationProvider.notifier).markAsRead(notification.id);
+            ref.read(notificationActionsProvider).markAsRead(notification.id);
           }
           _handleNotificationTap(notification);
         },
@@ -369,11 +378,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   ) {
     switch (action) {
       case 'mark_read':
-        ref.read(notificationProvider.notifier).markAsRead(notification.id);
+        ref.read(notificationActionsProvider).markAsRead(notification.id);
         break;
       case 'delete':
         ref
-            .read(notificationProvider.notifier)
+            .read(notificationActionsProvider)
             .deleteNotification(notification.id);
         break;
     }

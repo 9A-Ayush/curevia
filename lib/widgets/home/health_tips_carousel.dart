@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
+import '../../screens/health/health_tip_detail_screen.dart';
 
 /// Health tips carousel for home screen
 class HealthTipsCarousel extends StatelessWidget {
@@ -55,7 +56,7 @@ class HealthTipsCarousel extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {
-                  // TODO: Navigate to all health tips
+                  Navigator.pushNamed(context, '/health-tips');
                 },
                 child: const Text('View All'),
               ),
@@ -71,23 +72,38 @@ class HealthTipsCarousel extends StatelessWidget {
             itemCount: tips.length,
             itemBuilder: (context, index) {
               final tip = tips[index];
-              return Container(
-                width: 260,
-                margin: EdgeInsets.only(
-                  right: index < tips.length - 1 ? 16 : 0,
-                ),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      tip['color'] as Color,
-                      (tip['color'] as Color).withValues(alpha: 0.8),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HealthTipDetailScreen(
+                        tip: {
+                          ...tip,
+                          'category': 'Health & Wellness',
+                          'readTime': '3 min read',
+                        },
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 260,
+                  margin: EdgeInsets.only(
+                    right: index < tips.length - 1 ? 16 : 0,
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        tip['color'] as Color,
+                        (tip['color'] as Color).withValues(alpha: 0.8),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -138,6 +154,7 @@ class HealthTipsCarousel extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
               );
             },
           ),

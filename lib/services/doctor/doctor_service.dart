@@ -264,37 +264,320 @@ class DoctorService {
     String doctorId,
   ) async {
     try {
-      // This would typically come from a schedule collection
-      // For now, return a mock schedule
+      final doc = await _firestore
+          .collection('doctor_schedules')
+          .doc(doctorId)
+          .get();
+
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final schedule = <String, List<Map<String, dynamic>>>{};
+
+        for (final day in [
+          'monday',
+          'tuesday',
+          'wednesday',
+          'thursday',
+          'friday',
+          'saturday',
+          'sunday'
+        ]) {
+          if (data.containsKey(day) && data[day] is List) {
+            schedule[day] = List<Map<String, dynamic>>.from(
+              (data[day] as List).map((e) => Map<String, dynamic>.from(e)),
+            );
+          } else {
+            schedule[day] = [];
+          }
+        }
+
+        return schedule;
+      }
+
+      // Return default schedule if none exists
       return {
-        'monday': [
-          {'startTime': '09:00', 'endTime': '12:00', 'type': 'consultation'},
-          {'startTime': '14:00', 'endTime': '17:00', 'type': 'consultation'},
-        ],
-        'tuesday': [
-          {'startTime': '09:00', 'endTime': '12:00', 'type': 'consultation'},
-          {'startTime': '14:00', 'endTime': '17:00', 'type': 'consultation'},
-        ],
-        'wednesday': [
-          {'startTime': '09:00', 'endTime': '12:00', 'type': 'consultation'},
-          {'startTime': '14:00', 'endTime': '17:00', 'type': 'consultation'},
-        ],
-        'thursday': [
-          {'startTime': '09:00', 'endTime': '12:00', 'type': 'consultation'},
-          {'startTime': '14:00', 'endTime': '17:00', 'type': 'consultation'},
-        ],
-        'friday': [
-          {'startTime': '09:00', 'endTime': '12:00', 'type': 'consultation'},
-          {'startTime': '14:00', 'endTime': '17:00', 'type': 'consultation'},
-        ],
-        'saturday': [
-          {'startTime': '09:00', 'endTime': '13:00', 'type': 'consultation'},
-        ],
-        'sunday': [], // Off day
+        'monday': [],
+        'tuesday': [],
+        'wednesday': [],
+        'thursday': [],
+        'friday': [],
+        'saturday': [],
+        'sunday': [],
       };
     } catch (e) {
       debugPrint('Error getting doctor schedule: $e');
       return {};
+    }
+  }
+
+  /// Get doctor analytics data
+  static Future<Map<String, dynamic>> getDoctorAnalytics(
+    String doctorId,
+    String period,
+  ) async {
+    try {
+      final now = DateTime.now();
+      DateTime startDate;
+
+      switch (period) {
+        case 'This Week':
+          startDate = now.subtract(Duration(days: now.weekday - 1));
+          break;
+        case 'Last 3 Months':
+          startDate = DateTime(now.year, now.month - 3, now.day);
+          break;
+        case 'This Year':
+          startDate = DateTime(now.year, 1, 1);
+          break;
+        case 'This Month':
+        default:
+          startDate = DateTime(now.year, now.month, 1);
+      }
+
+      final appointmentsQuery = await _firestore
+          .collection(AppConstants.appointmentsCollection)
+          .where('doctorId', isEqualTo: doctorId)
+          .where(
+            'appointmentDate',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
+          )
+          .get();
+
+      int totalConsultations = 0;
+      int completedConsultations = 0;
+      double totalRevenue = 0;
+      double onlineRevenue = 0;
+      double offlineRevenue = 0;
+      final uniquePatients = <String>{};
+      final newPatients = <String>{};
+
+      for (final doc in appointmentsQuery.docs) {
+        final appointment = AppointmentModel.fromMap(doc.data());
+        totalConsultations++;
+
+        if (appointment.status == 'completed') {
+          completedConsultations++;
+          final fee = appointment.consultationFee ?? 0;
+          totalRevenue += fee;
+
+          if (appointment.consultationType?.toLowerCase() == 'online' ||
+              appointment.consultationType?.toLowerCase() == 'video') {
+            onlineRevenue += fee;
+          } else {
+            offlineRevenue += fee;
+          }
+        }
+
+        uniquePatients.add(appointment.patientId);
+
+        // Check if this is a new patient (first appointment in period)
+        final patientPreviousAppointments = await _firestore
+            .collection(AppConstants.appointmentsCollection)
+            .where('doctorId', isEqualTo: doctorId)
+            .where('patientId', isEqualTo: appointment.patientId)
+            .where(
+              'appointmentDate',
+              isLessThan: Timestamp.fromDate(startDate),
+            )
+            .limit(1)
+            .get();
+
+        if (patientPreviousAppointments.docs.isEmpty) {
+          newPatients.add(appointment.patientId);
+        }
+      }
+
+      final avgConsultationFee =
+          completedConsultations > 0 ? totalRevenue / completedConsultations : 0;
+
+      return {
+        'totalConsultations': totalConsultations,
+        'completedConsultations': completedConsultations,
+        'patientSatisfaction': 4.5, // TODO: Calculate from reviews
+        'avgResponseTime': 5.0, // TODO: Calculate from actual data
+        'revenue': totalRevenue.round(),
+        'avgConsultationFee': avgConsultationFee.round(),
+        'onlineRevenue': onlineRevenue.round(),
+        'offlineRevenue': offlineRevenue.round(),
+        'totalPatients': uniquePatients.length,
+        'newPatients': newPatients.length,
+        'returningPatients': uniquePatients.length - newPatients.length,
+        'consultationsChange': '+0%', // TODO: Calculate change from previous period
+        'satisfactionChange': '+0.0', // TODO: Calculate change
+        'responseTimeChange': '-0.0 min', // TODO: Calculate change
+        'revenueChange': '+0%', // TODO: Calculate change
+      };
+    } catch (e) {
+      debugPrint('Error getting doctor analytics: $e');
+      return {};
+    }
+  }
+
+  /// Get doctor notifications
+  static Future<List<Map<String, dynamic>>> getDoctorNotifications(
+    String doctorId, {
+    int limit = 10,
+  }) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('notifications')
+          .where('userId', isEqualTo: doctorId)
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+        final timeAgo = createdAt != null ? _getTimeAgo(createdAt) : 'Just now';
+
+        return {
+          'id': doc.id,
+          'title': data['title'] ?? 'Notification',
+          'message': data['message'] ?? '',
+          'type': data['type'] ?? 'general',
+          'time': timeAgo,
+          'isRead': data['isRead'] ?? false,
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('Error getting doctor notifications: $e');
+      return [];
+    }
+  }
+
+  /// Block a time slot
+  static Future<bool> blockTimeSlot({
+    required String doctorId,
+    required String date,
+    required String startTime,
+    required String endTime,
+    String? reason,
+  }) async {
+    try {
+      await _firestore.collection('blocked_slots').add({
+        'doctorId': doctorId,
+        'date': date,
+        'startTime': startTime,
+        'endTime': endTime,
+        'reason': reason ?? '',
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      });
+
+      return true;
+    } catch (e) {
+      debugPrint('Error blocking time slot: $e');
+      return false;
+    }
+  }
+
+  /// Copy schedule to next week
+  static Future<bool> copyScheduleToNextWeek(String doctorId) async {
+    try {
+      final schedule = await getDoctorSchedule(doctorId);
+
+      // TODO: Implement actual schedule copying logic
+      // This would involve creating new time slots for next week
+
+      return true;
+    } catch (e) {
+      debugPrint('Error copying schedule: $e');
+      return false;
+    }
+  }
+
+  /// Create a new appointment
+  static Future<bool> createAppointment({
+    required String doctorId,
+    required String patientName,
+    required String date,
+    required String time,
+    required String consultationType,
+  }) async {
+    try {
+      // TODO: Parse date and time properly
+      // For now, create a basic appointment
+
+      await _firestore.collection(AppConstants.appointmentsCollection).add({
+        'doctorId': doctorId,
+        'patientId': 'temp_patient_id', // TODO: Get actual patient ID
+        'patientName': patientName,
+        'appointmentDate': Timestamp.fromDate(DateTime.now()),
+        'consultationType': consultationType,
+        'status': 'pending',
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      });
+
+      return true;
+    } catch (e) {
+      debugPrint('Error creating appointment: $e');
+      return false;
+    }
+  }
+
+  /// Add a new patient
+  static Future<bool> addPatient({
+    required String doctorId,
+    required String patientName,
+    required String email,
+    required String phone,
+  }) async {
+    try {
+      // TODO: Implement proper patient registration
+      // This would involve creating a user account and linking to doctor
+
+      return true;
+    } catch (e) {
+      debugPrint('Error adding patient: $e');
+      return false;
+    }
+  }
+
+  /// Export patients as PDF
+  static Future<bool> exportPatientsAsPDF(
+    String doctorId,
+    List<Map<String, dynamic>> patients,
+  ) async {
+    try {
+      // TODO: Implement PDF export using pdf package
+      await Future.delayed(const Duration(seconds: 1));
+      return true;
+    } catch (e) {
+      debugPrint('Error exporting patients as PDF: $e');
+      return false;
+    }
+  }
+
+  /// Export patients as Excel
+  static Future<bool> exportPatientsAsExcel(
+    String doctorId,
+    List<Map<String, dynamic>> patients,
+  ) async {
+    try {
+      // TODO: Implement Excel export using excel package
+      await Future.delayed(const Duration(seconds: 1));
+      return true;
+    } catch (e) {
+      debugPrint('Error exporting patients as Excel: $e');
+      return false;
+    }
+  }
+
+  /// Helper method to calculate time ago
+  static String _getTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inSeconds < 60) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+    } else {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
   }
 }

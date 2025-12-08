@@ -407,32 +407,218 @@ class _DoctorScheduleScreenState extends ConsumerState<DoctorScheduleScreen> {
   }
 
   void _editDaySchedule(String day) {
-    // TODO: Implement day schedule editing
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Edit ${_dayDisplayNames[day]} schedule - Coming soon'),
+    _showEditScheduleDialog(day);
+  }
+
+  void _showEditScheduleDialog([String? specificDay]) {
+    final daySchedule = specificDay != null ? _schedule[specificDay] ?? [] : [];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          specificDay != null
+              ? 'Edit ${_dayDisplayNames[specificDay]} Schedule'
+              : 'Edit Schedule',
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Current schedule:',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              if (daySchedule.isEmpty)
+                const Text('No schedule set for this day')
+              else
+                ...daySchedule.map((slot) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Text('${slot['startTime']} - ${slot['endTime']}'),
+                    )),
+              const SizedBox(height: 16),
+              const Text(
+                'Use the time slot management feature to add or modify your schedule.',
+                style: TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Navigate to detailed schedule editor
+            },
+            child: const Text('Edit'),
+          ),
+        ],
       ),
     );
   }
 
-  void _showEditScheduleDialog() {
-    // TODO: Implement schedule editing dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Schedule editing - Coming soon')),
-    );
-  }
-
   void _showBlockTimeDialog() {
-    // TODO: Implement block time dialog
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Block time - Coming soon')));
+    final TextEditingController dateController = TextEditingController();
+    final TextEditingController startTimeController = TextEditingController();
+    final TextEditingController endTimeController = TextEditingController();
+    final TextEditingController reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Block Time Slot'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: dateController,
+                decoration: const InputDecoration(
+                  labelText: 'Date',
+                  hintText: 'Select date',
+                  prefixIcon: Icon(Icons.calendar_today),
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (date != null) {
+                    dateController.text = '${date.day}/${date.month}/${date.year}';
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: startTimeController,
+                decoration: const InputDecoration(
+                  labelText: 'Start Time',
+                  hintText: 'Select start time',
+                  prefixIcon: Icon(Icons.access_time),
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.now(),
+                  );
+                  if (time != null) {
+                    startTimeController.text = time.format(context);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: endTimeController,
+                decoration: const InputDecoration(
+                  labelText: 'End Time',
+                  hintText: 'Select end time',
+                  prefixIcon: Icon(Icons.access_time),
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.now(),
+                  );
+                  if (time != null) {
+                    endTimeController.text = time.format(context);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Reason (Optional)',
+                  hintText: 'Enter reason for blocking',
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (dateController.text.isEmpty ||
+                  startTimeController.text.isEmpty ||
+                  endTimeController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please fill all required fields'),
+                  ),
+                );
+                return;
+              }
+
+              Navigator.pop(context);
+              
+              try {
+                final user = ref.read(authProvider).userModel;
+                if (user != null) {
+                  await DoctorService.blockTimeSlot(
+                    doctorId: user.uid,
+                    date: dateController.text,
+                    startTime: startTimeController.text,
+                    endTime: endTimeController.text,
+                    reason: reasonController.text,
+                  );
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Time slot blocked successfully')),
+                    );
+                    _loadSchedule();
+                  }
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error blocking time slot: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Block'),
+          ),
+        ],
+      ),
+    );
   }
 
-  void _copyScheduleToNextWeek() {
-    // TODO: Implement copy schedule functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Copy schedule - Coming soon')),
-    );
+  void _copyScheduleToNextWeek() async {
+    try {
+      final user = ref.read(authProvider).userModel;
+      if (user != null) {
+        await DoctorService.copyScheduleToNextWeek(user.uid);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Schedule copied to next week successfully')),
+          );
+          _loadSchedule();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error copying schedule: $e')),
+        );
+      }
+    }
   }
 }

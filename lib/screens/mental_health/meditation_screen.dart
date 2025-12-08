@@ -190,7 +190,7 @@ class _MeditationScreenState extends State<MeditationScreen>
                     Text(
                       session.description,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: ThemeUtils.getTextSecondaryColor(context),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -216,18 +216,18 @@ class _MeditationScreenState extends State<MeditationScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: ThemeUtils.getSurfaceColor(context).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: AppColors.textSecondary),
+          Icon(icon, size: 12, color: ThemeUtils.getTextSecondaryColor(context)),
           const SizedBox(width: 4),
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
+              color: ThemeUtils.getTextSecondaryColor(context),
               fontSize: 10,
             ),
           ),
@@ -310,7 +310,7 @@ class _MeditationScreenState extends State<MeditationScreen>
                         'Inhale for 4 counts\nHold for 7 counts\nExhale for 8 counts',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: ThemeUtils.getTextSecondaryColor(context),
                           height: 1.5,
                         ),
                       ),

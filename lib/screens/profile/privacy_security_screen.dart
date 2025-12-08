@@ -5,10 +5,6 @@ import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/auth/biometric_service.dart';
-import '../../services/auth/two_factor_service.dart';
-import '../auth/two_factor_setup_screen.dart';
-import '../debug/biometric_debug_screen.dart';
-import '../debug/two_factor_debug_screen.dart';
 
 /// Privacy and security settings screen
 class PrivacySecurityScreen extends ConsumerStatefulWidget {
@@ -21,7 +17,6 @@ class PrivacySecurityScreen extends ConsumerStatefulWidget {
 
 class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
   bool _biometricEnabled = false;
-  bool _twoFactorEnabled = false;
   bool _dataSharing = true;
   bool _analyticsEnabled = true;
   bool _marketingEmails = false;
@@ -36,11 +31,9 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
   Future<void> _loadSecuritySettings() async {
     try {
       final biometricEnabled = await BiometricService.isBiometricEnabled();
-      final twoFactorEnabled = await TwoFactorService.isTwoFactorEnabled();
 
       setState(() {
         _biometricEnabled = biometricEnabled;
-        _twoFactorEnabled = twoFactorEnabled;
       });
     } catch (e) {
       print('Error loading security settings: $e');
@@ -131,46 +124,16 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
       children: [
         _buildSwitchTile(
           title: 'Biometric Authentication',
-          subtitle: 'Use biometric authentication to unlock the app',
+          subtitle: 'Use fingerprint or face ID to unlock the app',
           value: _biometricEnabled,
           onChanged: _toggleBiometric,
           icon: Icons.fingerprint,
         ),
         _buildActionTile(
-          title: 'Biometric Debug',
-          subtitle: 'Troubleshoot fingerprint sensor issues',
-          icon: Icons.bug_report,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const BiometricDebugScreen(),
-            ),
-          ),
-        ),
-        _buildSwitchTile(
-          title: 'Two-Factor Authentication',
-          subtitle: 'Add an extra layer of security to your account',
-          value: _twoFactorEnabled,
-          onChanged: _toggleTwoFactor,
-          icon: Icons.security,
-        ),
-        _buildActionTile(
-          title: 'Two-Factor Debug',
-          subtitle: 'Troubleshoot 2FA code verification issues',
-          icon: Icons.bug_report,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const TwoFactorDebugScreen(),
-            ),
-          ),
-        ),
-
-        _buildActionTile(
-          title: 'Active Sessions',
-          subtitle: 'Manage devices signed into your account',
-          icon: Icons.devices,
-          onTap: () => _showActiveSessionsDialog(),
+          title: 'Change Password',
+          subtitle: 'Update your account password',
+          icon: Icons.lock_outline,
+          onTap: () => _showChangePasswordDialog(),
         ),
       ],
     );
@@ -373,20 +336,147 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
     );
   }
 
-  void _showActiveSessionsDialog() {
+  void _showChangePasswordDialog() {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool obscureCurrent = true;
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+    bool isLoading = false;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Active Sessions'),
-        content: const Text(
-          'Session management will be available in a future update.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Change Password'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: currentPasswordController,
+                  obscureText: obscureCurrent,
+                  decoration: InputDecoration(
+                    labelText: 'Current Password',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureCurrent ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () =>
+                          setState(() => obscureCurrent = !obscureCurrent),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: newPasswordController,
+                  obscureText: obscureNew,
+                  decoration: InputDecoration(
+                    labelText: 'New Password',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureNew ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () => setState(() => obscureNew = !obscureNew),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: confirmPasswordController,
+                  obscureText: obscureConfirm,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm New Password',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureConfirm ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () =>
+                          setState(() => obscureConfirm = !obscureConfirm),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      if (newPasswordController.text !=
+                          confirmPasswordController.text) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Passwords do not match'),
+                            backgroundColor: AppColors.error,
+                          ),
+                        );
+                        return;
+                      }
+
+                      if (newPasswordController.text.length < 6) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Password must be at least 6 characters'),
+                            backgroundColor: AppColors.error,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setState(() => isLoading = true);
+
+                      try {
+                        final user = FirebaseAuth.instance.currentUser;
+                        if (user != null && user.email != null) {
+                          final credential = EmailAuthProvider.credential(
+                            email: user.email!,
+                            password: currentPasswordController.text,
+                          );
+                          await user.reauthenticateWithCredential(credential);
+                          await user.updatePassword(newPasswordController.text);
+
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Password changed successfully'),
+                                backgroundColor: AppColors.success,
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        setState(() => isLoading = false);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: ${e.toString()}'),
+                              backgroundColor: AppColors.error,
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Change Password'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -769,79 +859,7 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
     }
   }
 
-  /// Toggle two-factor authentication
-  Future<void> _toggleTwoFactor(bool enabled) async {
-    try {
-      if (enabled) {
-        // Navigate to two-factor setup screen
-        final result = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(builder: (context) => const TwoFactorSetupScreen()),
-        );
 
-        if (result == true) {
-          setState(() => _twoFactorEnabled = true);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Two-factor authentication enabled successfully'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          }
-        }
-      } else {
-        // Show confirmation dialog before disabling
-        final confirmed = await _showDisableTwoFactorDialog();
-        if (confirmed == true) {
-          await TwoFactorService.disableTwoFactor();
-          setState(() => _twoFactorEnabled = false);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Two-factor authentication disabled'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      setState(() => _twoFactorEnabled = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
-  /// Show confirmation dialog for disabling two-factor authentication
-  Future<bool?> _showDisableTwoFactorDialog() async {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Disable Two-Factor Authentication'),
-        content: const Text(
-          'Are you sure you want to disable two-factor authentication? This will make your account less secure.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Disable'),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// Request data download
   Future<void> _requestDataDownload() async {
@@ -875,7 +893,6 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
         'marketingEmails': _marketingEmails,
         'pushNotifications': _pushNotifications,
         'biometricEnabled': _biometricEnabled,
-        'twoFactorEnabled': _twoFactorEnabled,
         'updatedAt': DateTime.now().toIso8601String(),
       };
 

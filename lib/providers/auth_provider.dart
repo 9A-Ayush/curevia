@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/firebase/auth_service.dart';
 import '../services/auth/app_lifecycle_biometric_service.dart';
+import '../services/firebase/fcm_service.dart';
 
 /// Authentication state
 class AuthState {
@@ -42,6 +43,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _init();
   }
 
+  /// Initialize FCM service for the logged-in user
+  Future<void> _initializeFCM(String userId) async {
+    try {
+      await FCMService.initialize();
+      await FCMService.saveFCMToken(userId);
+      
+      // Subscribe to user-specific topic
+      await FCMService.subscribeToTopic('user_$userId');
+      
+      // Subscribe to general topics based on user role
+      if (state.userModel?.role == 'patient') {
+        await FCMService.subscribeToTopic('patients');
+        await FCMService.subscribeToTopic('health_tips');
+      } else if (state.userModel?.role == 'doctor') {
+        await FCMService.subscribeToTopic('doctors');
+      }
+    } catch (e) {
+      print('Error initializing FCM: $e');
+    }
+  }
+
   void _init() {
     // Listen to auth state changes
     AuthService.authStateChanges.listen((user) async {
@@ -53,15 +75,36 @@ class AuthNotifier extends StateNotifier<AuthState> {
             firebaseUser: user,
             error: null,
           );
+          
+          // Wait a bit for Firestore to sync after registration
+          await Future.delayed(const Duration(milliseconds: 500));
+          
           final userModel = await AuthService.getUserDocument(user.uid);
           
-          // If userModel is null, create a fallback from Firebase Auth data
+          // If userModel is null, wait and retry once more
           if (userModel == null) {
+            await Future.delayed(const Duration(milliseconds: 1000));
+            final retryUserModel = await AuthService.getUserDocument(user.uid);
+            
+            if (retryUserModel != null) {
+              state = state.copyWith(
+                isLoading: false,
+                userModel: retryUserModel,
+                error: null,
+              );
+              
+              // Initialize FCM after successful login
+              await _initializeFCM(user.uid);
+              return;
+            }
+            
+            // Still null, create fallback but DON'T save to Firestore
+            // This prevents overwriting the actual role
             final fallbackUserModel = UserModel(
               uid: user.uid,
               email: user.email ?? '',
               fullName: user.displayName ?? 'User',
-              role: 'patient', // Default role
+              role: 'patient', // Temporary fallback
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
               isActive: true,
@@ -80,6 +123,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
               userModel: userModel,
               error: null,
             );
+            
+            // Initialize FCM after successful login
+            await _initializeFCM(user.uid);
           }
         } catch (e) {
           // If Firestore fails, create fallback user model from Firebase Auth

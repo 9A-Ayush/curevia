@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
+import '../../utils/theme_utils.dart';
 import '../../models/weather_model.dart';
 import '../../services/weather/weather_service.dart';
 
@@ -111,9 +112,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
             Text(
               _errorMessage!,
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -138,7 +137,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.cloud_off, size: 64, color: AppColors.textSecondary),
+            Icon(Icons.cloud_off, size: 64, color: Theme.of(context).iconTheme.color),
             const SizedBox(height: 16),
             Text(
               'No Weather Data',
@@ -150,9 +149,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
             Text(
               'Weather information is not available at the moment.',
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -341,9 +338,9 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(color: AppColors.borderLight.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -366,8 +363,8 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
                 Text(
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
                     fontSize: 10,
+                    color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -499,9 +496,9 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
             const SizedBox(height: 12),
             Text(
               'Last updated: ${_formatTimestamp(_currentWeather!.timestamp)}',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+              ),
             ),
             const SizedBox(height: 8),
             Text(

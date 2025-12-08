@@ -10,6 +10,7 @@ import 'utils/env_config.dart';
 import 'screens/auth/splash_screen.dart';
 import 'services/weather/weather_service.dart';
 import 'services/auth/app_lifecycle_biometric_service.dart';
+import 'services/navigation_service.dart';
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
 import 'firebase_options.dart';
@@ -43,6 +44,10 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  // Initialize FCM service
+  // Note: FCM will be initialized after user login to get userId
+  // See auth_provider.dart for FCM initialization on login
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
@@ -118,6 +123,7 @@ class _CureviaAppState extends ConsumerState<CureviaApp>
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
+      navigatorKey: NavigationService.navigatorKey,
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: materialThemeMode,

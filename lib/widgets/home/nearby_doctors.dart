@@ -211,7 +211,14 @@ class NearbyDoctors extends ConsumerWidget {
                         ),
                         child: IconButton(
                           onPressed: () {
-                            // TODO: Book appointment
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Booking appointment with ${doctor['name']}',
+                                ),
+                              ),
+                            );
+                            Navigator.pushNamed(context, '/appointments');
                           },
                           icon: Icon(
                             Icons.calendar_today,
@@ -231,7 +238,14 @@ class NearbyDoctors extends ConsumerWidget {
                         ),
                         child: IconButton(
                           onPressed: () {
-                            // TODO: Start video call
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Starting video consultation with ${doctor['name']}',
+                                ),
+                              ),
+                            );
+                            Navigator.pushNamed(context, '/consultations');
                           },
                           icon: const Icon(
                             Icons.video_call,

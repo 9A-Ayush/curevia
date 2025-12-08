@@ -805,17 +805,141 @@ class _DoctorAppointmentsScreenState
   }
 
   void _showAddAppointmentDialog() {
+    final TextEditingController patientNameController = TextEditingController();
+    final TextEditingController dateController = TextEditingController();
+    final TextEditingController timeController = TextEditingController();
+    String consultationType = 'online';
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New Appointment'),
-        content: const Text('Appointment scheduling feature coming soon!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Add New Appointment'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: patientNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Patient Name',
+                    hintText: 'Enter patient name',
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: dateController,
+                  decoration: const InputDecoration(
+                    labelText: 'Date',
+                    hintText: 'Select date',
+                    prefixIcon: Icon(Icons.calendar_today),
+                  ),
+                  readOnly: true,
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (date != null) {
+                      dateController.text = '${date.day}/${date.month}/${date.year}';
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: timeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Time',
+                    hintText: 'Select time',
+                    prefixIcon: Icon(Icons.access_time),
+                  ),
+                  readOnly: true,
+                  onTap: () async {
+                    final time = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.now(),
+                    );
+                    if (time != null) {
+                      timeController.text = time.format(context);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: consultationType,
+                  decoration: const InputDecoration(
+                    labelText: 'Consultation Type',
+                    prefixIcon: Icon(Icons.medical_services),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'online', child: Text('Online')),
+                    DropdownMenuItem(value: 'offline', child: Text('Offline')),
+                    DropdownMenuItem(value: 'video', child: Text('Video Call')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => consultationType = value);
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (patientNameController.text.isEmpty ||
+                    dateController.text.isEmpty ||
+                    timeController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please fill all fields'),
+                    ),
+                  );
+                  return;
+                }
+
+                Navigator.pop(context);
+
+                try {
+                  final user = ref.read(authProvider).userModel;
+                  if (user != null) {
+                    await DoctorService.createAppointment(
+                      doctorId: user.uid,
+                      patientName: patientNameController.text,
+                      date: dateController.text,
+                      time: timeController.text,
+                      consultationType: consultationType,
+                    );
+
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Appointment created successfully'),
+                        ),
+                      );
+                      _loadAppointments();
+                    }
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error creating appointment: $e')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Create'),
+            ),
+          ],
+        ),
       ),
     );
   }

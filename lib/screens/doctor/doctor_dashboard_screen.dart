@@ -20,7 +20,7 @@ class DoctorDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
-  Map<String, int> _stats = {};
+  Map<String, dynamic> _stats = {};
   List<AppointmentModel> _todayAppointments = [];
   bool _isLoading = true;
 
@@ -39,10 +39,21 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
         final futures = await Future.wait([
           DoctorService.getDoctorStats(user.uid),
           DoctorService.getTodayAppointments(user.uid),
+          DoctorService.getDoctorAnalytics(user.uid, 'This Month'),
         ]);
 
+        final stats = futures[0] as Map<String, int>;
+        final analyticsData = futures[2] as Map<String, dynamic>;
+
+        // Merge stats with analytics data
+        final mergedStats = <String, dynamic>{
+          ...stats,
+          ...analyticsData,
+          'recentActivities': <Map<String, dynamic>>[], // Will be populated from recent appointments
+        };
+
         setState(() {
-          _stats = futures[0] as Map<String, int>;
+          _stats = mergedStats;
           _todayAppointments = futures[1] as List<AppointmentModel>;
           _isLoading = false;
         });
@@ -484,6 +495,11 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   }
 
   Widget _buildRecentActivitySection() {
+    final recentActivitiesRaw = _stats['recentActivities'];
+    final recentActivities = recentActivitiesRaw is List
+        ? recentActivitiesRaw.cast<Map<String, dynamic>>()
+        : <Map<String, dynamic>>[];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -501,33 +517,53 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.borderLight),
           ),
-          child: Column(
-            children: [
-              _buildActivityItem(
-                'New patient registration',
-                'John Doe registered for consultation',
-                '2 hours ago',
-                Icons.person_add,
-              ),
-              const Divider(),
-              _buildActivityItem(
-                'Consultation completed',
-                'Video call with Sarah Smith',
-                '4 hours ago',
-                Icons.video_call,
-              ),
-              const Divider(),
-              _buildActivityItem(
-                'Prescription sent',
-                'Prescription for Michael Johnson',
-                '6 hours ago',
-                Icons.receipt_long,
-              ),
-            ],
-          ),
+          child: recentActivities.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'No recent activity',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: ThemeUtils.getTextSecondaryColor(context),
+                      ),
+                    ),
+                  ),
+                )
+              : Column(
+                  children: recentActivities.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final activity = entry.value;
+                    return Column(
+                      children: [
+                        if (index > 0) const Divider(),
+                        _buildActivityItem(
+                          (activity['title'] as String?) ?? '',
+                          (activity['subtitle'] as String?) ?? '',
+                          (activity['time'] as String?) ?? '',
+                          _getActivityIcon((activity['type'] as String?) ?? ''),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
         ),
       ],
     );
+  }
+
+  IconData _getActivityIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'registration':
+        return Icons.person_add;
+      case 'consultation':
+        return Icons.video_call;
+      case 'prescription':
+        return Icons.receipt_long;
+      case 'appointment':
+        return Icons.calendar_today;
+      default:
+        return Icons.notifications;
+    }
   }
 
   Widget _buildActivityItem(
@@ -639,6 +675,14 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   }
 
   Widget _buildPerformanceInsights() {
+    final satisfaction = (_stats['patientSatisfaction'] as num?)?.toDouble() ?? 0.0;
+    final satisfactionChange = (_stats['satisfactionChange'] as String?) ?? '';
+    final responseTime = (_stats['avgResponseTime'] as num?)?.toInt() ?? 0;
+    final responseStatus = (_stats['responseStatus'] as String?) ?? 'Good';
+    final consultationRate = (_stats['consultationRate'] as num?)?.toInt() ?? 0;
+    final consultationChange = (_stats['consultationChange'] as String?) ?? '';
+    final followUps = (_stats['pendingFollowUps'] as num?)?.toInt() ?? 0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -663,20 +707,20 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   Expanded(
                     child: _buildInsightCard(
                       'Patient Satisfaction',
-                      '4.8/5.0',
+                      '${satisfaction.toStringAsFixed(1)}/5.0',
                       Icons.star,
                       AppColors.warning,
-                      '+0.2 from last month',
+                      satisfactionChange.isNotEmpty ? satisfactionChange : 'No change',
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildInsightCard(
                       'Response Time',
-                      '< 5 min',
+                      responseTime > 0 ? '$responseTime min' : 'N/A',
                       Icons.timer,
                       AppColors.success,
-                      'Excellent',
+                      responseStatus,
                     ),
                   ),
                 ],
@@ -687,20 +731,20 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   Expanded(
                     child: _buildInsightCard(
                       'Consultation Rate',
-                      '95%',
+                      '$consultationRate%',
                       Icons.trending_up,
                       AppColors.info,
-                      '+5% this week',
+                      consultationChange.isNotEmpty ? consultationChange : 'Stable',
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildInsightCard(
                       'Follow-ups',
-                      '12',
+                      '$followUps',
                       Icons.repeat,
                       AppColors.primary,
-                      'Pending',
+                      followUps > 0 ? 'Pending' : 'None',
                     ),
                   ),
                 ],
@@ -764,54 +808,83 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   }
 
   // Navigation methods
-  void _showNotificationsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Notifications'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildNotificationItem(
-                'New appointment request',
-                'John Doe requested an appointment for tomorrow',
-                '2 minutes ago',
-                Icons.calendar_today,
-              ),
-              const Divider(),
-              _buildNotificationItem(
-                'Consultation completed',
-                'Video call with Sarah Smith completed',
-                '1 hour ago',
-                Icons.video_call,
-              ),
-              const Divider(),
-              _buildNotificationItem(
-                'Payment received',
-                'Payment of ₹500 received from Michael Johnson',
-                '3 hours ago',
-                Icons.payment,
-              ),
-            ],
+  void _showNotificationsDialog() async {
+    final user = ref.read(authProvider).userModel;
+    if (user == null) return;
+
+    try {
+      final notifications = await DoctorService.getDoctorNotifications(user.uid, limit: 5);
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Notifications'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: notifications.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('No new notifications'),
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: notifications.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final notification = entry.value;
+                      return Column(
+                        children: [
+                          if (index > 0) const Divider(),
+                          _buildNotificationItem(
+                            notification['title'] ?? 'Notification',
+                            notification['message'] ?? '',
+                            notification['time'] ?? '',
+                            _getNotificationIcon(notification['type'] ?? ''),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+            if (notifications.isNotEmpty)
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // TODO: Navigate to all notifications screen
+                },
+                child: const Text('View All'),
+              ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Navigate to all notifications
-            },
-            child: const Text('View All'),
-          ),
-        ],
-      ),
-    );
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading notifications: $e')),
+        );
+      }
+    }
+  }
+
+  IconData _getNotificationIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'appointment':
+        return Icons.calendar_today;
+      case 'consultation':
+        return Icons.video_call;
+      case 'payment':
+        return Icons.payment;
+      case 'message':
+        return Icons.message;
+      default:
+        return Icons.notifications;
+    }
   }
 
   Widget _buildNotificationItem(
@@ -863,19 +936,14 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   }
 
   void _navigateToPrescriptions() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Prescriptions'),
-        content: const Text('Prescription management feature coming soon!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
+    // Navigate to prescriptions screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Opening prescriptions...'),
+        duration: Duration(seconds: 1),
       ),
     );
+    // TODO: Implement navigation to prescriptions screen when created
   }
 
   void _navigateToAppointments() {

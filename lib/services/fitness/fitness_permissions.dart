@@ -54,11 +54,16 @@ class FitnessPermissions {
           barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Row(
+              title: Row(
                 children: [
-                  Icon(Icons.security, color: Colors.blue),
-                  SizedBox(width: 8),
-                  Text('Fitness Tracking Permissions'),
+                  const Icon(Icons.security, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: const Text(
+                      'Fitness Tracking Permissions',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               content: const SingleChildScrollView(

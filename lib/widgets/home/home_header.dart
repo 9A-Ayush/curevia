@@ -15,6 +15,9 @@ class HomeHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weatherAsync = ref.watch(weatherProvider);
+    final homeState = ref.watch(homeProvider);
+    final healthMetrics = homeState.healthMetrics;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -78,11 +81,7 @@ class HomeHeader extends ConsumerWidget {
                   _buildHeaderButton(
                     icon: Icons.notifications_outlined,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Notifications feature coming soon!'),
-                        ),
-                      );
+                      Navigator.pushNamed(context, '/notifications');
                     },
                     hasNotification: true,
                   ),
@@ -191,7 +190,7 @@ class HomeHeader extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Good',
+                        healthMetrics?.healthStatus ?? 'Good',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textOnPrimary,
                           fontWeight: FontWeight.w600,

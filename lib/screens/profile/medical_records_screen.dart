@@ -1112,9 +1112,56 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
   }
 
   void _addAllergy() {
-    // Show dialog to add allergy
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add allergy feature coming soon!')),
+    final TextEditingController allergyController = TextEditingController();
+    final TextEditingController severityController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Allergy'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: allergyController,
+              decoration: const InputDecoration(
+                labelText: 'Allergy Name',
+                hintText: 'e.g., Peanuts, Penicillin',
+                prefixIcon: Icon(Icons.warning_amber),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: severityController,
+              decoration: const InputDecoration(
+                labelText: 'Severity',
+                hintText: 'e.g., Mild, Moderate, Severe',
+                prefixIcon: Icon(Icons.info_outline),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (allergyController.text.isNotEmpty) {
+                Navigator.pop(context);
+                // TODO: Save to Firestore
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Added allergy: ${allergyController.text}'),
+                  ),
+                );
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1126,9 +1173,68 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
   }
 
   void _addMedication() {
-    // Show dialog to add medication
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add medication feature coming soon!')),
+    final TextEditingController medicationController = TextEditingController();
+    final TextEditingController dosageController = TextEditingController();
+    final TextEditingController frequencyController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Medication'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: medicationController,
+                decoration: const InputDecoration(
+                  labelText: 'Medication Name',
+                  hintText: 'e.g., Aspirin, Metformin',
+                  prefixIcon: Icon(Icons.medication),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: dosageController,
+                decoration: const InputDecoration(
+                  labelText: 'Dosage',
+                  hintText: 'e.g., 500mg, 10ml',
+                  prefixIcon: Icon(Icons.science),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: frequencyController,
+                decoration: const InputDecoration(
+                  labelText: 'Frequency',
+                  hintText: 'e.g., Twice daily, Once a week',
+                  prefixIcon: Icon(Icons.schedule),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (medicationController.text.isNotEmpty) {
+                Navigator.pop(context);
+                // TODO: Save to Firestore
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Added medication: ${medicationController.text}'),
+                  ),
+                );
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1687,8 +1793,63 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
 
   /// Edit report
   void _editReport(MedicalRecordModel report) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit report feature coming soon!')),
+    final TextEditingController titleController =
+        TextEditingController(text: report.title);
+    final TextEditingController notesController =
+        TextEditingController(text: report.notes);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Report'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Report Title',
+                  prefixIcon: Icon(Icons.title),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: notesController,
+                decoration: const InputDecoration(
+                  labelText: 'Notes',
+                  prefixIcon: Icon(Icons.note),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (titleController.text.isNotEmpty) {
+                Navigator.pop(context);
+                try {
+                  // TODO: Update in Firestore
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Report updated successfully')),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error updating report: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 

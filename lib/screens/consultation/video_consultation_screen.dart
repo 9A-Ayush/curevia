@@ -320,10 +320,31 @@ class _VideoConsultationScreenState
             text: 'Book Now',
             onPressed: () {
               Navigator.pop(context);
-              // Navigate to booking screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Video consultation booking coming soon!'),
+              // TODO: Navigate to actual booking screen with doctor details
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Confirm Booking'),
+                  content: const Text(
+                    'You will be redirected to the appointment booking page to select a time slot.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Opening booking page...'),
+                          ),
+                        );
+                      },
+                      child: const Text('Continue'),
+                    ),
+                  ],
                 ),
               );
             },

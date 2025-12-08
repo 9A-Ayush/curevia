@@ -7,7 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../widgets/common/loading_overlay.dart';
-import '../main_navigation.dart';
+import '../role_based_navigation.dart';
 
 /// Registration screen for new users
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -73,7 +73,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             backgroundColor: AppColors.success,
           ),
         );
-        Navigator.pop(context);
+        
+        // Wait a bit for Firestore to sync
+        await Future.delayed(const Duration(milliseconds: 1500));
+        
+        // Refresh user data to get correct role
+        await ref.read(authProvider.notifier).refreshUserData();
+        
+        // Don't pop, let the auth listener handle navigation
+        // Navigator.pop(context);
       }
     }
   }
@@ -82,11 +90,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     final isLoading = ref.watch(isAuthLoadingProvider);
 
-    // Navigate to main app when authenticated
+    // Navigate to role-based navigation when authenticated
     ref.listen<bool>(isAuthenticatedProvider, (previous, next) {
       if (next && mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainNavigation()),
+          MaterialPageRoute(builder: (context) => const RoleBasedNavigation()),
         );
       }
     });

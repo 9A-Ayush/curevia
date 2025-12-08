@@ -398,17 +398,101 @@ class _FamilyMembersScreenState extends ConsumerState<FamilyMembersScreen> {
   }
 
   void _viewMedicalRecords(FamilyMemberModel member) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Medical records for ${member.name} - Coming soon!'),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${member.name}\'s Medical Records'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('View and manage medical records for ${member.name}.'),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.description, color: AppColors.primary),
+              title: const Text('Reports & Documents'),
+              subtitle: const Text('Lab reports, prescriptions'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Navigate to medical records screen for this member
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Opening records for ${member.name}')),
+                );
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.medication, color: AppColors.error),
+              title: const Text('Allergies & Medications'),
+              subtitle: const Text('Current medications, allergies'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Opening medications for ${member.name}')),
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }
 
   void _bookAppointment(FamilyMemberModel member) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Book appointment for ${member.name} - Coming soon!'),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Book Appointment for ${member.name}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Schedule a consultation for ${member.name}.'),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.video_call, color: AppColors.primary),
+              title: const Text('Video Consultation'),
+              subtitle: const Text('Online doctor visit'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Navigate to appointment booking
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Booking video call for ${member.name}')),
+                );
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.local_hospital, color: AppColors.success),
+              title: const Text('In-Person Visit'),
+              subtitle: const Text('Visit clinic or hospital'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Booking clinic visit for ${member.name}')),
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
       ),
     );
   }

@@ -12,6 +12,7 @@ import '../../widgets/home/home_header.dart';
 import '../../widgets/home/quick_actions_grid.dart';
 import '../../widgets/home/upcoming_appointments.dart';
 import '../../widgets/home/health_tips_carousel.dart';
+import '../../widgets/home/health_metrics_card.dart';
 import '../../widgets/home/nearby_doctors.dart';
 import '../../screens/consultation/video_consultation_screen.dart';
 import '../../screens/doctor/doctor_search_screen.dart';
@@ -72,6 +73,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
               // Emergency Banner (if needed)
               SliverToBoxAdapter(child: _buildEmergencyBanner()),
+
+              // Health Metrics Card (with real backend data)
+              const SliverToBoxAdapter(child: HealthMetricsCard()),
 
               // Upcoming Appointments
               const SliverToBoxAdapter(
@@ -207,6 +211,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildRecentActivity() {
+    // TODO: Backend Integration - Replace with real data from homeProvider
+    final homeState = ref.watch(homeProvider);
+    final activities = homeState.recentActivities;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -223,7 +231,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  // Navigate to full activity/history screen
+                  // TODO: Navigate to full activity/history screen
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Activity history feature coming soon!'),
@@ -235,6 +243,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
           const SizedBox(height: 12),
+          // TODO: Backend Integration - These are placeholder items
+          // Replace with dynamic list from activities variable
           _buildActivityItem(
             icon: Icons.calendar_today,
             title: 'Appointment with Dr. Smith',

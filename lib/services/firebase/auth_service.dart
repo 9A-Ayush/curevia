@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../models/user_model.dart';
 import '../../constants/app_constants.dart';
+import '../doctor/doctor_onboarding_service.dart';
 
 /// Firebase Authentication Service
 class AuthService {
@@ -59,6 +60,15 @@ class AuthService {
             fullName: fullName,
             role: role,
           );
+          
+          // If user is a doctor, initialize doctor onboarding document
+          if (role == AppConstants.doctorRole) {
+            await DoctorOnboardingService.initializeDoctorDocument(
+              credential.user!.uid,
+              email,
+              fullName,
+            );
+          }
         } catch (firestoreError) {
           // If Firestore fails, log but don't fail the entire signup
           print('Firestore error during user creation: $firestoreError');

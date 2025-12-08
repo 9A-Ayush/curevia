@@ -47,7 +47,7 @@ class UpcomingAppointments extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                // TODO: Navigate to all appointments
+                Navigator.pushNamed(context, '/appointments');
               },
               child: const Text('View All'),
             ),

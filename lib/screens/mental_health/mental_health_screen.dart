@@ -35,10 +35,9 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
           IconButton(
             icon: const Icon(Icons.history),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Mood history coming soon!')),
-              );
+              _showMoodHistory();
             },
+            tooltip: 'Mood History',
           ),
         ],
       ),
@@ -393,11 +392,13 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
               children: [
                 Icon(Icons.emergency, color: AppColors.error, size: 24),
                 const SizedBox(width: 8),
-                Text(
-                  'Need Immediate Help?',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.error,
+                Expanded(
+                  child: Text(
+                    'Need Immediate Help?',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.error,
+                    ),
                   ),
                 ),
               ],
@@ -408,18 +409,35 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
+            _buildEmergencyContact(
+              'National Mental Health Helpline',
+              '1800-599-0019',
+              Icons.phone,
+              AppColors.error,
+            ),
+            const SizedBox(height: 8),
+            _buildEmergencyContact(
+              'Suicide Prevention Helpline',
+              '9152987821',
+              Icons.phone_in_talk,
+              AppColors.error,
+            ),
+            const SizedBox(height: 8),
+            _buildEmergencyContact(
+              'AASRA (24/7 Support)',
+              '9820466726',
+              Icons.support_agent,
+              AppColors.error,
+            ),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Emergency contacts feature coming soon!'),
-                    ),
-                  );
+                  _showEmergencyContactsDialog();
                 },
-                icon: const Icon(Icons.phone),
-                label: const Text('Emergency Helpline'),
+                icon: const Icon(Icons.contacts),
+                label: const Text('View All Emergency Contacts'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.error,
                   foregroundColor: AppColors.textOnPrimary,
@@ -432,6 +450,180 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmergencyContact(
+    String name,
+    String number,
+    IconData icon,
+    Color color,
+  ) {
+    return InkWell(
+      onTap: () => _makePhoneCall(number),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    number,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: ThemeUtils.getTextSecondaryColor(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.call, color: color, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _makePhoneCall(String phoneNumber) async {
+    try {
+      // Remove any spaces or special characters
+      final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+      
+      // Show confirmation dialog
+      final shouldCall = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Call Emergency Helpline?'),
+          content: Text('Do you want to call $phoneNumber?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Call'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldCall == true && mounted) {
+        // TODO: Implement actual phone call using url_launcher
+        // For now, show a message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Calling $phoneNumber...'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error making call: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showEmergencyContactsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.emergency, color: AppColors.error),
+            const SizedBox(width: 8),
+            const Expanded(child: Text('Emergency Contacts')),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDialogContact('National Mental Health Helpline', '1800-599-0019'),
+              _buildDialogContact('Suicide Prevention Helpline', '9152987821'),
+              _buildDialogContact('AASRA (24/7 Support)', '9820466726'),
+              _buildDialogContact('Vandrevala Foundation', '1860-2662-345'),
+              _buildDialogContact('iCall Helpline', '9152987821'),
+              _buildDialogContact('Sneha Foundation', '044-24640050'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: AppColors.info, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'All helplines are available 24/7 and provide free, confidential support.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDialogContact(String name, String number) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(Icons.phone, color: AppColors.error),
+      title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text(number),
+      trailing: IconButton(
+        icon: Icon(Icons.call, color: AppColors.error),
+        onPressed: () {
+          Navigator.pop(context);
+          _makePhoneCall(number);
+        },
       ),
     );
   }
@@ -477,6 +669,86 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
               color: Colors.white,
               fontWeight: FontWeight.w600,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMoodHistory() {
+    // TODO: Fetch actual mood history from database
+    final mockHistory = [
+      {'date': 'Today, 10:30 AM', 'mood': '😊', 'label': 'Great'},
+      {'date': 'Yesterday, 3:45 PM', 'mood': '🙂', 'label': 'Good'},
+      {'date': 'Yesterday, 9:00 AM', 'mood': '😐', 'label': 'Okay'},
+      {'date': '2 days ago, 2:15 PM', 'mood': '🙂', 'label': 'Good'},
+      {'date': '3 days ago, 11:20 AM', 'mood': '😊', 'label': 'Great'},
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.history, color: AppColors.primary),
+            const SizedBox(width: 8),
+            const Text('Mood History'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.trending_up, color: AppColors.success),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Your mood has been mostly positive this week!',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...mockHistory.map((entry) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: ThemeUtils.getSurfaceColor(context),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          entry['mood'] as String,
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      entry['label'] as String,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(entry['date'] as String),
+                  )),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
           ),
         ],
       ),

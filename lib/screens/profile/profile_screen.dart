@@ -44,8 +44,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _loadUserData() {
     final user = ref.read(authProvider).userModel;
     if (user != null) {
-      // Load notifications
-      ref.read(notificationProvider.notifier).loadNotifications(user.uid);
+      // Notifications are loaded via stream provider automatically
+      // No need to manually load
 
       // Load family members
       ref.read(familyMemberProvider.notifier).loadFamilyMembers(user.uid);
@@ -411,7 +411,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildHealthStats(BuildContext context, PatientModel? patientModel) {
     final familyMemberCount = ref.watch(familyMemberCountProvider);
     final medicalRecordCount = ref.watch(medicalReportsCountProvider);
-    final unreadNotifications = ref.watch(unreadNotificationsCountProvider);
+    final user = ref.watch(authProvider).userModel;
+    final unreadNotifications = user != null 
+        ? ref.watch(unreadNotificationsCountProvider(user.uid))
+        : const AsyncValue.data(0);
 
     // Use actual patient data or show placeholders
     final bloodGroup = patientModel?.bloodGroup ?? 'Not set';
@@ -451,8 +454,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               context,
               icon: '🔔',
               label: 'Alerts',
-              value: '$unreadNotifications',
-              color: unreadNotifications > 0 ? Colors.red : Colors.grey,
+              value: unreadNotifications.when(
+                data: (count) => '$count',
+                loading: () => '...',
+                error: (_, __) => '0',
+              ),
+              color: unreadNotifications.when(
+                data: (count) => count > 0 ? Colors.red : Colors.grey,
+                loading: () => Colors.grey,
+                error: (_, __) => Colors.grey,
+              ),
             ),
             const SizedBox(width: 12),
 

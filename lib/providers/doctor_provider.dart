@@ -293,3 +293,8 @@ final topRatedDoctorsProvider = FutureProvider<List<DoctorModel>>((ref) async {
 final availableDoctorsProvider = FutureProvider.family<List<DoctorModel>, String>((ref, consultationType) async {
   return await DoctorService.getAvailableDoctors(consultationType: consultationType);
 });
+
+/// Verified doctors provider
+final verifiedDoctorsProvider = FutureProvider.autoDispose<List<DoctorModel>>((ref) async {
+  return await DoctorService.getVerifiedDoctors();
+});

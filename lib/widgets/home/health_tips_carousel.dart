@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
-import '../../utils/theme_utils.dart';
 import '../../screens/health/health_tip_detail_screen.dart';
+import '../../screens/health/health_tips_screen.dart';
 
 /// Health tips carousel for home screen
 class HealthTipsCarousel extends StatelessWidget {
@@ -56,7 +56,12 @@ class HealthTipsCarousel extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/health-tips');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HealthTipsScreen(),
+                    ),
+                  );
                 },
                 child: const Text('View All'),
               ),

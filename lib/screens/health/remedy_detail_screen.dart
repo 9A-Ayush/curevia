@@ -36,7 +36,7 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(widget.remedy.name),
         backgroundColor: AppColors.primary,
@@ -73,7 +73,7 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomActions(),
+
     );
   }
 
@@ -217,11 +217,11 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
 
   Widget _buildTabBar() {
     return Container(
-      color: AppColors.surface,
+      color: Theme.of(context).cardColor,
       child: TabBar(
         controller: _tabController,
         labelColor: AppColors.primary,
-        unselectedLabelColor: AppColors.textSecondary,
+        unselectedLabelColor: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
         indicatorColor: AppColors.primary,
         indicatorWeight: 3,
         tabs: const [
@@ -312,9 +312,9 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderLight),
+                border: Border.all(color: Theme.of(context).dividerColor),
               ),
               child: Row(
                 children: [
@@ -423,9 +423,9 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderLight),
+                        border: Border.all(color: Theme.of(context).dividerColor),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -563,9 +563,9 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -645,48 +645,5 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
     );
   }
 
-  Widget _buildBottomActions() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: CustomButton(
-              text: 'Save to Favorites',
-              onPressed: () {
-                // TODO: Implement favorites functionality
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Saved to favorites!'),
-                    backgroundColor: AppColors.success,
-                  ),
-                );
-              },
-              backgroundColor: AppColors.secondary,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: CustomButton(
-              text: 'Consult Doctor',
-              onPressed: () {
-                Navigator.pop(context);
-                // TODO: Navigate to doctor consultation
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 }

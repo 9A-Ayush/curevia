@@ -268,6 +268,39 @@ class DoctorService {
     }
   }
 
+  /// Get verified doctors
+  static Future<List<DoctorModel>> getVerifiedDoctors({int limit = 50}) async {
+    try {
+      // Simple query without composite index requirement
+      final querySnapshot = await _firestore
+          .collection(AppConstants.doctorsCollection)
+          .where('isActive', isEqualTo: true)
+          .limit(100) // Get more to filter client-side
+          .get();
+
+      // Filter and sort client-side
+      List<DoctorModel> doctors = querySnapshot.docs
+          .map((doc) => DoctorModel.fromMap(doc.data()))
+          .where((doctor) {
+            // Filter for verified doctors if verificationStatus exists
+            final status = doctor.verificationStatus;
+            return status == null || status == 'verified';
+          })
+          .toList();
+
+      // Sort by rating
+      doctors.sort((a, b) {
+        final ratingA = a.rating ?? 0.0;
+        final ratingB = b.rating ?? 0.0;
+        return ratingB.compareTo(ratingA);
+      });
+
+      return doctors.take(limit).toList();
+    } catch (e) {
+      throw Exception('Failed to get verified doctors: $e');
+    }
+  }
+
   /// Get all specialties
   static Future<List<String>> getAllSpecialties() async {
     try {

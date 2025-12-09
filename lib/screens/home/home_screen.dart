@@ -14,6 +14,7 @@ import '../../widgets/home/upcoming_appointments.dart';
 import '../../widgets/home/health_tips_carousel.dart';
 import '../../widgets/home/health_metrics_card.dart';
 import '../../widgets/home/nearby_doctors.dart';
+import '../../widgets/home/recent_activity.dart' as widgets;
 import '../../screens/consultation/video_consultation_screen.dart';
 import '../../screens/doctor/doctor_search_screen.dart';
 import '../../screens/emergency/emergency_screen.dart';
@@ -97,7 +98,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
 
               // Recent Activity
-              SliverToBoxAdapter(child: _buildRecentActivity()),
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 0),
+                  child: widgets.RecentActivity(),
+                ),
+              ),
 
               // Bottom spacing
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -210,117 +216,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildRecentActivity() {
-    // TODO: Backend Integration - Replace with real data from homeProvider
-    final homeState = ref.watch(homeProvider);
-    final activities = homeState.recentActivities;
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Recent Activity',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              TextButton(
-                onPressed: () {
-                  // TODO: Navigate to full activity/history screen
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Activity history feature coming soon!'),
-                    ),
-                  );
-                },
-                child: const Text('View All'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // TODO: Backend Integration - These are placeholder items
-          // Replace with dynamic list from activities variable
-          _buildActivityItem(
-            icon: Icons.calendar_today,
-            title: 'Appointment with Dr. Smith',
-            subtitle: 'Completed • 2 days ago',
-            color: AppColors.success,
-          ),
-          _buildActivityItem(
-            icon: Icons.medication,
-            title: 'Prescription uploaded',
-            subtitle: 'Dr. Johnson • 3 days ago',
-            color: AppColors.info,
-          ),
-          _buildActivityItem(
-            icon: Icons.favorite,
-            title: 'Health checkup reminder',
-            subtitle: 'Due in 5 days',
-            color: AppColors.warning,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: ThemeUtils.getSurfaceVariantColor(context),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: ThemeUtils.getTextSecondaryColor(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            Icons.chevron_right,
-            color: ThemeUtils.getTextSecondaryColor(context),
-            size: 20,
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showQuickBooking(BuildContext context) {
     showModalBottomSheet(

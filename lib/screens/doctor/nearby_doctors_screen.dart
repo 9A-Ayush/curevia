@@ -48,16 +48,21 @@ class _NearbyDoctorsScreenState extends ConsumerState<NearbyDoctorsScreen>
   }
 
   void _loadNearbyDoctors() {
-    final position = ref.read(currentPositionProvider);
-    if (position != null) {
-      ref
-          .read(doctorSearchProvider.notifier)
-          .getNearbyDoctors(
-            latitude: position.latitude,
-            longitude: position.longitude,
-            radiusKm: _radiusKm,
-          );
-    }
+    // Use WidgetsBinding to ensure we're not in build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      
+      final position = ref.read(currentPositionProvider);
+      if (position != null) {
+        ref
+            .read(doctorSearchProvider.notifier)
+            .getNearbyDoctors(
+              latitude: position.latitude,
+              longitude: position.longitude,
+              radiusKm: _radiusKm,
+            );
+      }
+    });
   }
 
   @override

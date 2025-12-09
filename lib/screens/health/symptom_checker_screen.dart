@@ -8,6 +8,7 @@ import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../services/ai/symptom_analysis_service.dart';
 import '../../models/symptom_analysis_model.dart';
+import '../patient/find_doctors_screen.dart';
 
 /// Symptom checker screen
 class SymptomCheckerScreen extends ConsumerStatefulWidget {
@@ -772,13 +773,35 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
           ],
 
           // Action Buttons
-          CustomButton(
-            text: 'Book Consultation with ${result.suggestedSpecialist}',
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Navigate to doctor booking with specialty filter
-            },
+          SizedBox(
             width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                // Navigate to Find Doctors screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FindDoctorsScreen(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Book Consultation with\n${result.suggestedSpecialist}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -856,7 +879,9 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: ThemeUtils.isDarkMode(context)
+            ? Colors.grey.shade900
+            : AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),

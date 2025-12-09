@@ -468,34 +468,17 @@ class _MedicineDirectoryScreenState
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showMedicineDetails(medicine),
-                  icon: const Icon(Icons.info_outline, size: 16),
-                  label: const Text('Details'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: ThemeUtils.getPrimaryColor(context),
-                    side: BorderSide(
-                      color: ThemeUtils.getPrimaryColor(context),
-                    ),
-                  ),
-                ),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _showMedicineDetails(medicine),
+              icon: const Icon(Icons.info_outline, size: 16),
+              label: const Text('Details'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ThemeUtils.getPrimaryColor(context),
+                foregroundColor: Colors.white,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _findNearbyPharmacies(medicine),
-                  icon: const Icon(Icons.location_on, size: 16),
-                  label: const Text('Find Nearby'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ThemeUtils.getPrimaryColor(context),
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -683,19 +666,7 @@ class _MedicineDirectoryScreenState
     );
   }
 
-  void _findNearbyPharmacies(Medicine medicine) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Finding pharmacies with ${medicine.name}...'),
-        action: SnackBarAction(
-          label: 'View Map',
-          onPressed: () {
-            // TODO: Navigate to pharmacy map
-          },
-        ),
-      ),
-    );
-  }
+
 }
 
 class Medicine {

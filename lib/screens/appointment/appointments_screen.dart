@@ -131,21 +131,86 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
               ],
             ),
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const FindDoctorsScreen(),
+
+          // Bottom Quick Actions
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: ThemeUtils.getSurfaceColor(context),
+              boxShadow: [
+                BoxShadow(
+                  color: ThemeUtils.getShadowLightColor(context),
+                  blurRadius: 8,
+                  offset: const Offset(0, -2),
+                ),
+              ],
             ),
-          );
-        },
-        backgroundColor: ThemeUtils.getPrimaryColor(context),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Book Appointment'),
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FindDoctorsScreen(
+                              consultationType: 'online',
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ThemeUtils.getSurfaceVariantColor(context),
+                        foregroundColor: ThemeUtils.getTextPrimaryColor(context),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: ThemeUtils.getBorderLightColor(context),
+                          ),
+                        ),
+                      ),
+                      icon: const Icon(Icons.video_call, size: 20),
+                      label: const Text(
+                        'Video Call',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        _showQuickBookingOptions();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ThemeUtils.getPrimaryColor(context),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.add, size: 20),
+                      label: const Text(
+                        'Book Appointment',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -243,6 +308,51 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                 ),
               ),
             ),
+            const SizedBox(height: 24),
+            // Prominent Book Appointment Button
+            Container(
+              width: double.infinity,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    ThemeUtils.getPrimaryColor(context),
+                    ThemeUtils.getPrimaryColor(context).withOpacity(0.8),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: ThemeUtils.getPrimaryColor(context).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _showQuickBookingOptions();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                ),
+                icon: const Icon(Icons.add, size: 24),
+                label: const Text(
+                  'Book Appointment',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -319,7 +429,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.5,
+        height: MediaQuery.of(context).size.height * 0.6,
         decoration: BoxDecoration(
           color: ThemeUtils.getSurfaceColor(context),
           borderRadius: const BorderRadius.only(
@@ -338,59 +448,129 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Book Appointment',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.medical_services,
+                          color: ThemeUtils.getPrimaryColor(context),
+                          size: 28,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Book Your Appointment',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildBookingOption(
-                    icon: Icons.video_call,
-                    title: 'Video Consultation',
-                    subtitle: 'Connect with doctors online',
-                    color: AppColors.secondary,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const FindDoctorsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildBookingOption(
-                    icon: Icons.location_on,
-                    title: 'In-Person Visit',
-                    subtitle: 'Book appointment at clinic',
-                    color: AppColors.primary,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const FindDoctorsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildBookingOption(
-                    icon: Icons.emergency,
-                    title: 'Emergency Consultation',
-                    subtitle: 'Immediate medical attention',
-                    color: AppColors.error,
-                    onTap: () {
-                      Navigator.pop(context);
-                      // Navigate to emergency screen
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      'Choose your preferred consultation type',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: ThemeUtils.getTextSecondaryColor(context),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _buildBookingOption(
+                            icon: Icons.video_call,
+                            title: 'Video Consultation',
+                            subtitle: 'Connect with doctors online from home',
+                            color: AppColors.secondary,
+                            badge: 'Popular',
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const FindDoctorsScreen(
+                                    consultationType: 'online',
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildBookingOption(
+                            icon: Icons.location_on,
+                            title: 'In-Person Visit',
+                            subtitle: 'Visit doctor at clinic for physical examination',
+                            color: AppColors.primary,
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const FindDoctorsScreen(
+                                    consultationType: 'offline',
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildBookingOption(
+                            icon: Icons.emergency,
+                            title: 'Emergency Consultation',
+                            subtitle: 'Immediate medical attention required',
+                            color: AppColors.error,
+                            badge: '24/7',
+                            onTap: () {
+                              Navigator.pop(context);
+                              // Navigate to emergency screen or show emergency doctors
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const FindDoctorsScreen(
+                                    consultationType: 'emergency',
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: ThemeUtils.getPrimaryColorWithOpacity(context, 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: ThemeUtils.getPrimaryColorWithOpacity(context, 0.2),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: ThemeUtils.getPrimaryColor(context),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'All consultations are with verified doctors',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: ThemeUtils.getPrimaryColor(context),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -404,6 +584,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     required String title,
     required String subtitle,
     required Color color,
+    String? badge,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -413,22 +594,29 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: ThemeUtils.getSurfaceVariantColor(context),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: ThemeUtils.getBorderLightColor(context)),
+          boxShadow: [
+            BoxShadow(
+              color: ThemeUtils.getShadowLightColor(context),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
                 icon,
                 color: color,
-                size: 24,
+                size: 28,
               ),
             ),
             const SizedBox(width: 16),
@@ -436,12 +624,35 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (badge != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            badge,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -451,9 +662,18 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: ThemeUtils.getTextSecondaryColor(context),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.chevron_right,
+                color: color,
+                size: 20,
+              ),
             ),
           ],
         ),

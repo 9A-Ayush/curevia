@@ -10,7 +10,12 @@ import 'doctor_detail_screen.dart';
 
 /// Find doctors screen for patients
 class FindDoctorsScreen extends ConsumerStatefulWidget {
-  const FindDoctorsScreen({super.key});
+  final String? consultationType;
+  
+  const FindDoctorsScreen({
+    super.key,
+    this.consultationType,
+  });
 
   @override
   ConsumerState<FindDoctorsScreen> createState() => _FindDoctorsScreenState();

@@ -125,7 +125,7 @@ class _AdditionalInfoStepState extends ConsumerState<AdditionalInfoStep> {
                         }
                       });
                     },
-                    selectedColor: AppColors.primary.withValues(alpha: 0.3),
+                    selectedColor: AppColors.primary.withOpacity(0.3),
                     backgroundColor: ThemeUtils.getSurfaceColor(context),
                     labelStyle: TextStyle(
                       color: isSelected
@@ -195,7 +195,7 @@ class _AdditionalInfoStepState extends ConsumerState<AdditionalInfoStep> {
                         }
                       });
                     },
-                    selectedColor: AppColors.primary.withValues(alpha: 0.3),
+                    selectedColor: AppColors.primary.withOpacity(0.3),
                     backgroundColor: ThemeUtils.getSurfaceColor(context),
                     labelStyle: TextStyle(
                       color: isSelected
@@ -378,7 +378,7 @@ class _AdditionalInfoStepState extends ConsumerState<AdditionalInfoStep> {
                             (service) => Chip(
                               label: Text(service),
                               backgroundColor:
-                                  AppColors.primary.withValues(alpha: 0.1),
+                                  AppColors.primary.withOpacity(0.1),
                               deleteIcon: const Icon(Icons.close, size: 16),
                               onDeleted: () {
                                 setState(() {
@@ -451,7 +451,7 @@ class _AdditionalInfoStepState extends ConsumerState<AdditionalInfoStep> {
                             (condition) => Chip(
                               label: Text(condition),
                               backgroundColor:
-                                  AppColors.info.withValues(alpha: 0.1),
+                                  AppColors.info.withOpacity(0.1),
                               deleteIcon: const Icon(Icons.close, size: 16),
                               onDeleted: () {
                                 setState(() {

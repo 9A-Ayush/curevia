@@ -14,7 +14,9 @@ class AppointmentModel {
   final String status; // 'pending', 'confirmed', 'completed', 'cancelled', 'rescheduled'
   final double? consultationFee;
   final String? paymentId;
-  final String? paymentStatus; // 'pending', 'completed', 'failed', 'refunded'
+  final String? paymentStatus; // 'pending', 'completed', 'failed', 'refunded', 'pay_on_clinic'
+  final String? paymentMethod; // 'card', 'upi', 'netbanking', 'cash', etc.
+  final DateTime? paymentReceivedAt; // When payment was actually received
   final String? symptoms;
   final String? notes;
   final String? prescriptionId;
@@ -47,6 +49,8 @@ class AppointmentModel {
     this.consultationFee,
     this.paymentId,
     this.paymentStatus,
+    this.paymentMethod,
+    this.paymentReceivedAt,
     this.symptoms,
     this.notes,
     this.prescriptionId,
@@ -82,6 +86,8 @@ class AppointmentModel {
       consultationFee: map['consultationFee']?.toDouble(),
       paymentId: map['paymentId'],
       paymentStatus: map['paymentStatus'],
+      paymentMethod: map['paymentMethod'],
+      paymentReceivedAt: (map['paymentReceivedAt'] as Timestamp?)?.toDate(),
       symptoms: map['symptoms'],
       notes: map['notes'],
       prescriptionId: map['prescriptionId'],
@@ -118,6 +124,8 @@ class AppointmentModel {
       'consultationFee': consultationFee,
       'paymentId': paymentId,
       'paymentStatus': paymentStatus,
+      'paymentMethod': paymentMethod,
+      'paymentReceivedAt': paymentReceivedAt != null ? Timestamp.fromDate(paymentReceivedAt!) : null,
       'symptoms': symptoms,
       'notes': notes,
       'prescriptionId': prescriptionId,
@@ -153,6 +161,8 @@ class AppointmentModel {
     double? consultationFee,
     String? paymentId,
     String? paymentStatus,
+    String? paymentMethod,
+    DateTime? paymentReceivedAt,
     String? symptoms,
     String? notes,
     String? prescriptionId,
@@ -185,6 +195,8 @@ class AppointmentModel {
       consultationFee: consultationFee ?? this.consultationFee,
       paymentId: paymentId ?? this.paymentId,
       paymentStatus: paymentStatus ?? this.paymentStatus,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      paymentReceivedAt: paymentReceivedAt ?? this.paymentReceivedAt,
       symptoms: symptoms ?? this.symptoms,
       notes: notes ?? this.notes,
       prescriptionId: prescriptionId ?? this.prescriptionId,

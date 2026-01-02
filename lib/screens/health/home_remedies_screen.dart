@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../models/home_remedy_model.dart';
-import '../../services/home_remedies/home_remedies_service.dart';
+import '../../providers/home_remedies_provider.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../utils/theme_utils.dart';
 import 'remedy_detail_screen.dart';
@@ -20,17 +20,31 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
 
-  List<HomeRemedyModel> _remedies = [];
-  List<RemedyCategory> _categories = [];
   String? _selectedCategory;
-  bool _isLoading = false;
   String _searchQuery = '';
+  bool _isSeeding = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _loadInitialData();
+    _tabController = TabController(length: 2, vsync: this); // Reduced to 2 tabs
+    // Seed data on first load and wait for completion
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      setState(() {
+        _isSeeding = true;
+      });
+      try {
+        await ref.read(seedRemediesDataProvider.future);
+      } catch (e) {
+        print('Error seeding remedies data: $e');
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSeeding = false;
+          });
+        }
+      }
+    });
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -44,85 +58,56 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
   void _onSearchChanged() {
     final query = _searchController.text.trim();
     if (query != _searchQuery) {
-      _searchQuery = query;
-      _debounceSearch();
+      setState(() {
+        _searchQuery = query;
+      });
     }
   }
 
-  void _debounceSearch() {
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (_searchQuery == _searchController.text.trim()) {
-        _performSearch();
+  void _loadInitialData() {
+    setState(() {
+      _selectedCategory = null;
+    });
+  }
+
+  /// Force seed home remedies data
+  Future<void> _forceSeedData() async {
+    setState(() {
+      _isSeeding = true;
+    });
+    
+    try {
+      // Invalidate all providers to force refresh
+      ref.invalidate(remedyCategoriesProvider);
+      ref.invalidate(allRemediesProvider);
+      ref.invalidate(seedRemediesDataProvider);
+      
+      // Force seed data
+      await ref.read(seedRemediesDataProvider.future);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Home remedies data refreshed successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
-    });
-  }
-
-  Future<void> _loadInitialData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final categories = await HomeRemediesService.getRemedyCategories();
-      final remedies = await HomeRemediesService.getPopularRemedies(limit: 20);
-
-      setState(() {
-        _categories = categories;
-        _remedies = remedies;
-        _isLoading = false;
-      });
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _performSearch() async {
-    if (_searchQuery.isEmpty) {
-      await _loadInitialData();
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final remedies = await HomeRemediesService.searchRemedies(_searchQuery);
-      setState(() {
-        _remedies = remedies;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _filterByCategory(String? category) async {
-    setState(() {
-      _selectedCategory = category;
-      _isLoading = true;
-    });
-
-    try {
-      List<HomeRemedyModel> remedies;
-      if (category == null) {
-        remedies = await HomeRemediesService.getPopularRemedies(limit: 20);
-      } else {
-        remedies = await HomeRemediesService.getRemediesByCategory(category);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to refresh data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
-
-      setState(() {
-        _remedies = remedies;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSeeding = false;
+        });
+      }
     }
   }
 
@@ -135,15 +120,21 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
         elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: _forceSeedData,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Data',
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.textOnPrimary,
-          unselectedLabelColor: AppColors.textOnPrimary.withValues(alpha: 0.7),
+          unselectedLabelColor: AppColors.textOnPrimary.withOpacity(0.7),
           indicatorColor: AppColors.textOnPrimary,
           tabs: const [
             Tab(text: 'Remedies'),
             Tab(text: 'Categories'),
-            Tab(text: 'Herbs'),
           ],
         ),
       ),
@@ -159,7 +150,6 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
               children: [
                 _buildRemediesTab(),
                 _buildCategoriesTab(),
-                _buildHerbsTab(),
               ],
             ),
           ),
@@ -192,7 +182,7 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
           Text(
             'Discover time-tested natural remedies and herbal treatments',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textOnPrimary.withValues(alpha: 0.9),
+              color: AppColors.textOnPrimary.withOpacity(0.9),
             ),
           ),
           const SizedBox(height: 16),
@@ -220,7 +210,7 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
     return Column(
       children: [
         // Categories Filter
-        if (_categories.isNotEmpty) _buildCategoriesFilter(),
+        _buildCategoriesFilter(),
 
         // Remedies List
         Expanded(child: _buildRemediesList()),
@@ -229,22 +219,30 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
   }
 
   Widget _buildCategoriesFilter() {
-    return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _categories.length + 1,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return _buildCategoryChip('All', null);
-          }
+    final categoriesAsync = ref.watch(remedyCategoriesProvider);
+    
+    return categoriesAsync.when(
+      data: (categories) {
+        return Container(
+          height: 60,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: categories.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return _buildCategoryChip('All', null);
+              }
 
-          final category = _categories[index - 1];
-          return _buildCategoryChip(category.name, category.id);
-        },
-      ),
+              final category = categories[index - 1];
+              return _buildCategoryChip(category.name, category.name);
+            },
+          ),
+        );
+      },
+      loading: () => const SizedBox(height: 60),
+      error: (error, stack) => const SizedBox(height: 60),
     );
   }
 
@@ -257,9 +255,11 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
         label: Text(label),
         selected: isSelected,
         onSelected: (selected) {
-          _filterByCategory(selected ? value : null);
+          setState(() {
+            _selectedCategory = selected ? value : null;
+          });
         },
-        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+        selectedColor: AppColors.primary.withOpacity(0.2),
         checkmarkColor: AppColors.primary,
         backgroundColor: ThemeUtils.getSurfaceColor(context),
         labelStyle: TextStyle(
@@ -273,21 +273,118 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
   }
 
   Widget _buildRemediesList() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+    // Show loading during seeding
+    if (_isSeeding) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading remedies data...'),
+          ],
+        ),
+      );
     }
 
-    if (_remedies.isEmpty) {
+    // Use search if there's a query, otherwise use category filter
+    if (_searchQuery.isNotEmpty) {
+      final searchAsync = ref.watch(searchRemediesProvider(_searchQuery));
+      return searchAsync.when(
+        data: (remedies) => _buildRemediesGrid(remedies),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => _buildErrorState(),
+      );
+    } else if (_selectedCategory != null) {
+      final categoryAsync = ref.watch(remediesByCategoryProvider(_selectedCategory!));
+      return categoryAsync.when(
+        data: (remedies) => _buildRemediesGrid(remedies),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => _buildErrorState(),
+      );
+    } else {
+      final allRemediesAsync = ref.watch(allRemediesProvider);
+      return allRemediesAsync.when(
+        data: (remedies) => _buildRemediesGrid(remedies),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => _buildErrorState(),
+      );
+    }
+  }
+
+  Widget _buildRemediesGrid(List<HomeRemedyModel> remedies) {
+    if (remedies.isEmpty) {
       return _buildEmptyState();
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _remedies.length,
+      itemCount: remedies.length,
       itemBuilder: (context, index) {
-        final remedy = _remedies[index];
+        final remedy = remedies[index];
         return _buildRemedyCard(remedy);
       },
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: ThemeUtils.getErrorColor(context),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Unable to load remedies',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: ThemeUtils.getTextPrimaryColor(context),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Please check your internet connection and try again',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: ThemeUtils.getTextSecondaryColor(context),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              // Force refresh all providers
+              ref.invalidate(remedyCategoriesProvider);
+              ref.invalidate(allRemediesProvider);
+              ref.invalidate(seedRemediesDataProvider);
+              setState(() {
+                _isSeeding = true;
+              });
+              // Retry seeding
+              ref.read(seedRemediesDataProvider.future).then((_) {
+                if (mounted) {
+                  setState(() {
+                    _isSeeding = false;
+                  });
+                }
+              }).catchError((e) {
+                if (mounted) {
+                  setState(() {
+                    _isSeeding = false;
+                  });
+                }
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -352,7 +449,7 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.1),
+                      color: AppColors.success.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -372,50 +469,16 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
                           children: [
                             Expanded(
                               child: Text(
-                                remedy.name,
+                                remedy.title,
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ),
-                            if (remedy.isVerified)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.success.withValues(
-                                    alpha: 0.1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.verified,
-                                      size: 12,
-                                      color: AppColors.success,
-                                    ),
-                                    const SizedBox(width: 2),
-                                    Text(
-                                      'Verified',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: AppColors.success,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'For ${remedy.condition}',
+                          remedy.categoryName,
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
                                 color: AppColors.primary,
@@ -446,7 +509,7 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
               Row(
                 children: [
                   _buildInfoChip(
-                    remedy.formattedPreparationTime,
+                    remedy.preparationTime,
                     Icons.schedule,
                     AppColors.info,
                   ),
@@ -456,32 +519,26 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
                     Icons.trending_up,
                     _getDifficultyColor(remedy.difficulty),
                   ),
-                  const SizedBox(width: 8),
-                  _buildInfoChip(
-                    '${remedy.effectiveness}/5',
-                    Icons.star,
-                    AppColors.warning,
-                  ),
                 ],
               ),
 
-              if (remedy.symptoms.isNotEmpty) ...[
+              if (remedy.tags.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 4,
                   runSpacing: 4,
-                  children: remedy.symptoms.take(3).map((symptom) {
+                  children: remedy.tags.take(3).map((tag) {
                     return Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.1),
+                        color: AppColors.accent.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        symptom,
+                        tag,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.accent,
                           fontSize: 10,
@@ -502,9 +559,9 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -537,30 +594,54 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
   }
 
   Widget _buildCategoriesTab() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.2,
-      ),
-      itemCount: _categories.length,
-      itemBuilder: (context, index) {
-        final category = _categories[index];
-        return _buildCategoryCard(category);
+    // Show loading during seeding
+    if (_isSeeding) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading categories...'),
+          ],
+        ),
+      );
+    }
+
+    final categoriesAsync = ref.watch(remedyCategoriesProvider);
+    
+    return categoriesAsync.when(
+      data: (categories) {
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.2,
+          ),
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final category = categories[index];
+            return _buildCategoryCard(category);
+          },
+        );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => _buildErrorState(),
     );
   }
 
-  Widget _buildCategoryCard(RemedyCategory category) {
+  Widget _buildCategoryCard(HomeRemedyCategoryModel category) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
           _tabController.animateTo(0); // Switch to remedies tab
-          _filterByCategory(category.id);
+          setState(() {
+            _selectedCategory = category.name;
+          });
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -572,14 +653,12 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: _getCategoryColor(
-                    category.color,
-                  ).withValues(alpha: 0.1),
+                  color: AppColors.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  _getCategoryIcon(category.iconName),
-                  color: _getCategoryColor(category.color),
+                  _getCategoryIcon(category.name),
+                  color: AppColors.primary,
                   size: 24,
                 ),
               ),
@@ -593,7 +672,7 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
               ),
               const SizedBox(height: 4),
               Text(
-                '${category.remedyCount} remedies',
+                '${category.remedies.length} remedies',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: ThemeUtils.getTextSecondaryColor(context),
                 ),
@@ -605,190 +684,42 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
     );
   }
 
-  Widget _buildHerbsTab() {
-    return FutureBuilder<List<HerbModel>>(
-      future: HomeRemediesService.getHerbsEncyclopedia(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: ThemeUtils.getTextSecondaryColor(context),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Error loading herbs',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: ThemeUtils.getTextSecondaryColor(context),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Please try again later',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: ThemeUtils.getTextSecondaryColor(context),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final herbs = snapshot.data ?? [];
-
-        if (herbs.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.eco,
-                  size: 64,
-                  color: ThemeUtils.getTextSecondaryColor(context),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No herbs available',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: ThemeUtils.getTextSecondaryColor(context),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: herbs.length,
-          itemBuilder: (context, index) {
-            final herb = herbs[index];
-            return _buildHerbCard(herb);
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildHerbCard(HerbModel herb) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.eco, color: AppColors.success, size: 24),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        herb.name,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        herb.scientificName,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: ThemeUtils.getTextSecondaryColor(context),
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              herb.description,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 4,
-              runSpacing: 4,
-              children: herb.properties.take(4).map((property) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    property,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.primary,
-                      fontSize: 10,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _getCategoryColor(String colorName) {
-    switch (colorName.toLowerCase()) {
-      case 'blue':
-        return Colors.blue;
-      case 'green':
-        return Colors.green;
-      case 'pink':
-        return Colors.pink;
-      case 'orange':
-        return Colors.orange;
-      case 'purple':
-        return Colors.purple;
-      case 'indigo':
-        return Colors.indigo;
-      default:
-        return AppColors.primary;
-    }
-  }
-
-  IconData _getCategoryIcon(String iconName) {
-    switch (iconName.toLowerCase()) {
-      case 'lungs':
+  IconData _getCategoryIcon(String categoryName) {
+    switch (categoryName.toLowerCase()) {
+      case 'respiratory health':
         return Icons.air;
-      case 'stomach':
-        return Icons.restaurant;
-      case 'face':
-        return Icons.face;
-      case 'healing':
-        return Icons.healing;
-      case 'shield':
+      case 'immunity boosting':
         return Icons.shield;
-      case 'sleep':
+      case 'skin care':
+        return Icons.face;
+      case 'digestive health':
+        return Icons.restaurant;
+      case 'oral care':
+        return Icons.medical_services;
+      case 'hair care':
+        return Icons.face_retouching_natural;
+      case 'sleep and relaxation':
         return Icons.bedtime;
+      case 'joint and muscle pain relief':
+        return Icons.healing;
+      case 'stress and mental wellness':
+        return Icons.psychology;
+      case 'women\'s health':
+        return Icons.female;
+      case 'children\'s common ailments':
+        return Icons.child_care;
+      case 'first aid':
+        return Icons.medical_services;
+      case 'pet-safe remedies':
+        return Icons.pets;
+      case 'ayurveda-based treatments':
+        return Icons.spa;
+      case 'disease-specific remedies':
+        return Icons.local_hospital;
+      case 'herb encyclopedia':
+        return Icons.eco;
+      case 'common otc natural products':
+        return Icons.local_pharmacy;
       default:
         return Icons.local_florist;
     }

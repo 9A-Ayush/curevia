@@ -265,7 +265,7 @@ class _BiometricAuthenticationOverlayState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black.withValues(alpha: 0.8),
+      backgroundColor: Colors.black.withOpacity(0.8),
       body: Center(
         child: AnimatedBuilder(
           animation: _animationController,
@@ -282,7 +282,7 @@ class _BiometricAuthenticationOverlayState
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
+                        color: Colors.black.withOpacity(0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),

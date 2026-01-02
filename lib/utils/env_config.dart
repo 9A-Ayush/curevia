@@ -37,10 +37,11 @@ class EnvConfig {
   static String get agoraAppCertificate =>
       dotenv.env['AGORA_APP_CERTIFICATE'] ?? '';
 
-  // Stripe Configuration
-  static String get stripePublishableKey =>
-      dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? '';
-  static String get stripeSecretKey => dotenv.env['STRIPE_SECRET_KEY'] ?? '';
+  // Razorpay Configuration
+  static String get razorpayKeyId =>
+      dotenv.env['RAZORPAY_KEY_ID'] ?? '';
+  static String get razorpayKeySecret => dotenv.env['RAZORPAY_KEY_SECRET'] ?? '';
+  static String get razorpayPlanId => dotenv.env['RAZORPAY_PLAN_ID'] ?? '';
 
   // AI API Configuration
   static String get openAiApiKey => dotenv.env['OPENAI_API_KEY'] ?? '';
@@ -70,7 +71,7 @@ class EnvConfig {
       'GOOGLE_MAPS_API_KEY',
       'CLOUDINARY_CLOUD_NAME',
       'AGORA_APP_ID',
-      'STRIPE_PUBLISHABLE_KEY',
+      'RAZORPAY_KEY_ID',
       'OPENAI_API_KEY',
     ];
 
@@ -83,18 +84,11 @@ class EnvConfig {
     return true;
   }
 
-  /// Get all environment variables for debugging (without sensitive data)
-  static Map<String, String> getDebugInfo() {
-    if (!debugMode) return {};
-
+  /// Get environment variables for production use
+  static Map<String, String> getAppInfo() {
     return {
       'APP_NAME': appName,
       'APP_VERSION': appVersion,
-      'DEBUG_MODE': debugMode.toString(),
-      'FIREBASE_PROJECT_ID': firebaseProjectId,
-      'CLOUDINARY_CLOUD_NAME': cloudinaryCloudName,
-      'AGORA_APP_ID': agoraAppId,
-      'AI_API_BASE_URL': aiApiBaseUrl,
     };
   }
 }

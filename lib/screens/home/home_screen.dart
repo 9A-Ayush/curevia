@@ -16,7 +16,7 @@ import '../../widgets/home/health_metrics_card.dart';
 import '../../widgets/home/nearby_doctors.dart';
 import '../../widgets/home/recent_activity.dart' as widgets;
 import '../../screens/consultation/video_consultation_screen.dart';
-import '../../screens/doctor/doctor_search_screen.dart';
+import '../../screens/patient/find_doctors_screen.dart';
 import '../../screens/emergency/emergency_screen.dart';
 
 /// Home screen - main dashboard
@@ -111,15 +111,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           _showQuickBooking(context);
         },
         backgroundColor: ThemeUtils.getPrimaryColor(context),
-        child: Icon(
-          Icons.add,
-          color: ThemeUtils.getTextOnPrimaryColor(context),
-        ),
+        foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Book Now'),
       ),
     );
   }
@@ -197,7 +196,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Text(
                   'Get immediate medical help',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textOnPrimary.withValues(alpha: 0.9),
+                    color: AppColors.textOnPrimary.withOpacity(0.9),
                   ),
                 ),
               ],
@@ -278,7 +277,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const DoctorSearchScreen(),
+                          builder: (context) => const FindDoctorsScreen(),
                         ),
                       );
                     },

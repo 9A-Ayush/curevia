@@ -104,7 +104,7 @@ class _DoctorAnalyticsScreenState extends ConsumerState<DoctorAnalyticsScreen>
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.textOnPrimary,
-          unselectedLabelColor: AppColors.textOnPrimary.withValues(alpha: 0.7),
+          unselectedLabelColor: AppColors.textOnPrimary.withOpacity(0.7),
           indicatorColor: AppColors.textOnPrimary,
           tabs: const [
             Tab(text: 'Overview'),
@@ -293,8 +293,8 @@ class _DoctorAnalyticsScreenState extends ConsumerState<DoctorAnalyticsScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: change.startsWith('+')
-                      ? AppColors.success.withValues(alpha: 0.1)
-                      : AppColors.error.withValues(alpha: 0.1),
+                      ? AppColors.success.withOpacity(0.1)
+                      : AppColors.error.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -350,7 +350,7 @@ class _DoctorAnalyticsScreenState extends ConsumerState<DoctorAnalyticsScreen>
           Container(
             height: 200,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: AppColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Center(
@@ -412,7 +412,7 @@ class _DoctorAnalyticsScreenState extends ConsumerState<DoctorAnalyticsScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -593,6 +593,9 @@ class _DoctorAnalyticsScreenState extends ConsumerState<DoctorAnalyticsScreen>
     final avgPerConsultation = _analyticsData['avgConsultationFee'] ?? 0;
     final onlineRevenue = _analyticsData['onlineRevenue'] ?? 0;
     final offlineRevenue = _analyticsData['offlineRevenue'] ?? 0;
+    final confirmedAppointments = _analyticsData['confirmedAppointments'] ?? 0;
+    final cancelledAppointments = _analyticsData['cancelledAppointments'] ?? 0;
+    final netRevenue = _analyticsData['netRevenue'] ?? 0;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -615,8 +618,8 @@ class _DoctorAnalyticsScreenState extends ConsumerState<DoctorAnalyticsScreen>
             children: [
               Expanded(
                 child: _buildRevenueItem(
-                  'Total Revenue',
-                  '₹$totalRevenue',
+                  'Net Revenue',
+                  '₹$netRevenue',
                   AppColors.success,
                 ),
               ),
@@ -647,6 +650,90 @@ class _DoctorAnalyticsScreenState extends ConsumerState<DoctorAnalyticsScreen>
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 20),
+          const Divider(),
+          const SizedBox(height: 16),
+          Text(
+            'Appointment Status Impact',
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatusItem(
+                  'Confirmed',
+                  '$confirmedAppointments',
+                  AppColors.success,
+                  Icons.check_circle,
+                ),
+              ),
+              Expanded(
+                child: _buildStatusItem(
+                  'Cancelled',
+                  '$cancelledAppointments',
+                  AppColors.error,
+                  Icons.cancel,
+                ),
+              ),
+            ],
+          ),
+          if (cancelledAppointments > 0) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.warning, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Revenue from cancelled appointments has been automatically deducted from your total.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.warning.withOpacity(0.8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusItem(String label, String count, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            count,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: ThemeUtils.getTextSecondaryColor(context),
+            ),
           ),
         ],
       ),
@@ -696,7 +783,7 @@ class _DoctorAnalyticsScreenState extends ConsumerState<DoctorAnalyticsScreen>
           Container(
             height: 200,
             decoration: BoxDecoration(
-              color: AppColors.info.withValues(alpha: 0.1),
+              color: AppColors.info.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Center(

@@ -2,12 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../constants/app_colors.dart';
+import '../../utils/theme_utils.dart';
 import '../../models/doctor_model.dart';
-import '../../models/time_slot_model.dart';
-import '../../services/appointment_booking_service.dart';
+import '../../models/appointment_model.dart';
+import '../../providers/appointment_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/common/custom_button.dart';
+import '../../widgets/common/custom_text_field.dart';
+import '../../widgets/common/loading_overlay.dart';
+import '../../services/firebase/appointment_service.dart';
+import '../../services/firebase/notification_service.dart';
+import '../payment/payment_screen.dart';
 
-/// Appointment booking screen with calendar and time slot selection
+/// Video consultation appointment booking screen
 class AppointmentBookingScreen extends ConsumerStatefulWidget {
   final DoctorModel doctor;
   final String? consultationType; // 'online' or 'offline'
@@ -23,425 +30,207 @@ class AppointmentBookingScreen extends ConsumerStatefulWidget {
 }
 
 class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScreen> {
+  final TextEditingController _symptomsController = TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
-  DateTime _focusedDate = DateTime.now();
-  TimeSlotModel? _selectedTimeSlot;
-  List<TimeSlotModel> _availableSlots = [];
-  List<DateTime> _availableDates = [];
-  bool _isLoadingSlots = false;
-  bool _isLoadingDates = true;
+  String? _selectedTimeSlot;
   String _consultationType = 'online';
 
   @override
   void initState() {
     super.initState();
     _consultationType = widget.consultationType ?? 'online';
-    _loadAvailableDates();
     _loadAvailableSlots();
   }
 
-  Future<void> _loadAvailableDates() async {
-    setState(() => _isLoadingDates = true);
-    
-    try {
-      final dates = await AppointmentBookingService.getAvailableDates(
-        doctorId: widget.doctor.uid,
-        daysAhead: 30,
-      );
-      
-      setState(() {
-        _availableDates = dates;
-        _isLoadingDates = false;
-        
-        // Set selected date to first available date if current date is not available
-        if (dates.isNotEmpty && !_isDateAvailable(_selectedDate)) {
-          _selectedDate = dates.first;
-          _focusedDate = dates.first;
-        }
-      });
-      
-      _loadAvailableSlots();
-    } catch (e) {
-      setState(() => _isLoadingDates = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading available dates: $e')),
-        );
-      }
-    }
+  @override
+  void dispose() {
+    _symptomsController.dispose();
+    _notesController.dispose();
+    super.dispose();
   }
 
-  Future<void> _loadAvailableSlots() async {
-    setState(() => _isLoadingSlots = true);
-    
-    try {
-      final slots = await AppointmentBookingService.getAvailableSlots(
-        doctorId: widget.doctor.uid,
-        date: _selectedDate,
-      );
-      
-      setState(() {
-        _availableSlots = slots;
-        _selectedTimeSlot = null; // Reset selected slot when date changes
-        _isLoadingSlots = false;
-      });
-    } catch (e) {
-      setState(() => _isLoadingSlots = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading time slots: $e')),
-        );
-      }
-    }
-  }
-
-  bool _isDateAvailable(DateTime date) {
-    return _availableDates.any((availableDate) =>
-        availableDate.year == date.year &&
-        availableDate.month == date.month &&
-        availableDate.day == date.day);
-  }
-
-  Future<void> _bookAppointment() async {
-    if (_selectedTimeSlot == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a time slot')),
-      );
-      return;
-    }
-
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+  void _loadAvailableSlots() {
+    ref.read(appointmentBookingProvider.notifier).loadAvailableSlots(
+      doctorId: widget.doctor.uid,
+      date: _selectedDate,
     );
-
-    try {
-      final appointmentId = await AppointmentBookingService.bookAppointment(
-        doctorId: widget.doctor.uid,
-        patientId: 'current_user_id', // TODO: Get from auth service
-        timeSlotId: _selectedTimeSlot!.id,
-        patientName: 'Current User', // TODO: Get from auth service
-        doctorName: widget.doctor.fullName,
-        doctorSpecialty: widget.doctor.specialty ?? 'General Physician',
-        consultationType: _consultationType,
-        consultationFee: widget.doctor.consultationFee ?? 0,
-        symptoms: '', // TODO: Add symptoms input
-        notes: '', // TODO: Add notes input
-      );
-
-      Navigator.pop(context); // Close loading dialog
-
-      if (appointmentId != null) {
-        // Show success dialog
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Appointment Booked'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Your appointment has been successfully booked!'),
-                const SizedBox(height: 16),
-                Text('Doctor: ${widget.doctor.fullName}'),
-                Text('Date: ${_formatDate(_selectedDate)}'),
-                Text('Time: ${_selectedTimeSlot!.timeRange}'),
-                Text('Type: ${_consultationType == 'online' ? 'Video Consultation' : 'In-Person Visit'}'),
-                Text('Fee: ${widget.doctor.consultationFeeText}'),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close dialog
-                  Navigator.pop(context); // Go back to previous screen
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to book appointment. Please try again.')),
-        );
-      }
-    } catch (e) {
-      Navigator.pop(context); // Close loading dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error booking appointment: $e')),
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bookingState = ref.watch(appointmentBookingProvider);
+    final userModel = ref.watch(currentUserModelProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Book Appointment'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
+        title: const Text('Book Video Consultation'),
+        backgroundColor: ThemeUtils.getAppBarBackgroundColor(context),
+        foregroundColor: ThemeUtils.getAppBarForegroundColor(context),
       ),
-      body: Column(
-        children: [
-          // Doctor info header
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: AppColors.surface,
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  backgroundImage: widget.doctor.profileImageUrl != null
-                      ? NetworkImage(widget.doctor.profileImageUrl!)
-                      : null,
-                  child: widget.doctor.profileImageUrl == null
-                      ? Icon(Icons.person, size: 30, color: AppColors.primary)
-                      : null,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.doctor.fullName,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        widget.doctor.specialty ?? 'General Physician',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      Text(
-                        widget.doctor.consultationFeeText,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.success,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+      body: LoadingOverlay(
+        isLoading: bookingState.isLoading,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Doctor Info Card
+              _buildDoctorInfoCard(),
+              
+              const SizedBox(height: 24),
+              
+              // Consultation Type Selector
+              _buildConsultationTypeSelector(),
+              
+              const SizedBox(height: 24),
+              
+              // Date Selection
+              _buildDateSelection(bookingState),
+              
+              const SizedBox(height: 24),
+              
+              // Time Slot Selection
+              _buildTimeSlotSelection(bookingState),
+              
+              const SizedBox(height: 24),
+              
+              // Symptoms Input
+              _buildSymptomsInput(),
+              
+              const SizedBox(height: 16),
+              
+              // Notes Input
+              _buildNotesInput(),
+              
+              const SizedBox(height: 24),
+              
+              // Booking Summary
+              _buildBookingSummary(),
+              
+              const SizedBox(height: 24),
+              
+              // Book Button
+              _buildBookButton(bookingState, userModel),
+              
+              const SizedBox(height: 16),
+              
+              // Error/Success Messages
+              if (bookingState.error != null)
+                _buildErrorMessage(bookingState.error!),
+              
+              if (bookingState.successMessage != null)
+                _buildSuccessMessage(bookingState.successMessage!),
+            ],
           ),
+        ),
+      ),
+    );
+  }
 
-          // Consultation type selector
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildConsultationTypeCard(
-                    'Video Consultation',
-                    'online',
-                    Icons.video_call,
-                    'Consult from home',
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildConsultationTypeCard(
-                    'In-Person Visit',
-                    'offline',
-                    Icons.local_hospital,
-                    'Visit clinic',
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Calendar
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  // Calendar widget
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.borderLight),
-                    ),
-                    child: TableCalendar<DateTime>(
-                      firstDay: DateTime.now(),
-                      lastDay: DateTime.now().add(const Duration(days: 90)),
-                      focusedDay: _focusedDate,
-                      selectedDayPredicate: (day) => isSameDay(_selectedDate, day),
-                      enabledDayPredicate: (day) => _isDateAvailable(day),
-                      calendarFormat: CalendarFormat.month,
-                      startingDayOfWeek: StartingDayOfWeek.monday,
-                      headerStyle: HeaderStyle(
-                        formatButtonVisible: false,
-                        titleCentered: true,
-                        titleTextStyle: Theme.of(context).textTheme.titleMedium!.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      calendarStyle: CalendarStyle(
-                        outsideDaysVisible: false,
-                        selectedDecoration: BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        todayDecoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        disabledDecoration: BoxDecoration(
-                          color: AppColors.surface,
-                          shape: BoxShape.circle,
-                        ),
-                        disabledTextStyle: TextStyle(
-                          color: AppColors.textSecondary.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      onDaySelected: (selectedDay, focusedDay) {
-                        if (_isDateAvailable(selectedDay)) {
-                          setState(() {
-                            _selectedDate = selectedDay;
-                            _focusedDate = focusedDay;
-                          });
-                          _loadAvailableSlots();
-                        }
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Time slots
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Available Time Slots',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        if (_isLoadingSlots)
-                          const Center(child: CircularProgressIndicator())
-                        else if (_availableSlots.isEmpty)
-                          Container(
-                            padding: const EdgeInsets.all(32),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.schedule,
-                                  size: 48,
-                                  color: AppColors.textSecondary,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No available slots',
-                                  style: Theme.of(context).textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Please select a different date',
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        else
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              childAspectRatio: 2.5,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
-                            ),
-                            itemCount: _availableSlots.length,
-                            itemBuilder: (context, index) {
-                              final slot = _availableSlots[index];
-                              final isSelected = _selectedTimeSlot?.id == slot.id;
-                              
-                              return InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedTimeSlot = slot;
-                                  });
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: isSelected 
-                                        ? AppColors.primary 
-                                        : AppColors.surface,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: isSelected 
-                                          ? AppColors.primary 
-                                          : AppColors.borderLight,
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      slot.timeRange,
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: isSelected 
-                                            ? AppColors.textOnPrimary 
-                                            : AppColors.textPrimary,
-                                        fontWeight: isSelected 
-                                            ? FontWeight.bold 
-                                            : FontWeight.normal,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 100), // Space for bottom button
-                ],
-              ),
-            ),
+  Widget _buildDoctorInfoCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ThemeUtils.getSurfaceColor(context),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: ThemeUtils.getShadowLightColor(context),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadowLight,
-              blurRadius: 8,
-              offset: const Offset(0, -2),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: ThemeUtils.getPrimaryColorWithOpacity(context, 0.1),
+            backgroundImage: widget.doctor.profileImageUrl != null
+                ? NetworkImage(widget.doctor.profileImageUrl!)
+                : null,
+            child: widget.doctor.profileImageUrl == null
+                ? Icon(Icons.person, color: ThemeUtils.getPrimaryColor(context), size: 30)
+                : null,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.doctor.fullName,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  widget.doctor.specialty ?? 'General Medicine',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: ThemeUtils.getTextSecondaryColor(context),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.star, size: 16, color: AppColors.ratingFilled),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${widget.doctor.rating?.toStringAsFixed(1) ?? 'N/A'} (${widget.doctor.totalReviews ?? 0} reviews)',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (widget.doctor.consultationFee != null)
+            Text(
+              widget.doctor.consultationFeeText,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: ThemeUtils.getPrimaryColor(context),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConsultationTypeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Consultation Type',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildConsultationTypeCard(
+                'Video Consultation',
+                'online',
+                Icons.video_call,
+                'Consult from home',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildConsultationTypeCard(
+                'In-Person Visit',
+                'offline',
+                Icons.local_hospital,
+                'Visit clinic',
+              ),
             ),
           ],
         ),
-        child: CustomButton(
-          text: 'Book Appointment',
-          onPressed: _selectedTimeSlot != null ? _bookAppointment : null,
-          backgroundColor: AppColors.primary,
-          textColor: AppColors.textOnPrimary,
-          icon: Icons.calendar_month,
-        ),
-      ),
+      ],
     );
   }
 
@@ -463,10 +252,10 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
+          color: isSelected ? ThemeUtils.getPrimaryColorWithOpacity(context, 0.1) : ThemeUtils.getSurfaceColor(context),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.borderLight,
+            color: isSelected ? ThemeUtils.getPrimaryColor(context) : ThemeUtils.getBorderLightColor(context),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -474,7 +263,7 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              color: isSelected ? ThemeUtils.getPrimaryColor(context) : ThemeUtils.getTextSecondaryColor(context),
               size: 32,
             ),
             const SizedBox(height: 8),
@@ -482,7 +271,7 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
               title,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                color: isSelected ? ThemeUtils.getPrimaryColor(context) : ThemeUtils.getTextPrimaryColor(context),
               ),
               textAlign: TextAlign.center,
             ),
@@ -490,7 +279,7 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
             Text(
               subtitle,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
+                color: ThemeUtils.getTextSecondaryColor(context),
               ),
               textAlign: TextAlign.center,
             ),
@@ -498,6 +287,395 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
         ),
       ),
     );
+  }
+
+  Widget _buildDateSelection(AppointmentBookingState bookingState) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select Date',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: ThemeUtils.getSurfaceColor(context),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: ThemeUtils.getShadowLightColor(context),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TableCalendar<dynamic>(
+            firstDay: DateTime.now(),
+            lastDay: DateTime.now().add(const Duration(days: 30)),
+            focusedDay: _selectedDate,
+            selectedDayPredicate: (day) => isSameDay(_selectedDate, day),
+            onDaySelected: (selectedDay, focusedDay) {
+              if (selectedDay.isAfter(DateTime.now().subtract(const Duration(days: 1)))) {
+                setState(() {
+                  _selectedDate = selectedDay;
+                  _selectedTimeSlot = null;
+                });
+                _loadAvailableSlots();
+              }
+            },
+            calendarStyle: CalendarStyle(
+              outsideDaysVisible: false,
+              selectedDecoration: BoxDecoration(
+                color: ThemeUtils.getPrimaryColor(context),
+                shape: BoxShape.circle,
+              ),
+              todayDecoration: BoxDecoration(
+                color: ThemeUtils.getSecondaryColor(context),
+                shape: BoxShape.circle,
+              ),
+            ),
+            headerStyle: const HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeSlotSelection(AppointmentBookingState bookingState) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select Time Slot',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (bookingState.isLoading)
+          const Center(child: CircularProgressIndicator())
+        else if (bookingState.availableSlots.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: ThemeUtils.getSurfaceVariantColor(context),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                'No available slots for this date',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: ThemeUtils.getTextSecondaryColor(context),
+                ),
+              ),
+            ),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: bookingState.availableSlots.map((slot) {
+              final isSelected = _selectedTimeSlot == slot;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedTimeSlot = slot;
+                  });
+                  ref.read(appointmentBookingProvider.notifier).selectTimeSlot(slot);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? ThemeUtils.getPrimaryColor(context)
+                        : ThemeUtils.getSurfaceColor(context),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected
+                          ? ThemeUtils.getPrimaryColor(context)
+                          : ThemeUtils.getBorderLightColor(context),
+                    ),
+                  ),
+                  child: Text(
+                    slot,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: isSelected
+                          ? ThemeUtils.getTextOnPrimaryColor(context)
+                          : ThemeUtils.getTextPrimaryColor(context),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSymptomsInput() {
+    return CustomTextField(
+      controller: _symptomsController,
+      label: 'Symptoms (Optional)',
+      hintText: 'Describe your symptoms...',
+      maxLines: 3,
+      prefixIcon: Icons.medical_services,
+    );
+  }
+
+  Widget _buildNotesInput() {
+    return CustomTextField(
+      controller: _notesController,
+      label: 'Additional Notes (Optional)',
+      hintText: 'Any additional information...',
+      maxLines: 2,
+      prefixIcon: Icons.note,
+    );
+  }
+
+  Widget _buildBookingSummary() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ThemeUtils.getPrimaryColorWithOpacity(context, 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: ThemeUtils.getPrimaryColorWithOpacity(context, 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Booking Summary',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildSummaryRow('Doctor', widget.doctor.fullName),
+          _buildSummaryRow('Specialty', widget.doctor.specialty ?? 'General Medicine'),
+          _buildSummaryRow('Date', _formatDate(_selectedDate)),
+          _buildSummaryRow('Time', _selectedTimeSlot ?? 'Not selected'),
+          _buildSummaryRow('Type', _consultationType == 'online' ? 'Video Consultation' : 'In-Person Visit'),
+          if (widget.doctor.consultationFee != null)
+            _buildSummaryRow('Fee', widget.doctor.consultationFeeText),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookButton(AppointmentBookingState bookingState, userModel) {
+    final canBook = _selectedTimeSlot != null && !bookingState.isLoading;
+    
+    return CustomButton(
+      text: 'Book Appointment',
+      onPressed: canBook ? _bookAppointment : null,
+      isLoading: bookingState.isLoading,
+    );
+  }
+
+  Widget _buildErrorMessage(String error) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: ThemeUtils.getErrorColor(context).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: ThemeUtils.getErrorColor(context).withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: ThemeUtils.getErrorColor(context), size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              error,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: ThemeUtils.getErrorColor(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuccessMessage(String message) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: ThemeUtils.getSuccessColor(context).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: ThemeUtils.getSuccessColor(context).withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle_outline, color: ThemeUtils.getSuccessColor(context), size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: ThemeUtils.getSuccessColor(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _bookAppointment() async {
+    final userModel = ref.read(currentUserModelProvider);
+    if (userModel == null) return;
+
+    // First, book the appointment with pending status
+    final appointmentId = await ref.read(appointmentBookingProvider.notifier).bookAppointment(
+      patientId: userModel.uid,
+      doctorId: widget.doctor.uid,
+      patientName: userModel.fullName,
+      doctorName: widget.doctor.fullName,
+      doctorSpecialty: widget.doctor.specialty ?? 'General Medicine',
+      consultationType: _consultationType,
+      consultationFee: widget.doctor.consultationFee,
+      paymentStatus: 'pending',
+      symptoms: _symptomsController.text.trim().isEmpty ? null : _symptomsController.text.trim(),
+      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+    );
+
+    if (appointmentId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to create appointment. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Create appointment object for payment
+    final appointment = AppointmentModel(
+      id: appointmentId,
+      patientId: userModel.uid,
+      doctorId: widget.doctor.uid,
+      patientName: userModel.fullName,
+      doctorName: widget.doctor.fullName,
+      doctorSpecialty: widget.doctor.specialty ?? 'General Medicine',
+      appointmentDate: _selectedDate,
+      timeSlot: _selectedTimeSlot ?? '',
+      consultationType: _consultationType,
+      status: 'pending',
+      consultationFee: widget.doctor.consultationFee,
+      paymentStatus: 'pending',
+      symptoms: _symptomsController.text.trim().isEmpty ? null : _symptomsController.text.trim(),
+      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    // Navigate to payment screen
+    final paymentId = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentScreen(
+          appointment: appointment,
+          doctor: widget.doctor,
+          patient: userModel,
+          onPaymentSuccess: (paymentId) async {
+            // Update appointment status to confirmed and add payment info
+            try {
+              await AppointmentService.updateAppointmentStatus(
+                appointmentId: appointmentId,
+                status: 'confirmed',
+              );
+              
+              // Send notification to doctor
+              await NotificationService.sendNotification(
+                userId: widget.doctor.uid,
+                title: 'New Video Consultation Booked',
+                body: 'You have a new video consultation with ${userModel.fullName}',
+                type: 'appointment',
+                data: {
+                  'appointmentId': appointmentId,
+                  'patientId': userModel.uid,
+                  'patientName': userModel.fullName,
+                },
+              );
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Video consultation booked successfully! Doctor has been notified.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            } catch (e) {
+              print('Error updating appointment status: $e');
+            }
+          },
+        ),
+      ),
+    );
+
+    if (paymentId != null && mounted) {
+      // Show success dialog and navigate back
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Appointment Booked!'),
+          content: const Text('Your appointment has been successfully booked and payment completed. You will receive a confirmation shortly.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context, true); // Go back with success result
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Payment was cancelled or failed, cancel the appointment
+      try {
+        await AppointmentService.updateAppointmentStatus(
+          appointmentId: appointmentId,
+          status: 'cancelled',
+          cancellationReason: 'Payment failed or cancelled',
+          cancelledBy: 'patient',
+        );
+      } catch (e) {
+        print('Error cancelling appointment: $e');
+      }
+    }
   }
 
   String _formatDate(DateTime date) {

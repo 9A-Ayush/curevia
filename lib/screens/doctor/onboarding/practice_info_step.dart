@@ -191,7 +191,7 @@ class _PracticeInfoStepState extends ConsumerState<PracticeInfoStep> {
                           }
                         });
                       },
-                      selectedColor: AppColors.primary.withValues(alpha: 0.3),
+                      selectedColor: AppColors.primary.withOpacity(0.3),
                       backgroundColor: ThemeUtils.getSurfaceColor(context),
                       labelStyle: TextStyle(
                         color: isSelected
@@ -629,7 +629,7 @@ class _PracticeInfoStepState extends ConsumerState<PracticeInfoStep> {
                                   (lang) => Chip(
                                     label: Text(lang),
                                     backgroundColor: AppColors.primary
-                                        .withValues(alpha: 0.1),
+                                        .withOpacity(0.1),
                                     deleteIcon: const Icon(Icons.close, size: 16),
                                     onDeleted: () {
                                       setState(() {

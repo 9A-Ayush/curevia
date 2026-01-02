@@ -112,7 +112,7 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
                             ThemeUtils.getPrimaryColor(context),
                             ThemeUtils.getPrimaryColor(
                               context,
-                            ).withValues(alpha: 0.8),
+                            ).withOpacity(0.8),
                           ],
                         )
                       : AppColors.primaryGradient,
@@ -132,7 +132,7 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
                           decoration: BoxDecoration(
                             color: ThemeUtils.getTextOnPrimaryColor(
                               context,
-                            ).withValues(alpha: 0.2),
+                            ).withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -162,7 +162,7 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
                                     ?.copyWith(
                                       color: ThemeUtils.getTextOnPrimaryColor(
                                         context,
-                                      ).withValues(alpha: 0.9),
+                                      ).withOpacity(0.9),
                                     ),
                               ),
                             ],
@@ -177,15 +177,15 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
                         color: ThemeUtils.isDarkMode(context)
                             ? ThemeUtils.getWarningColor(
                                 context,
-                              ).withValues(alpha: 0.15)
-                            : AppColors.warning.withValues(alpha: 0.2),
+                              ).withOpacity(0.15)
+                            : AppColors.warning.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: ThemeUtils.isDarkMode(context)
                               ? ThemeUtils.getWarningColor(
                                   context,
-                                ).withValues(alpha: 0.3)
-                              : AppColors.warning.withValues(alpha: 0.3),
+                                ).withOpacity(0.3)
+                              : AppColors.warning.withOpacity(0.3),
                         ),
                       ),
                       child: Row(
@@ -276,7 +276,7 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
           // Loading overlay
           if (_isAnalyzing)
             Container(
-              color: Colors.black.withValues(alpha: 0.5),
+              color: Colors.black.withOpacity(0.5),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -359,7 +359,7 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
                       _selectedSymptoms.remove(symptom);
                     });
                   },
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
                   labelStyle: TextStyle(color: AppColors.primary),
                 );
               }).toList(),
@@ -393,7 +393,7 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
                       }
                     });
                   },
-                  selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                  selectedColor: AppColors.primary.withOpacity(0.2),
                   checkmarkColor: AppColors.primary,
                 );
               }).toList(),
@@ -497,7 +497,7 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
               onSelected: (selected) {
                 onChanged(selected ? option : null);
               },
-              selectedColor: AppColors.primary.withValues(alpha: 0.2),
+              selectedColor: AppColors.primary.withOpacity(0.2),
               checkmarkColor: AppColors.primary,
             );
           }).toList(),
@@ -701,9 +701,9 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.info.withValues(alpha: 0.1),
+              color: AppColors.info.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+              border: Border.all(color: AppColors.info.withOpacity(0.3)),
             ),
             child: Row(
               children: [
@@ -829,10 +829,10 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.1),
+              color: AppColors.warning.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppColors.warning.withValues(alpha: 0.3),
+                color: AppColors.warning.withOpacity(0.3),
               ),
             ),
             child: Column(
@@ -883,7 +883,7 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
             ? Colors.grey.shade900
             : AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -894,7 +894,7 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 18),

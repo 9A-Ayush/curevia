@@ -102,7 +102,7 @@ class HealthTipsCarousel extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: [
                         tip['color'] as Color,
-                        (tip['color'] as Color).withValues(alpha: 0.8),
+                        (tip['color'] as Color).withOpacity(0.8),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -119,7 +119,7 @@ class HealthTipsCarousel extends StatelessWidget {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -131,7 +131,7 @@ class HealthTipsCarousel extends StatelessWidget {
                         const Spacer(),
                         Icon(
                           Icons.arrow_forward,
-                          color: Colors.white.withValues(alpha: 0.8),
+                          color: Colors.white.withOpacity(0.8),
                           size: 20,
                         ),
                       ],
@@ -151,7 +151,7 @@ class HealthTipsCarousel extends StatelessWidget {
                       child: Text(
                         tip['description'] as String,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: Colors.white.withOpacity(0.9),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,

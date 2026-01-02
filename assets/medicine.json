@@ -1,0 +1,719 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "Pain Relief",
+      "medicines": [
+        {
+          "id": "paracetamol_500",
+          "name": "Paracetamol",
+          "chemical": "Acetaminophen",
+          "uses": "Used to treat mild to moderate pain and reduce fever. Effective for headaches, muscle aches, arthritis, backache, toothaches, colds, and fevers.",
+          "dosage": "Adults: 500-1000mg every 4-6 hours. Maximum 4000mg per day. Children: 10-15mg/kg every 4-6 hours.",
+          "price": "₹10-50",
+          "brands": ["Crocin", "Dolo", "Calpol", "Panadol", "Tylenol"],
+          "categoryName": "Pain Relief",
+          "categoryId": 1
+        },
+        {
+          "id": "ibuprofen_400",
+          "name": "Ibuprofen",
+          "chemical": "Ibuprofen",
+          "uses": "Anti-inflammatory drug used to reduce fever and treat pain or inflammation caused by conditions like headache, toothache, back pain, arthritis, menstrual cramps, or minor injury.",
+          "dosage": "Adults: 200-400mg every 4-6 hours. Maximum 1200mg per day. Take with food to reduce stomach irritation.",
+          "price": "₹15-80",
+          "brands": ["Brufen", "Combiflam", "Advil", "Motrin", "Nurofen"],
+          "categoryName": "Pain Relief",
+          "categoryId": 1
+        },
+        {
+          "id": "aspirin_325",
+          "name": "Aspirin",
+          "chemical": "Acetylsalicylic Acid",
+          "uses": "Used to reduce pain, fever, or inflammation. Also used in low doses to prevent heart attacks and strokes in high-risk patients.",
+          "dosage": "Adults: 325-650mg every 4 hours for pain. Low dose: 75-100mg daily for heart protection. Take with food.",
+          "price": "₹5-30",
+          "brands": ["Disprin", "Ecosprin", "Loprin", "Bayer Aspirin"],
+          "categoryName": "Pain Relief",
+          "categoryId": 1
+        },
+        {
+          "id": "diclofenac_50",
+          "name": "Diclofenac",
+          "chemical": "Diclofenac Sodium",
+          "uses": "NSAID used to treat pain and inflammation in conditions like arthritis, muscle strains, dental pain, and post-operative pain.",
+          "dosage": "Adults: 25-50mg 2-3 times daily with food. Maximum 150mg per day. Avoid in elderly and those with heart conditions.",
+          "price": "₹20-70",
+          "brands": ["Voveran", "Diclo", "Voltaren", "Diclonac"],
+          "categoryName": "Pain Relief",
+          "categoryId": 1
+        },
+        {
+          "id": "tramadol_50",
+          "name": "Tramadol",
+          "chemical": "Tramadol Hydrochloride",
+          "uses": "Opioid pain medication used to treat moderate to severe pain. Often prescribed after surgery or for chronic pain conditions.",
+          "dosage": "Adults: 50-100mg every 4-6 hours as needed. Maximum 400mg per day. Start with lowest effective dose.",
+          "price": "₹30-120",
+          "brands": ["Ultram", "Tramal", "Tramacet", "Contramal"],
+          "categoryName": "Pain Relief",
+          "categoryId": 1
+        },
+        {
+          "id": "nimesulide_100",
+          "name": "Nimesulide",
+          "chemical": "Nimesulide",
+          "uses": "NSAID with anti-inflammatory and fever-reducing properties. Used for acute pain, dental pain, and inflammatory conditions.",
+          "dosage": "Adults: 100mg twice daily after meals. Not recommended for children under 12 years. Maximum 15 days continuous use.",
+          "price": "₹25-80",
+          "brands": ["Nimulid", "Nise", "Nicip", "Nimesil"],
+          "categoryName": "Pain Relief",
+          "categoryId": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Antibiotics",
+      "medicines": [
+        {
+          "id": "amoxicillin_500",
+          "name": "Amoxicillin",
+          "chemical": "Amoxicillin",
+          "uses": "Broad-spectrum antibiotic used to treat bacterial infections including respiratory tract infections, urinary tract infections, skin infections, and dental infections.",
+          "dosage": "Adults: 250-500mg every 8 hours or 500-875mg every 12 hours. Children: 20-40mg/kg/day divided into 3 doses. Complete full course.",
+          "price": "₹30-150",
+          "brands": ["Amoxil", "Novamox", "Moxikind", "Amoxyclav"],
+          "categoryName": "Antibiotics",
+          "categoryId": 2
+        },
+        {
+          "id": "azithromycin_500",
+          "name": "Azithromycin",
+          "chemical": "Azithromycin",
+          "uses": "Macrolide antibiotic used to treat respiratory infections, skin infections, ear infections, and sexually transmitted diseases. Often used when penicillin allergies exist.",
+          "dosage": "Adults: 500mg on day 1, then 250mg daily for 4 days. Or 500mg daily for 3 days. Take on empty stomach.",
+          "price": "₹50-200",
+          "brands": ["Azithral", "Zithromax", "Azee", "Azimax"],
+          "categoryName": "Antibiotics",
+          "categoryId": 2
+        },
+        {
+          "id": "ciprofloxacin_500",
+          "name": "Ciprofloxacin",
+          "chemical": "Ciprofloxacin",
+          "uses": "Fluoroquinolone antibiotic used to treat urinary tract infections, respiratory infections, skin infections, and gastrointestinal infections.",
+          "dosage": "Adults: 250-750mg every 12 hours. Take with plenty of water. Avoid dairy products and antacids within 2 hours.",
+          "price": "₹40-120",
+          "brands": ["Ciplox", "Cifran", "Ciprobay", "Ciproxin"],
+          "categoryName": "Antibiotics",
+          "categoryId": 2
+        },
+        {
+          "id": "doxycycline_100",
+          "name": "Doxycycline",
+          "chemical": "Doxycycline Hyclate",
+          "uses": "Tetracycline antibiotic used for respiratory infections, acne, malaria prevention, and tick-borne diseases. Also used for certain sexually transmitted infections.",
+          "dosage": "Adults: 100mg twice daily or 200mg once daily. Take with food and plenty of water. Avoid lying down for 30 minutes after taking.",
+          "price": "₹35-100",
+          "brands": ["Doxy", "Vibramycin", "Doxt", "Doxycip"],
+          "categoryName": "Antibiotics",
+          "categoryId": 2
+        },
+        {
+          "id": "cephalexin_500",
+          "name": "Cephalexin",
+          "chemical": "Cephalexin",
+          "uses": "First-generation cephalosporin antibiotic used to treat skin infections, respiratory tract infections, urinary tract infections, and bone infections.",
+          "dosage": "Adults: 250-500mg every 6 hours. Children: 25-50mg/kg/day divided into 4 doses. Take with or without food.",
+          "price": "₹40-130",
+          "brands": ["Keflex", "Cefalexin", "Sporidex", "Cephadex"],
+          "categoryName": "Antibiotics",
+          "categoryId": 2
+        },
+        {
+          "id": "clindamycin_300",
+          "name": "Clindamycin",
+          "chemical": "Clindamycin Hydrochloride",
+          "uses": "Lincosamide antibiotic used for serious infections caused by anaerobic bacteria, including bone infections, dental infections, and skin infections.",
+          "dosage": "Adults: 150-300mg every 6 hours. Severe infections: 300-450mg every 6 hours. Take with full glass of water.",
+          "price": "₹60-180",
+          "brands": ["Cleocin", "Dalacin", "Clindac", "Clindam"],
+          "categoryName": "Antibiotics",
+          "categoryId": 2
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Common Cold & Flu",
+      "medicines": [
+        {
+          "id": "cetirizine_10",
+          "name": "Cetirizine",
+          "chemical": "Cetirizine Hydrochloride",
+          "uses": "Antihistamine used to treat allergic rhinitis, hay fever, urticaria (hives), and other allergic reactions. Helps with sneezing, runny nose, and itchy eyes.",
+          "dosage": "Adults: 10mg once daily. Children 6-12 years: 5-10mg once daily. Children 2-6 years: 2.5-5mg once daily.",
+          "price": "₹20-60",
+          "brands": ["Zyrtec", "Alerid", "Okacet", "Cetrizet"],
+          "categoryName": "Common Cold & Flu",
+          "categoryId": 3
+        },
+        {
+          "id": "phenylephrine_combo",
+          "name": "Phenylephrine + Paracetamol",
+          "chemical": "Phenylephrine + Paracetamol",
+          "uses": "Combination medicine for cold and flu symptoms. Phenylephrine is a decongestant that relieves nasal congestion, while paracetamol reduces fever and pain.",
+          "dosage": "Adults: 1-2 tablets every 4-6 hours. Maximum 8 tablets per day. Do not exceed recommended dose.",
+          "price": "₹25-80",
+          "brands": ["Sinarest", "D-Cold Total", "Wikoryl", "Maxirich"],
+          "categoryName": "Common Cold & Flu",
+          "categoryId": 3
+        },
+        {
+          "id": "dextromethorphan_syrup",
+          "name": "Dextromethorphan",
+          "chemical": "Dextromethorphan Hydrobromide",
+          "uses": "Cough suppressant used to treat dry, non-productive cough. Helps reduce the urge to cough by acting on the cough center in the brain.",
+          "dosage": "Adults: 15-30mg every 4-8 hours. Children 6-12 years: 7.5-15mg every 4-8 hours. Maximum 120mg per day.",
+          "price": "₹40-100",
+          "brands": ["Benadryl", "Robitussin", "Delsym", "Koflet"],
+          "categoryName": "Common Cold & Flu",
+          "categoryId": 3
+        },
+        {
+          "id": "loratadine_10",
+          "name": "Loratadine",
+          "chemical": "Loratadine",
+          "uses": "Non-sedating antihistamine used to treat seasonal allergies, hay fever, and chronic urticaria. Does not cause drowsiness like older antihistamines.",
+          "dosage": "Adults and children over 6 years: 10mg once daily. Children 2-5 years: 5mg once daily. Take on empty stomach.",
+          "price": "₹30-90",
+          "brands": ["Claritin", "Lorfast", "Lorano", "Allergex"],
+          "categoryName": "Common Cold & Flu",
+          "categoryId": 3
+        },
+        {
+          "id": "guaifenesin_200",
+          "name": "Guaifenesin",
+          "chemical": "Guaifenesin",
+          "uses": "Expectorant that helps loosen and thin mucus in the airways, making it easier to cough up. Used for productive coughs with thick mucus.",
+          "dosage": "Adults: 200-400mg every 4 hours. Children 6-12 years: 100-200mg every 4 hours. Drink plenty of fluids.",
+          "price": "₹35-85",
+          "brands": ["Mucinex", "Robitussin", "Tussin", "Glycodin"],
+          "categoryName": "Common Cold & Flu",
+          "categoryId": 3
+        },
+        {
+          "id": "pseudoephedrine_60",
+          "name": "Pseudoephedrine",
+          "chemical": "Pseudoephedrine Hydrochloride",
+          "uses": "Nasal decongestant used to relieve stuffy nose and sinus congestion caused by colds, allergies, or sinus infections.",
+          "dosage": "Adults: 60mg every 4-6 hours or 120mg every 12 hours. Maximum 240mg per day. Take with food if stomach upset occurs.",
+          "price": "₹40-110",
+          "brands": ["Sudafed", "Actifed", "Nasofed", "Deconex"],
+          "categoryName": "Common Cold & Flu",
+          "categoryId": 3
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Digestive Health",
+      "medicines": [
+        {
+          "id": "omeprazole_20",
+          "name": "Omeprazole",
+          "chemical": "Omeprazole",
+          "uses": "Proton pump inhibitor used to treat gastroesophageal reflux disease (GERD), peptic ulcers, and Zollinger-Ellison syndrome. Reduces stomach acid production.",
+          "dosage": "Adults: 20-40mg once daily before breakfast. For ulcers: 20mg daily for 4-8 weeks. Take on empty stomach.",
+          "price": "₹30-120",
+          "brands": ["Prilosec", "Omez", "Ocid", "Omepral"],
+          "categoryName": "Digestive Health",
+          "categoryId": 4
+        },
+        {
+          "id": "domperidone_10",
+          "name": "Domperidone",
+          "chemical": "Domperidone",
+          "uses": "Anti-nausea medication used to treat nausea, vomiting, and gastroparesis. Also helps with gastric motility disorders and bloating.",
+          "dosage": "Adults: 10mg 3-4 times daily before meals. Children: 0.25mg/kg 3-4 times daily. Take 15-30 minutes before meals.",
+          "price": "₹25-70",
+          "brands": ["Motilium", "Domstal", "Vomistop", "Domcolic"],
+          "categoryName": "Digestive Health",
+          "categoryId": 4
+        },
+        {
+          "id": "loperamide_2",
+          "name": "Loperamide",
+          "chemical": "Loperamide Hydrochloride",
+          "uses": "Anti-diarrheal medication used to treat acute and chronic diarrhea. Slows down gut movement and reduces the frequency of bowel movements.",
+          "dosage": "Adults: 4mg initially, then 2mg after each loose stool. Maximum 16mg per day. Children: consult doctor for dosing.",
+          "price": "₹20-60",
+          "brands": ["Imodium", "Lopamide", "Eldoper", "Lomotil"],
+          "categoryName": "Digestive Health",
+          "categoryId": 4
+        },
+        {
+          "id": "ranitidine_150",
+          "name": "Ranitidine",
+          "chemical": "Ranitidine Hydrochloride",
+          "uses": "H2 receptor antagonist used to treat peptic ulcers, GERD, and conditions where stomach produces too much acid. Reduces acid production.",
+          "dosage": "Adults: 150mg twice daily or 300mg at bedtime. For ulcers: 150mg twice daily for 4-8 weeks. Take with or without food.",
+          "price": "₹25-80",
+          "brands": ["Zantac", "Aciloc", "Rantac", "Zinetac"],
+          "categoryName": "Digestive Health",
+          "categoryId": 4
+        },
+        {
+          "id": "ondansetron_4",
+          "name": "Ondansetron",
+          "chemical": "Ondansetron Hydrochloride",
+          "uses": "Anti-nausea medication used to prevent nausea and vomiting caused by chemotherapy, radiation therapy, or surgery. Also used for severe morning sickness.",
+          "dosage": "Adults: 4-8mg every 8 hours as needed. For chemotherapy: 8mg before treatment, then 8mg every 12 hours. Take with or without food.",
+          "price": "₹40-150",
+          "brands": ["Zofran", "Emeset", "Ondem", "Vomikind"],
+          "categoryName": "Digestive Health",
+          "categoryId": 4
+        },
+        {
+          "id": "simethicone_40",
+          "name": "Simethicone",
+          "chemical": "Simethicone",
+          "uses": "Anti-foaming agent used to relieve gas, bloating, and abdominal discomfort. Helps break up gas bubbles in the digestive tract.",
+          "dosage": "Adults: 40-125mg after meals and at bedtime as needed. Maximum 500mg per day. Can be taken with food.",
+          "price": "₹30-90",
+          "brands": ["Gas-X", "Mylicon", "Gasex", "Simyl"],
+          "categoryName": "Digestive Health",
+          "categoryId": 4
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Vitamins & Supplements",
+      "medicines": [
+        {
+          "id": "vitamin_d3_1000",
+          "name": "Vitamin D3",
+          "chemical": "Cholecalciferol",
+          "uses": "Essential vitamin for bone health, immune function, and calcium absorption. Used to treat and prevent vitamin D deficiency, osteoporosis, and rickets.",
+          "dosage": "Adults: 1000-4000 IU daily. Children: 400-1000 IU daily. Take with fat-containing meal for better absorption.",
+          "price": "₹50-200",
+          "brands": ["Calcirol", "Uprise D3", "Shelcal", "Drise"],
+          "categoryName": "Vitamins & Supplements",
+          "categoryId": 5
+        },
+        {
+          "id": "multivitamin_tablet",
+          "name": "Multivitamin",
+          "chemical": "Multiple Vitamins and Minerals",
+          "uses": "Comprehensive supplement containing essential vitamins and minerals. Used to prevent nutritional deficiencies and support overall health and energy levels.",
+          "dosage": "Adults: 1 tablet daily with breakfast. Children: As per pediatric formulation. Take with food to reduce stomach upset.",
+          "price": "₹100-500",
+          "brands": ["Centrum", "Revital", "Supradyn", "Becosules"],
+          "categoryName": "Vitamins & Supplements",
+          "categoryId": 5
+        },
+        {
+          "id": "iron_folic_acid",
+          "name": "Iron + Folic Acid",
+          "chemical": "Ferrous Sulfate + Folic Acid",
+          "uses": "Used to treat and prevent iron deficiency anemia and folate deficiency. Essential during pregnancy, menstruation, and for vegetarians.",
+          "dosage": "Adults: 1 tablet daily on empty stomach. Pregnant women: As prescribed by doctor. Take with vitamin C for better absorption.",
+          "price": "₹30-100",
+          "brands": ["Fefol", "Autrin", "Orofer", "Hemfer"],
+          "categoryName": "Vitamins & Supplements",
+          "categoryId": 5
+        },
+        {
+          "id": "vitamin_b12_1000",
+          "name": "Vitamin B12",
+          "chemical": "Cyanocobalamin",
+          "uses": "Essential for nerve function, red blood cell formation, and DNA synthesis. Used to treat B12 deficiency, pernicious anemia, and neurological disorders.",
+          "dosage": "Adults: 1000-2000 mcg daily or weekly injections for severe deficiency. Sublingual tablets: 1000 mcg daily.",
+          "price": "₹40-180",
+          "brands": ["Neurobion", "Methylcobal", "Nervijen", "B-Folcin"],
+          "categoryName": "Vitamins & Supplements",
+          "categoryId": 5
+        },
+        {
+          "id": "calcium_carbonate_500",
+          "name": "Calcium Carbonate",
+          "chemical": "Calcium Carbonate",
+          "uses": "Calcium supplement used to prevent and treat calcium deficiency, osteoporosis, and bone disorders. Also used as antacid for heartburn.",
+          "dosage": "Adults: 500-1200mg daily in divided doses with meals. Take with vitamin D for better absorption. Avoid with iron supplements.",
+          "price": "₹35-120",
+          "brands": ["Caltrate", "Shelcal", "Calcimax", "Ostocalcium"],
+          "categoryName": "Vitamins & Supplements",
+          "categoryId": 5
+        },
+        {
+          "id": "omega_3_1000",
+          "name": "Omega-3 Fatty Acids",
+          "chemical": "EPA + DHA",
+          "uses": "Essential fatty acids for heart health, brain function, and inflammation reduction. Used to lower triglycerides and support cardiovascular health.",
+          "dosage": "Adults: 1000-2000mg daily with meals. For high triglycerides: 2000-4000mg daily as prescribed by doctor.",
+          "price": "₹200-800",
+          "brands": ["Seven Seas", "Omacor", "Omega Plus", "Cardiomax"],
+          "categoryName": "Vitamins & Supplements",
+          "categoryId": 5
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Heart (Cardiac Care)",
+      "medicines": [
+        {
+          "id": "atorvastatin_20",
+          "name": "Atorvastatin",
+          "chemical": "Atorvastatin Calcium",
+          "uses": "Statin medication used to lower cholesterol and triglyceride levels. Helps prevent heart disease, stroke, and other cardiovascular complications.",
+          "dosage": "Adults: 10-80mg once daily in the evening. Start with 10-20mg and adjust based on cholesterol levels. Take with or without food.",
+          "price": "₹50-300",
+          "brands": ["Lipitor", "Atorlip", "Storvas", "Atocor"],
+          "categoryName": "Heart (Cardiac Care)",
+          "categoryId": 6
+        },
+        {
+          "id": "metoprolol_50",
+          "name": "Metoprolol",
+          "chemical": "Metoprolol Tartrate",
+          "uses": "Beta-blocker used to treat high blood pressure, chest pain (angina), and heart failure. Also used after heart attacks to improve survival.",
+          "dosage": "Adults: 25-100mg twice daily. Extended-release: 25-200mg once daily. Take with food. Do not stop suddenly.",
+          "price": "₹40-150",
+          "brands": ["Lopressor", "Metolar", "Betaloc", "Seloken"],
+          "categoryName": "Heart (Cardiac Care)",
+          "categoryId": 6
+        },
+        {
+          "id": "clopidogrel_75",
+          "name": "Clopidogrel",
+          "chemical": "Clopidogrel Bisulfate",
+          "uses": "Antiplatelet medication used to prevent blood clots in patients with heart disease, stroke, or peripheral artery disease. Reduces risk of heart attack and stroke.",
+          "dosage": "Adults: 75mg once daily with or without food. Loading dose: 300-600mg for acute conditions. Take at the same time daily.",
+          "price": "₹100-400",
+          "brands": ["Plavix", "Clopivas", "Deplatt", "Clopilet"],
+          "categoryName": "Heart (Cardiac Care)",
+          "categoryId": 6
+        },
+        {
+          "id": "digoxin_0_25",
+          "name": "Digoxin",
+          "chemical": "Digoxin",
+          "uses": "Cardiac glycoside used to treat heart failure and atrial fibrillation. Helps the heart beat stronger and more regularly.",
+          "dosage": "Adults: 0.125-0.25mg daily. Elderly: 0.125mg daily. Requires regular blood level monitoring. Take at same time daily.",
+          "price": "₹20-80",
+          "brands": ["Lanoxin", "Digitek", "Digox", "Cardoxin"],
+          "categoryName": "Heart (Cardiac Care)",
+          "categoryId": 6
+        },
+        {
+          "id": "isosorbide_mononitrate_20",
+          "name": "Isosorbide Mononitrate",
+          "chemical": "Isosorbide Mononitrate",
+          "uses": "Nitrate medication used to prevent chest pain (angina) in people with coronary artery disease. Helps relax and widen blood vessels.",
+          "dosage": "Adults: 20mg twice daily with 7-hour gap between doses. Extended-release: 30-120mg once daily in morning.",
+          "price": "₹30-120",
+          "brands": ["Imdur", "Monoket", "Ismo", "Monotrate"],
+          "categoryName": "Heart (Cardiac Care)",
+          "categoryId": 6
+        },
+        {
+          "id": "warfarin_5",
+          "name": "Warfarin",
+          "chemical": "Warfarin Sodium",
+          "uses": "Anticoagulant (blood thinner) used to prevent blood clots in conditions like atrial fibrillation, deep vein thrombosis, and pulmonary embolism.",
+          "dosage": "Adults: 2-10mg daily based on INR levels. Requires regular blood monitoring. Take at same time daily, usually evening.",
+          "price": "₹25-100",
+          "brands": ["Coumadin", "Warf", "Warfin", "Anticoag"],
+          "categoryName": "Heart (Cardiac Care)",
+          "categoryId": 6
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Diabetes",
+      "medicines": [
+        {
+          "id": "metformin_500",
+          "name": "Metformin",
+          "chemical": "Metformin Hydrochloride",
+          "uses": "First-line medication for type 2 diabetes. Helps control blood sugar by reducing glucose production in the liver and improving insulin sensitivity.",
+          "dosage": "Adults: Start with 500mg twice daily with meals. Can increase to 1000mg twice daily. Extended-release: 500-2000mg once daily.",
+          "price": "₹20-100",
+          "brands": ["Glucophage", "Glycomet", "Obimet", "Formin"],
+          "categoryName": "Diabetes",
+          "categoryId": 7
+        },
+        {
+          "id": "glimepiride_2",
+          "name": "Glimepiride",
+          "chemical": "Glimepiride",
+          "uses": "Sulfonylurea medication used to treat type 2 diabetes. Stimulates the pancreas to produce more insulin and helps cells use glucose more effectively.",
+          "dosage": "Adults: Start with 1-2mg once daily with breakfast. Can increase to 4-8mg daily. Monitor blood sugar regularly.",
+          "price": "₹30-120",
+          "brands": ["Amaryl", "Glimpid", "Glimer", "Glimy"],
+          "categoryName": "Diabetes",
+          "categoryId": 7
+        },
+        {
+          "id": "insulin_regular",
+          "name": "Regular Insulin",
+          "chemical": "Human Insulin",
+          "uses": "Short-acting insulin used to control blood sugar in type 1 and type 2 diabetes. Administered before meals to manage post-meal glucose spikes.",
+          "dosage": "Individualized based on blood sugar levels. Typically 0.5-1 unit per kg body weight daily. Inject 30 minutes before meals.",
+          "price": "₹200-800",
+          "brands": ["Humulin R", "Actrapid", "Insuman Rapid", "Wosulin R"],
+          "categoryName": "Diabetes",
+          "categoryId": 7
+        },
+        {
+          "id": "sitagliptin_100",
+          "name": "Sitagliptin",
+          "chemical": "Sitagliptin Phosphate",
+          "uses": "DPP-4 inhibitor used to treat type 2 diabetes. Helps increase insulin production and decrease glucose production by the liver.",
+          "dosage": "Adults: 100mg once daily with or without food. Reduce dose in kidney disease. Can be combined with other diabetes medications.",
+          "price": "₹150-400",
+          "brands": ["Januvia", "Sitavig", "Zita", "Istavel"],
+          "categoryName": "Diabetes",
+          "categoryId": 7
+        },
+        {
+          "id": "pioglitazone_15",
+          "name": "Pioglitazone",
+          "chemical": "Pioglitazone Hydrochloride",
+          "uses": "Thiazolidinedione used to treat type 2 diabetes. Improves insulin sensitivity and helps cells use glucose more effectively.",
+          "dosage": "Adults: Start with 15-30mg once daily. Can increase to 45mg daily. Take with or without food. Monitor liver function.",
+          "price": "₹80-250",
+          "brands": ["Actos", "Pioz", "Glizone", "Piopar"],
+          "categoryName": "Diabetes",
+          "categoryId": 7
+        },
+        {
+          "id": "gliclazide_80",
+          "name": "Gliclazide",
+          "chemical": "Gliclazide",
+          "uses": "Sulfonylurea medication for type 2 diabetes. Stimulates insulin release from pancreas and improves glucose utilization by tissues.",
+          "dosage": "Adults: 40-80mg once or twice daily with meals. Modified-release: 30-120mg once daily. Monitor for hypoglycemia.",
+          "price": "₹25-90",
+          "brands": ["Diamicron", "Glizid", "Gliclaz", "Diabend"],
+          "categoryName": "Diabetes",
+          "categoryId": 7
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Blood Pressure",
+      "medicines": [
+        {
+          "id": "amlodipine_5",
+          "name": "Amlodipine",
+          "chemical": "Amlodipine Besylate",
+          "uses": "Calcium channel blocker used to treat high blood pressure and chest pain (angina). Relaxes blood vessels and improves blood flow.",
+          "dosage": "Adults: Start with 2.5-5mg once daily. Can increase to 10mg daily. Take at the same time each day, with or without food.",
+          "price": "₹25-80",
+          "brands": ["Norvasc", "Amlong", "Amlodac", "Stamlo"],
+          "categoryName": "Blood Pressure",
+          "categoryId": 8
+        },
+        {
+          "id": "lisinopril_10",
+          "name": "Lisinopril",
+          "chemical": "Lisinopril",
+          "uses": "ACE inhibitor used to treat high blood pressure and heart failure. Also used after heart attacks to improve survival and prevent kidney problems in diabetics.",
+          "dosage": "Adults: Start with 5-10mg once daily. Can increase to 20-40mg daily. Take at the same time daily, with or without food.",
+          "price": "₹40-150",
+          "brands": ["Prinivil", "Lipril", "Lisinace", "Lisicard"],
+          "categoryName": "Blood Pressure",
+          "categoryId": 8
+        },
+        {
+          "id": "losartan_50",
+          "name": "Losartan",
+          "chemical": "Losartan Potassium",
+          "uses": "ARB (Angiotensin Receptor Blocker) used to treat high blood pressure and protect kidneys in diabetic patients. Also used for heart failure.",
+          "dosage": "Adults: Start with 25-50mg once daily. Can increase to 100mg daily. Take with or without food at the same time daily.",
+          "price": "₹60-200",
+          "brands": ["Cozaar", "Losartan", "Repace", "Losacar"],
+          "categoryName": "Blood Pressure",
+          "categoryId": 8
+        },
+        {
+          "id": "hydrochlorothiazide_25",
+          "name": "Hydrochlorothiazide",
+          "chemical": "Hydrochlorothiazide",
+          "uses": "Thiazide diuretic used to treat high blood pressure and fluid retention. Helps kidneys remove excess water and salt from the body.",
+          "dosage": "Adults: 12.5-50mg once daily in the morning. Take with food to reduce stomach upset. Monitor electrolyte levels.",
+          "price": "₹15-60",
+          "brands": ["Microzide", "HCTZ", "Aquazide", "Hydrodiuril"],
+          "categoryName": "Blood Pressure",
+          "categoryId": 8
+        },
+        {
+          "id": "atenolol_50",
+          "name": "Atenolol",
+          "chemical": "Atenolol",
+          "uses": "Beta-blocker used to treat high blood pressure, chest pain, and prevent heart attacks. Slows heart rate and reduces blood pressure.",
+          "dosage": "Adults: 25-100mg once daily. Can be taken with or without food. Do not stop suddenly - taper dose gradually.",
+          "price": "₹20-80",
+          "brands": ["Tenormin", "Aten", "Atecor", "Betacard"],
+          "categoryName": "Blood Pressure",
+          "categoryId": 8
+        },
+        {
+          "id": "telmisartan_40",
+          "name": "Telmisartan",
+          "chemical": "Telmisartan",
+          "uses": "ARB used to treat high blood pressure and reduce cardiovascular risk. Also provides kidney protection in diabetic patients.",
+          "dosage": "Adults: 20-80mg once daily. Can be taken with or without food. Usually taken in the morning at the same time daily.",
+          "price": "₹80-250",
+          "brands": ["Micardis", "Telma", "Telmikind", "Telvas"],
+          "categoryName": "Blood Pressure",
+          "categoryId": 8
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Mental Health",
+      "medicines": [
+        {
+          "id": "sertraline_50",
+          "name": "Sertraline",
+          "chemical": "Sertraline Hydrochloride",
+          "uses": "SSRI antidepressant used to treat depression, anxiety disorders, panic disorder, PTSD, and OCD. Helps balance serotonin levels in the brain.",
+          "dosage": "Adults: Start with 25-50mg daily, can increase to 200mg daily. Take with food to reduce nausea. May take 4-6 weeks to show full effect.",
+          "price": "₹80-300",
+          "brands": ["Zoloft", "Sertima", "Daxid", "Serlift"],
+          "categoryName": "Mental Health",
+          "categoryId": 9
+        },
+        {
+          "id": "alprazolam_0_5",
+          "name": "Alprazolam",
+          "chemical": "Alprazolam",
+          "uses": "Benzodiazepine used for short-term treatment of anxiety disorders and panic attacks. Provides rapid relief of anxiety symptoms.",
+          "dosage": "Adults: 0.25-0.5mg 2-3 times daily. Maximum 4mg daily. Start with lowest dose. Avoid alcohol. Can be habit-forming.",
+          "price": "₹30-120",
+          "brands": ["Xanax", "Alprax", "Alzolam", "Trika"],
+          "categoryName": "Mental Health",
+          "categoryId": 9
+        },
+        {
+          "id": "escitalopram_10",
+          "name": "Escitalopram",
+          "chemical": "Escitalopram Oxalate",
+          "uses": "SSRI antidepressant used to treat major depressive disorder and generalized anxiety disorder. More selective than other SSRIs.",
+          "dosage": "Adults: Start with 10mg daily, can increase to 20mg daily. Take in morning or evening consistently. Monitor for suicidal thoughts initially.",
+          "price": "₹100-350",
+          "brands": ["Lexapro", "Escita", "Nexito", "S-Citadep"],
+          "categoryName": "Mental Health",
+          "categoryId": 9
+        },
+        {
+          "id": "lorazepam_1",
+          "name": "Lorazepam",
+          "chemical": "Lorazepam",
+          "uses": "Benzodiazepine used for anxiety disorders, insomnia, and as pre-medication before medical procedures. Also used for seizure control.",
+          "dosage": "Adults: 1-4mg daily in divided doses. For sleep: 2-4mg at bedtime. Elderly: Start with 0.5mg. Use for shortest duration possible.",
+          "price": "₹25-100",
+          "brands": ["Ativan", "Lorazep", "Lorsilan", "Anxinil"],
+          "categoryName": "Mental Health",
+          "categoryId": 9
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Skin & Dermatology",
+      "medicines": [
+        {
+          "id": "tretinoin_0_025",
+          "name": "Tretinoin",
+          "chemical": "Tretinoin",
+          "uses": "Topical retinoid used to treat acne, reduce fine wrinkles, and improve skin texture. Also used for certain skin conditions like keratosis.",
+          "dosage": "Apply thin layer to affected area once daily at bedtime. Start with lower concentration. Use sunscreen during day. Avoid eyes and lips.",
+          "price": "₹200-600",
+          "brands": ["Retin-A", "A-Ret", "Tretiva", "Retino-A"],
+          "categoryName": "Skin & Dermatology",
+          "categoryId": 10
+        },
+        {
+          "id": "hydrocortisone_1",
+          "name": "Hydrocortisone",
+          "chemical": "Hydrocortisone",
+          "uses": "Mild topical corticosteroid used to treat skin inflammation, eczema, dermatitis, insect bites, and minor skin irritations.",
+          "dosage": "Apply thin layer to affected area 2-4 times daily. Do not use on face for more than 5 days. Avoid prolonged use.",
+          "price": "₹50-200",
+          "brands": ["Cortaid", "Locoid", "Hycort", "Dermacort"],
+          "categoryName": "Skin & Dermatology",
+          "categoryId": 10
+        },
+        {
+          "id": "clotrimazole_1",
+          "name": "Clotrimazole",
+          "chemical": "Clotrimazole",
+          "uses": "Antifungal medication used to treat fungal skin infections like athlete's foot, jock itch, ringworm, and yeast infections.",
+          "dosage": "Apply to affected area twice daily for 2-4 weeks. Continue for 1 week after symptoms clear. Keep area clean and dry.",
+          "price": "₹40-150",
+          "brands": ["Lotrimin", "Candid", "Clotrin", "Surfaz"],
+          "categoryName": "Skin & Dermatology",
+          "categoryId": 10
+        },
+        {
+          "id": "benzoyl_peroxide_2_5",
+          "name": "Benzoyl Peroxide",
+          "chemical": "Benzoyl Peroxide",
+          "uses": "Topical antibacterial agent used to treat acne. Kills acne-causing bacteria and helps unclog pores. Available in various strengths.",
+          "dosage": "Apply thin layer to affected area once daily, gradually increase to twice daily. Start with 2.5% strength. May cause dryness initially.",
+          "price": "₹100-300",
+          "brands": ["Benzac", "PanOxyl", "Persol", "Acnestar"],
+          "categoryName": "Skin & Dermatology",
+          "categoryId": 10
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Women's Health",
+      "medicines": [
+        {
+          "id": "oral_contraceptive_combo",
+          "name": "Combined Oral Contraceptive",
+          "chemical": "Ethinyl Estradiol + Levonorgestrel",
+          "uses": "Birth control pill containing estrogen and progestin. Also used to regulate menstrual cycles, reduce menstrual cramps, and treat acne.",
+          "dosage": "Take 1 tablet daily at the same time for 21 days, then 7-day break. Start on first day of menstrual cycle or as directed.",
+          "price": "₹50-200",
+          "brands": ["Yasmin", "Diane-35", "Novelon", "Mala-D"],
+          "categoryName": "Women's Health",
+          "categoryId": 11
+        },
+        {
+          "id": "mefenamic_acid_250",
+          "name": "Mefenamic Acid",
+          "chemical": "Mefenamic Acid",
+          "uses": "NSAID used to treat menstrual pain, heavy menstrual bleeding, and other types of pain and inflammation. Particularly effective for period pain.",
+          "dosage": "Adults: 250-500mg 3 times daily with food. For menstrual pain: start at first sign of bleeding. Maximum 7 days continuous use.",
+          "price": "₹25-80",
+          "brands": ["Ponstan", "Meftal", "Dolfenal", "Mefac"],
+          "categoryName": "Women's Health",
+          "categoryId": 11
+        },
+        {
+          "id": "folic_acid_5mg",
+          "name": "Folic Acid",
+          "chemical": "Folic Acid",
+          "uses": "B-vitamin essential for DNA synthesis and red blood cell formation. Crucial during pregnancy to prevent neural tube defects in developing baby.",
+          "dosage": "Adults: 400-800 mcg daily. Pregnancy: 400-600 mcg daily. High-risk pregnancy: 5mg daily. Take before conception and during pregnancy.",
+          "price": "₹20-60",
+          "brands": ["Folvite", "Folsafe", "Folic", "Folibest"],
+          "categoryName": "Women's Health",
+          "categoryId": 11
+        }
+      ]
+    }
+  ]
+}

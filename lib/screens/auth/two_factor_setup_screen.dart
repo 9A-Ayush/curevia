@@ -277,7 +277,7 @@ class _TwoFactorSetupScreenState extends ConsumerState<TwoFactorSetupScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -335,12 +335,12 @@ class _TwoFactorSetupScreenState extends ConsumerState<TwoFactorSetupScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: ThemeUtils.getPrimaryColor(context).withValues(alpha: 0.1),
+              color: ThemeUtils.getPrimaryColor(context).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: ThemeUtils.getPrimaryColor(
                   context,
-                ).withValues(alpha: 0.3),
+                ).withOpacity(0.3),
               ),
             ),
             child: Column(
@@ -416,12 +416,12 @@ class _TwoFactorSetupScreenState extends ConsumerState<TwoFactorSetupScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: ThemeUtils.getWarningColor(context).withValues(alpha: 0.1),
+              color: ThemeUtils.getWarningColor(context).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: ThemeUtils.getWarningColor(
                   context,
-                ).withValues(alpha: 0.3),
+                ).withOpacity(0.3),
               ),
             ),
             child: Row(
@@ -539,10 +539,10 @@ class _TwoFactorSetupScreenState extends ConsumerState<TwoFactorSetupScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: ThemeUtils.getErrorColor(context).withValues(alpha: 0.1),
+              color: ThemeUtils.getErrorColor(context).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: ThemeUtils.getErrorColor(context).withValues(alpha: 0.3),
+                color: ThemeUtils.getErrorColor(context).withOpacity(0.3),
               ),
             ),
             child: Column(

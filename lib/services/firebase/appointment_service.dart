@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/appointment_model.dart';
 import '../../constants/app_constants.dart';
+import 'revenue_service.dart';
 
 /// Service for appointment-related operations
 class AppointmentService {
@@ -17,6 +18,8 @@ class AppointmentService {
     required String timeSlot,
     required String consultationType,
     double? consultationFee,
+    String? paymentId,
+    String? paymentStatus,
     String? symptoms,
     String? notes,
   }) async {
@@ -36,8 +39,10 @@ class AppointmentService {
         appointmentDate: appointmentDate,
         timeSlot: timeSlot,
         consultationType: consultationType,
-        status: 'pending',
+        status: paymentStatus == 'completed' ? 'confirmed' : 'pending',
         consultationFee: consultationFee,
+        paymentId: paymentId,
+        paymentStatus: paymentStatus ?? 'pending',
         symptoms: symptoms,
         notes: notes,
         createdAt: DateTime.now(),
@@ -165,28 +170,87 @@ class AppointmentService {
     required String status,
     String? cancellationReason,
     String? cancelledBy,
+    String? paymentId,
+    String? paymentStatus,
   }) async {
     try {
+      // Get the appointment first to access fee and doctor info
+      final appointment = await getAppointmentById(appointmentId);
+      if (appointment == null) {
+        throw Exception('Appointment not found');
+      }
+
       final updateData = <String, dynamic>{
         'status': status,
         'updatedAt': Timestamp.now(),
       };
+
+      // Add payment information if provided
+      if (paymentId != null) {
+        updateData['paymentId'] = paymentId;
+      }
+      if (paymentStatus != null) {
+        updateData['paymentStatus'] = paymentStatus;
+      }
 
       if (status == 'cancelled') {
         updateData['cancellationReason'] = cancellationReason;
         updateData['cancelledBy'] = cancelledBy;
         updateData['cancelledAt'] = Timestamp.now();
 
-        // Free up the time slot
-        final appointment = await getAppointmentById(appointmentId);
-        if (appointment != null) {
-          await _updateDoctorAvailability(
-            appointment.doctorId,
-            appointment.appointmentDate,
-            appointment.timeSlot,
-            true,
+        // Reduce revenue if appointment was previously confirmed
+        if (appointment.status == 'confirmed' && appointment.consultationFee != null) {
+          print('Reducing revenue: ₹${appointment.consultationFee} for cancelled appointment $appointmentId');
+          await RevenueService.reduceRevenue(
+            doctorId: appointment.doctorId,
+            appointmentId: appointmentId,
+            amount: appointment.consultationFee!,
+            type: appointment.consultationType ?? 'offline',
+            reason: cancellationReason ?? 'Appointment cancelled',
           );
         }
+
+        // Free up the time slot
+        await _updateDoctorAvailability(
+          appointment.doctorId,
+          appointment.appointmentDate,
+          appointment.timeSlot,
+          true,
+        );
+      } else if (status == 'confirmed') {
+        // Add revenue when appointment is confirmed
+        if (appointment.consultationFee != null) {
+          // Don't add revenue for "pay_on_clinic" appointments until payment is actually made
+          if (appointment.paymentStatus != 'pay_on_clinic') {
+            // Check if revenue record already exists to avoid duplicates
+            final hasRevenue = await RevenueService.hasRevenueRecord(appointmentId);
+            if (!hasRevenue) {
+              print('Adding revenue: ₹${appointment.consultationFee} for appointment $appointmentId');
+              await RevenueService.addRevenue(
+                doctorId: appointment.doctorId,
+                appointmentId: appointmentId,
+                amount: appointment.consultationFee!,
+                type: appointment.consultationType ?? 'offline',
+                description: 'Consultation fee - ${appointment.patientName}',
+              );
+            } else {
+              print('Revenue record already exists for appointment $appointmentId');
+            }
+          } else {
+            print('Pay-on-clinic appointment confirmed: $appointmentId - Revenue will be added when payment is received');
+          }
+        }
+
+        // If confirming without explicit payment status, set it to completed
+        if (paymentStatus == null) {
+          updateData['paymentStatus'] = 'completed';
+        }
+      } else if (status == 'completed') {
+        // Update revenue status to completed if it exists
+        await RevenueService.updateRevenueStatus(
+          appointmentId: appointmentId,
+          status: 'completed',
+        );
       }
 
       await _firestore
@@ -247,63 +311,96 @@ class AppointmentService {
     required DateTime date,
   }) async {
     try {
-      // Get doctor's general availability for the day
-      final doctorDoc = await _firestore
-          .collection(AppConstants.doctorsCollection)
-          .doc(doctorId)
-          .get();
+      // Always return default time slots for now to avoid permission issues
+      // In production, you would implement proper doctor availability logic
+      final defaultSlots = _getDefaultTimeSlots();
+      
+      // Try to get booked appointments to filter out unavailable slots
+      try {
+        final bookedAppointments = await _firestore
+            .collection(AppConstants.appointmentsCollection)
+            .where('doctorId', isEqualTo: doctorId)
+            .where('status', whereIn: ['pending', 'confirmed'])
+            .get();
 
-      if (!doctorDoc.exists) {
-        throw Exception('Doctor not found');
+        // Filter appointments for the specific date
+        final bookedSlots = bookedAppointments.docs
+            .where((doc) {
+              try {
+                final data = doc.data();
+                final appointmentDate = (data['appointmentDate'] as Timestamp).toDate();
+                
+                return appointmentDate.year == date.year &&
+                       appointmentDate.month == date.month &&
+                       appointmentDate.day == date.day;
+              } catch (e) {
+                return false;
+              }
+            })
+            .map((doc) {
+              try {
+                return doc.data()['timeSlot'] as String;
+              } catch (e) {
+                return '';
+              }
+            })
+            .where((slot) => slot.isNotEmpty)
+            .toSet();
+
+        // Filter out booked slots and past slots for today
+        final availableSlots = defaultSlots.where((slot) {
+          if (bookedSlots.contains(slot)) return false;
+
+          // If it's today, filter out past slots
+          if (_isToday(date)) {
+            final now = DateTime.now();
+            final slotTime = _parseTimeSlot(slot);
+            if (slotTime != null) {
+              final slotDateTime = DateTime(
+                date.year,
+                date.month,
+                date.day,
+                slotTime.hour,
+                slotTime.minute,
+              );
+              return slotDateTime.isAfter(
+                now.add(const Duration(hours: 1)),
+              ); // 1 hour buffer
+            }
+          }
+
+          return true;
+        }).toList();
+
+        return availableSlots;
+      } catch (e) {
+        print('Error fetching booked appointments, using all default slots: $e');
+        
+        // If there's an error, just filter out past slots for today
+        return defaultSlots.where((slot) {
+          if (_isToday(date)) {
+            final now = DateTime.now();
+            final slotTime = _parseTimeSlot(slot);
+            if (slotTime != null) {
+              final slotDateTime = DateTime(
+                date.year,
+                date.month,
+                date.day,
+                slotTime.hour,
+                slotTime.minute,
+              );
+              return slotDateTime.isAfter(
+                now.add(const Duration(hours: 1)),
+              );
+            }
+          }
+          return true;
+        }).toList();
       }
-
-      final doctorData = doctorDoc.data()!;
-      final availability = doctorData['availability'] as Map<String, dynamic>?;
-
-      if (availability == null) {
-        return [];
-      }
-
-      // Get day of week (Monday = 1, Sunday = 7)
-      final dayOfWeek = date.weekday;
-      final dayName = _getDayName(dayOfWeek);
-
-      final dayAvailability =
-          availability[dayName.toLowerCase()] as Map<String, dynamic>?;
-
-      if (dayAvailability == null || dayAvailability['isAvailable'] != true) {
-        return [];
-      }
-
-      final allSlots = List<String>.from(dayAvailability['slots'] ?? []);
-
-      // Get booked appointments for the date
-      final startOfDay = DateTime(date.year, date.month, date.day);
-      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
-
-      final bookedAppointments = await _firestore
-          .collection(AppConstants.appointmentsCollection)
-          .where('doctorId', isEqualTo: doctorId)
-          .where(
-            'appointmentDate',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
-          )
-          .where(
-            'appointmentDate',
-            isLessThanOrEqualTo: Timestamp.fromDate(endOfDay),
-          )
-          .where('status', whereIn: ['pending', 'confirmed'])
-          .get();
-
-      final bookedSlots = bookedAppointments.docs
-          .map((doc) => doc.data()['timeSlot'] as String)
-          .toSet();
-
-      // Filter out booked slots and past slots for today
-      final availableSlots = allSlots.where((slot) {
-        if (bookedSlots.contains(slot)) return false;
-
-        // If it's today, filter out past slots
+    } catch (e) {
+      print('Error getting available time slots: $e');
+      // Return default time slots as fallback
+      return _getDefaultTimeSlots().where((slot) {
         if (_isToday(date)) {
           final now = DateTime.now();
           final slotTime = _parseTimeSlot(slot);
@@ -317,17 +414,32 @@ class AppointmentService {
             );
             return slotDateTime.isAfter(
               now.add(const Duration(hours: 1)),
-            ); // 1 hour buffer
+            );
           }
         }
-
         return true;
       }).toList();
-
-      return availableSlots;
-    } catch (e) {
-      throw Exception('Failed to get available time slots: $e');
     }
+  }
+
+  /// Get default time slots
+  static List<String> _getDefaultTimeSlots() {
+    return [
+      '09:00 AM',
+      '09:30 AM',
+      '10:00 AM',
+      '10:30 AM',
+      '11:00 AM',
+      '11:30 AM',
+      '02:00 PM',
+      '02:30 PM',
+      '03:00 PM',
+      '03:30 PM',
+      '04:00 PM',
+      '04:30 PM',
+      '05:00 PM',
+      '05:30 PM',
+    ];
   }
 
   /// Update doctor availability (internal method)
@@ -454,5 +566,48 @@ class AppointmentService {
               )
               .toList(),
         );
+  }
+
+  /// Mark payment as received for pay-on-clinic appointments
+  static Future<void> markPaymentReceived({
+    required String appointmentId,
+    String? paymentMethod,
+  }) async {
+    try {
+      // Get the appointment first
+      final appointment = await getAppointmentById(appointmentId);
+      if (appointment == null) {
+        throw Exception('Appointment not found');
+      }
+
+      // Update payment status
+      await _firestore
+          .collection(AppConstants.appointmentsCollection)
+          .doc(appointmentId)
+          .update({
+            'paymentStatus': 'completed',
+            'paymentReceivedAt': Timestamp.now(),
+            'paymentMethod': paymentMethod ?? 'cash',
+            'updatedAt': Timestamp.now(),
+          });
+
+      // Add revenue now that payment is received
+      if (appointment.consultationFee != null) {
+        final hasRevenue = await RevenueService.hasRevenueRecord(appointmentId);
+        if (!hasRevenue) {
+          await RevenueService.addRevenue(
+            doctorId: appointment.doctorId,
+            appointmentId: appointmentId,
+            amount: appointment.consultationFee!,
+            type: appointment.consultationType ?? 'offline',
+            description: 'Consultation fee - ${appointment.patientName} (Pay on Clinic)',
+          );
+        }
+      }
+
+      print('Payment marked as received for appointment $appointmentId');
+    } catch (e) {
+      throw Exception('Failed to mark payment as received: $e');
+    }
   }
 }

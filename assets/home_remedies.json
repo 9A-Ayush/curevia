@@ -1,0 +1,1703 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "Respiratory Health",
+      "remedies": [
+        {
+          "id": 1,
+          "title": "Honey-Lemon Ginger Tea",
+          "description": "A soothing warm beverage combining honey, lemon, and ginger to relieve cough and throat irritation. Honey coats the throat and lemon provides vitamin C, while ginger adds warmth and anti-inflammatory benefits.",
+          "ingredients": [
+            "Water",
+            "Fresh ginger (1-2 inch piece)",
+            "Lemon juice (from 1/2 lemon)",
+            "Honey (1-2 tbsp)"
+          ],
+          "preparation": [
+            "Bring water to a boil in a pot.",
+            "Add sliced or crushed ginger to the boiling water and simmer for 5-10 minutes.",
+            "Remove from heat. Strain into a cup.",
+            "Stir in honey and lemon juice once the tea has cooled slightly."
+          ],
+          "usage": "Sip warm 1-2 cups per day to soothe cough and sore throat. Can be taken every few hours as needed.",
+          "ageSuitability": "Adults and children (over 1 year old).",
+          "dosage": "1 cup per dose; Honey amount: 1-2 teaspoons (do not give honey to infants under 1 year).",
+          "precautions": "Do not give honey to children under 1 year. Consult doctor if symptoms persist. Ginger may cause mild heartburn in sensitive individuals.",
+          "contraindications": "Not suitable for infants (<1 year); those with known allergies to ginger or citrus should avoid.",
+          "imageURL": "",
+          "preparationTime": "15 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "cough",
+            "cold",
+            "throat",
+            "ginger",
+            "honey",
+            "lemon",
+            "tea"
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Steam Inhalation (Eucalyptus Steam)",
+          "description": "Inhaling steam from hot water, optionally infused with eucalyptus oil or menthol, helps loosen mucus, relieve nasal congestion, and soothe irritated airways. This provides relief for colds and sinus congestion.",
+          "ingredients": [
+            "Water",
+            "Optional: a few drops of eucalyptus or peppermint essential oil"
+          ],
+          "preparation": [
+            "Boil water and pour it into a heatproof bowl.",
+            "Add a few drops of eucalyptus or peppermint oil if using.",
+            "Drape a towel over your head and lean over the bowl to inhale the steam carefully for 5-10 minutes."
+          ],
+          "usage": "Repeat 1-2 times per day as needed for congestion. Breathe slowly and take breaks if the steam feels too hot.",
+          "ageSuitability": "Adults and children (supervised).",
+          "dosage": "N/A (inhale steam); do 1 session at a time.",
+          "precautions": "Keep eyes closed to avoid irritation. Maintain a safe distance to prevent burns. Supervise children closely. Not for infants.",
+          "contraindications": "Avoid in asthma or severe respiratory conditions without consulting a doctor.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "congestion",
+            "sinus",
+            "respiratory",
+            "steam",
+            "eucalyptus",
+            "decongestion"
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Ginger-Honey Cough Syrup",
+          "description": "A natural syrup made from ginger, honey, and lemon. Ginger provides anti-inflammatory and warming effects, while honey soothes the throat and lemon adds Vitamin C. This syrup can help suppress cough and boost immunity during colds.",
+          "ingredients": [
+            "Water",
+            "Fresh ginger (2 inch piece, grated)",
+            "Lemon (zest and juice)",
+            "Honey (1/2 cup)"
+          ],
+          "preparation": [
+            "Zest a lemon and chop the ginger.",
+            "Simmer ginger and lemon zest in 1 cup of water for 10-15 minutes.",
+            "Strain the liquid into a container.",
+            "Stir in 1/2 cup honey and lemon juice, mix well, then cool before storing."
+          ],
+          "usage": "Take 1 teaspoon every 2-3 hours as needed for cough. Refrigerate in a sealed container.",
+          "ageSuitability": "Adults and children (over 1 year old).",
+          "dosage": "1 teaspoon per dose, up to 3-4 times daily.",
+          "precautions": "Not to be given to children under 1 year (honey). Excess ginger may cause stomach upset. Consult doctor if cough persists beyond a few days.",
+          "contraindications": "Do not use if allergic to any ingredient. Not suitable for infants (<1 year).",
+          "imageURL": "",
+          "preparationTime": "20 minutes",
+          "difficulty": "Medium",
+          "tags": [
+            "cough",
+            "syrup",
+            "ginger",
+            "honey",
+            "home remedy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Immunity Boosting",
+      "remedies": [
+        {
+          "id": 4,
+          "title": "Golden Milk (Turmeric Milk)",
+          "description": "A warm, spiced milk drink made with turmeric and other spices. Turmeric contains curcumin with anti-inflammatory and antioxidant properties, which can help support the immune system. Black pepper increases turmeric absorption.",
+          "ingredients": [
+            "Milk (or dairy-free milk)",
+            "Turmeric powder (1-2 tsp)",
+            "Black pepper (pinch)",
+            "Honey or sugar (to taste)",
+            "Optional: cinnamon (1/2 tsp), ginger (1 tsp)"
+          ],
+          "preparation": [
+            "Warm the milk in a saucepan over medium heat.",
+            "Whisk in turmeric, black pepper, and optional spices.",
+            "Simmer for 5-10 minutes, stirring occasionally.",
+            "Strain into a cup and sweeten with honey or sugar before serving."
+          ],
+          "usage": "Drink 1 cup of golden milk daily, preferably in the evening or when feeling under the weather.",
+          "ageSuitability": "Adults and children (older); use smaller portion and less sweetener for kids.",
+          "dosage": "1 cup per day.",
+          "precautions": "Avoid very high doses of turmeric (generally safe in culinary amounts). Black pepper can irritate the stomach in sensitive individuals. Dairy allergies: use alternative milk.",
+          "contraindications": "Not recommended for people on blood thinners or with gallstones without medical advice (turmeric).",
+          "imageURL": "",
+          "preparationTime": "15 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "immunity",
+            "anti-inflammatory",
+            "turmeric",
+            "golden milk",
+            "honey"
+          ]
+        },
+        {
+          "id": 5,
+          "title": "Elderberry Syrup",
+          "description": "A syrup made from elderberries, which are rich in antioxidants. Elderberry may help reduce cold and flu symptom severity and duration. It is traditionally used to support immune health during viral illnesses.",
+          "ingredients": [
+            "Dried elderberries (1/2 cup) or fresh (1 cup)",
+            "Water (2 cups)",
+            "Optional: cinnamon stick, cloves",
+            "Honey or maple syrup (1/2 cup)"
+          ],
+          "preparation": [
+            "Combine elderberries and water in a saucepan. Add spices if using.",
+            "Bring to a boil, then simmer uncovered for 20-30 minutes until reduced by half.",
+            "Mash berries to extract juice, then strain through a fine mesh.",
+            "Stir in honey or syrup while warm and let cool. Store in the fridge."
+          ],
+          "usage": "Take 1 tablespoon daily at the first sign of cold or flu, up to 3 times per day until symptoms subside.",
+          "ageSuitability": "Adults and children (over 1 year old).",
+          "dosage": "1 tbsp (15 ml) per dose, 2-3 times a day.",
+          "precautions": "Do not consume raw elderberries (they contain toxic compounds). Ensure berries are fully cooked. Possible mild digestive upset.",
+          "contraindications": "Not for infants; consult doctor if immune disorders or pregnant.",
+          "imageURL": "",
+          "preparationTime": "40 minutes",
+          "difficulty": "Medium",
+          "tags": [
+            "elderberry",
+            "syrup",
+            "cold",
+            "flu",
+            "antiviral"
+          ]
+        },
+        {
+          "id": 6,
+          "title": "Garlic Infusion",
+          "description": "An infusion or tonic made from fresh garlic. Garlic has antimicrobial and immune-boosting properties. Some studies suggest it may reduce the incidence of colds. Regular consumption is believed to support respiratory health.",
+          "ingredients": [
+            "Fresh garlic cloves (2-3 cloves)",
+            "Water (1 cup)",
+            "Optional: honey to taste"
+          ],
+          "preparation": [
+            "Crush or chop garlic cloves and place in a cup.",
+            "Pour hot (not boiling) water over the garlic.",
+            "Let steep for 5-10 minutes and then strain.",
+            "Add honey if desired for taste. Drink warm."
+          ],
+          "usage": "Drink 1 cup once per day during cold season, or at first sign of infection.",
+          "ageSuitability": "Adults (use in food for older children with medical advice).",
+          "dosage": "1 infusion (about 1 cup).",
+          "precautions": "Garlic can cause heartburn or upset stomach in some. Use in moderation. Fresh garlic odor may linger.",
+          "contraindications": "Not recommended in large amounts for people on blood thinners (anticoagulants). Avoid if known garlic allergy.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "garlic",
+            "immune",
+            "antibacterial",
+            "colds",
+            "home remedy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Skin Care",
+      "remedies": [
+        {
+          "id": 7,
+          "title": "Aloe Vera Gel",
+          "description": "Clear gel extracted from the aloe vera plant, used topically for burns, sunburn, and moisturizing skin. Aloe vera has anti-inflammatory and healing properties that can soothe sunburn and minor wounds.",
+          "ingredients": [
+            "Fresh aloe vera leaf (inner gel) or pure aloe vera gel product"
+          ],
+          "preparation": [
+            "Slice open an aloe vera leaf and scoop out the inner gel.",
+            "Apply the gel directly to the affected skin areas (burns, sunburn, or dry skin).",
+            "Allow it to absorb into the skin. Reapply as needed."
+          ],
+          "usage": "Apply a thin layer to clean, dry skin several times a day for relief.",
+          "ageSuitability": "Suitable for adults and children (topical use).",
+          "dosage": "Apply to affected area; no fixed dosage (topical).",
+          "precautions": "Patch-test first to rule out allergy. For external use only. Avoid contact with eyes.",
+          "contraindications": "Avoid using on deep wounds or severe burns without medical care. Do not ingest large amounts of aloe latex (not applicable for gel).",
+          "imageURL": "",
+          "preparationTime": "5 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "burns",
+            "sunburn",
+            "aloe vera",
+            "moisturizing",
+            "soothing"
+          ]
+        },
+        {
+          "id": 8,
+          "title": "Turmeric & Honey Face Mask",
+          "description": "A facial mask made with turmeric and honey. Turmeric has antioxidant and antibacterial properties, and honey is soothing and moisturizing. Together they may help reduce acne and brighten skin.",
+          "ingredients": [
+            "Turmeric powder (1 tsp)",
+            "Honey (1 tbsp)",
+            "Optional: plain yogurt (1 tbsp)"
+          ],
+          "preparation": [
+            "Mix turmeric powder and honey (and yogurt if using) to form a smooth paste.",
+            "Apply the mask evenly to clean face and affected areas.",
+            "Leave on for 10-15 minutes, then rinse off with warm water."
+          ],
+          "usage": "Use 2-3 times a week on the face or target areas. After rinsing, moisturize as usual.",
+          "ageSuitability": "Adults and teens.",
+          "dosage": "Apply one mask per session.",
+          "precautions": "Turmeric may temporarily stain skin or clothing. Do a patch test for allergic reaction. Avoid contact with eyes. Cleanse well to avoid yellow tint.",
+          "contraindications": "Not recommended if skin is inflamed or broken (open wounds) as it may irritate. Avoid if allergic to turmeric or honey.",
+          "imageURL": "",
+          "preparationTime": "5 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "acne",
+            "brightening",
+            "antibacterial",
+            "turmeric",
+            "face mask"
+          ]
+        },
+        {
+          "id": 9,
+          "title": "Oatmeal Bath",
+          "description": "A soothing bath using colloidal oatmeal to relieve itching and irritation. Oatmeal has antioxidant and anti-inflammatory properties and forms a protective barrier on the skin. This remedy is helpful for eczema, dry skin, or rashes.",
+          "ingredients": [
+            "Colloidal oatmeal (ground oats) or 1-2 cups plain rolled oats",
+            "Warm bath water"
+          ],
+          "preparation": [
+            "Grind plain oats into a fine powder if not using colloidal oatmeal.",
+            "Add the oatmeal to a bath of warm (not hot) water and stir well.",
+            "Soak in the bath for 15-20 minutes.",
+            "Pat skin dry gently; do not rub."
+          ],
+          "usage": "Soak 1-2 times per week or as needed. For mild relief, even 10-minute soaks may help.",
+          "ageSuitability": "Suitable for adults and children (supervised).",
+          "dosage": "Use as needed; no fixed dosage.",
+          "precautions": "Ensure water is not too hot. Rinse off after soaking. Avoid slippery bathtub surface.",
+          "contraindications": "Not for use on open wounds or severe burns without medical advice.",
+          "imageURL": "",
+          "preparationTime": "5 minutes (grinding oats) + 15-20 min soak",
+          "difficulty": "Easy",
+          "tags": [
+            "itching",
+            "eczema",
+            "rash",
+            "soothing",
+            "oatmeal"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Digestive Health",
+      "remedies": [
+        {
+          "id": 10,
+          "title": "Ginger Tea",
+          "description": "A tea made from fresh ginger root to help ease nausea and aid digestion. Ginger has anti-nausea and anti-inflammatory compounds that can soothe the stomach.",
+          "ingredients": [
+            "Fresh ginger (sliced, 1-2 inch piece)",
+            "Water (1 cup)",
+            "Optional: lemon or honey to taste"
+          ],
+          "preparation": [
+            "Boil water in a pot.",
+            "Add sliced ginger and simmer for 5-10 minutes.",
+            "Strain into a cup. Add lemon or honey if desired."
+          ],
+          "usage": "Drink 1 cup of ginger tea after meals or whenever experiencing indigestion or nausea.",
+          "ageSuitability": "Adults and older children.",
+          "dosage": "1 cup per dose; up to 2-3 times a day.",
+          "precautions": "Can cause heartburn or gas in some people. Avoid excessive ginger (typically safe up to 1g per day).",
+          "contraindications": "Avoid in gallbladder disease or ulcer unless directed by a doctor.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "ginger",
+            "digestion",
+            "nausea",
+            "tea",
+            "anti-nausea"
+          ]
+        },
+        {
+          "id": 11,
+          "title": "Fennel Seed Tea",
+          "description": "A tea made from fennel seeds. Fennel has anti-inflammatory and carminative properties and can relax gastrointestinal muscles, helping to relieve gas, bloating and indigestion.",
+          "ingredients": [
+            "Fennel seeds (1-2 teaspoons)",
+            "Water (1 cup)"
+          ],
+          "preparation": [
+            "Lightly crush the fennel seeds to release flavor.",
+            "Boil water and add crushed fennel seeds.",
+            "Simmer for 5-10 minutes, then strain into a cup."
+          ],
+          "usage": "Drink 1 cup after meals or when experiencing bloating, gas, or indigestion. Up to 2-3 cups per day.",
+          "ageSuitability": "Adults and older children.",
+          "dosage": "1 cup per dose.",
+          "precautions": "May cause laxative effect if taken in excess. Can relax GI muscles - may not be suitable for severe diarrhea.",
+          "contraindications": "Avoid if allergic to fennel or anise plants. Not for infants (choking risk and strong taste).",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "fennel",
+            "digestion",
+            "bloating",
+            "gas",
+            "antispasmodic"
+          ]
+        },
+        {
+          "id": 12,
+          "title": "Triphala Digestive Drink",
+          "description": "A drink made from Triphala, an Ayurvedic herbal blend of three fruits. Triphala has antioxidant, anti-inflammatory, and mild laxative effects that may promote healthy digestion and regularity.",
+          "ingredients": [
+            "Triphala powder (1 teaspoon)",
+            "Warm water (1 cup)"
+          ],
+          "preparation": [
+            "Dissolve triphala powder in warm water and stir well.",
+            "Let steep for a few minutes, then drink."
+          ],
+          "usage": "Drink once daily, preferably in the evening, to aid digestion and bowel regularity.",
+          "ageSuitability": "Adults.",
+          "dosage": "1 cup per day.",
+          "precautions": "May cause loose stools if taken in excess. Start with smaller dose to assess tolerance.",
+          "contraindications": "Avoid during pregnancy or in cases of inflammatory bowel disease without doctor’s approval. Not for children without medical advice.",
+          "imageURL": "",
+          "preparationTime": "5 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "triphala",
+            "digestion",
+            "laxative",
+            "ayurvedic",
+            "constipation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Oral Care",
+      "remedies": [
+        {
+          "id": 13,
+          "title": "Clove Oil for Toothache",
+          "description": "Clove oil contains eugenol, which acts as an anesthetic and antibacterial agent. Applying diluted clove oil topically can help numb and reduce tooth or gum pain temporarily.",
+          "ingredients": [
+            "Clove essential oil",
+            "Carrier oil (e.g., coconut or olive oil)"
+          ],
+          "preparation": [
+            "Dilute a few drops of clove oil in a teaspoon of carrier oil.",
+            "Dip a clean cotton swab or ball into the mixture.",
+            "Apply to the painful tooth or gum area, and hold for a few minutes.",
+            "Rinse mouth after 5-10 minutes."
+          ],
+          "usage": "Apply on the affected tooth/gum 1-2 times per day as needed for pain relief.",
+          "ageSuitability": "Adults (not for young children).",
+          "dosage": "1-2 drops of diluted oil per application.",
+          "precautions": "Perform a patch test first; clove oil can irritate gums. Use sparingly. Do not swallow the oil mixture.",
+          "contraindications": "Avoid if allergic to clove or eugenol. Not recommended for infants or pregnant women. Keep away from eyes and sensitive tissues.",
+          "imageURL": "",
+          "preparationTime": "5 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "toothache",
+            "clove",
+            "eugenol",
+            "analgesic",
+            "oral care"
+          ]
+        },
+        {
+          "id": 14,
+          "title": "Warm Saltwater Gargle",
+          "description": "Gargling with warm saltwater is a simple remedy for sore throat and mouth sores. Saltwater helps reduce bacterial growth and soothe inflamed tissues.",
+          "ingredients": [
+            "Salt (1 teaspoon)",
+            "Warm water (1 cup)"
+          ],
+          "preparation": [
+            "Dissolve salt in a cup of warm water.",
+            "Swish the solution in your mouth or gargle in the throat area for 20-30 seconds.",
+            "Spit out the water. Repeat until all water is used."
+          ],
+          "usage": "Gargle 2-3 times a day or as needed for sore throat or mouth ulcers.",
+          "ageSuitability": "Adults and children (old enough to gargle without swallowing).",
+          "dosage": "1 cup per session.",
+          "precautions": "Do not swallow the saltwater. Limit use (excessive salt can irritate). Allow water to cool to comfortable temperature.",
+          "contraindications": "Not for infants (cannot gargle). Avoid if salt allergy (rare).",
+          "imageURL": "",
+          "preparationTime": "1 minute",
+          "difficulty": "Easy",
+          "tags": [
+            "sore throat",
+            "gargle",
+            "saltwater",
+            "ulcers",
+            "oral health"
+          ]
+        },
+        {
+          "id": 15,
+          "title": "Oil Pulling",
+          "description": "Oil pulling involves swishing a tablespoon of edible oil in the mouth for 10-15 minutes. It may reduce oral bacteria and improve oral hygiene (evidence mixed). Typically coconut or sesame oil is used.",
+          "ingredients": [
+            "Coconut oil or sesame oil (1 tablespoon)"
+          ],
+          "preparation": [
+            "Place oil in mouth.",
+            "Swish around the teeth and gums gently for 10-15 minutes.",
+            "Spit the oil into a trash can (not sink, to avoid clogging).",
+            "Rinse mouth with warm water and brush teeth afterward."
+          ],
+          "usage": "Perform once daily in the morning on an empty stomach.",
+          "ageSuitability": "Adults and older children (able to hold mouthful of oil).",
+          "dosage": "1 tablespoon of oil per session.",
+          "precautions": "Do not swallow the oil (it contains bacteria/toxins). Ensure not to inhale or aspirate oil during swishing.",
+          "contraindications": "Not recommended for people prone to lipid pneumonia (very rare).",
+          "imageURL": "",
+          "preparationTime": "15 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "oral hygiene",
+            "oil pulling",
+            "teeth",
+            "health",
+            "detox"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Hair Care",
+      "remedies": [
+        {
+          "id": 16,
+          "title": "Coconut Oil Scalp Treatment",
+          "description": "Applying coconut oil to the scalp and hair can moisturize dry scalp and reduce dandruff. The lauric acid in coconut oil has anti-fungal properties that may help combat dandruff-causing fungi.",
+          "ingredients": [
+            "Virgin coconut oil"
+          ],
+          "preparation": [
+            "Warm a small amount of coconut oil until liquid.",
+            "Massage it into the scalp and hair roots for 5-10 minutes.",
+            "Leave it on for at least 30 minutes, or overnight under a shower cap.",
+            "Wash hair with shampoo and rinse well."
+          ],
+          "usage": "Use once or twice a week to condition hair and soothe scalp. Leave on for at least 30 minutes each time.",
+          "ageSuitability": "Adults and children.",
+          "dosage": "Apply enough to cover the scalp lightly.",
+          "precautions": "Patch-test first. Over-application may make scalp oily or worsen conditions like seborrheic dermatitis.",
+          "contraindications": "Avoid if severe scalp conditions without doctor’s advice. Avoid contact with eyes.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "coconut oil",
+            "hair mask",
+            "dandruff",
+            "moisturizer",
+            "scalp care"
+          ]
+        },
+        {
+          "id": 17,
+          "title": "Egg Hair Mask",
+          "description": "Eggs are rich in proteins and fatty acids that can nourish dry or damaged hair. An egg hair mask can add shine and strength.",
+          "ingredients": [
+            "Eggs (1-2, beaten)",
+            "Optional: olive oil or honey (1 tsp)"
+          ],
+          "preparation": [
+            "Beat eggs in a bowl. Mix in olive oil or honey if using.",
+            "Apply the mixture to damp hair, from roots to ends.",
+            "Leave on for 15-20 minutes.",
+            "Rinse with cool or lukewarm water (avoid hot water or it will cook the egg).",
+            "Shampoo and condition as usual."
+          ],
+          "usage": "Use once a week for dry or brittle hair.",
+          "ageSuitability": "Adults.",
+          "dosage": "1 mask per use.",
+          "precautions": "Rinse thoroughly to remove all egg smell/residue. Avoid hot water or hair will smell like cooked egg.",
+          "contraindications": "Skip if allergic to eggs.",
+          "imageURL": "",
+          "preparationTime": "25 minutes",
+          "difficulty": "Medium",
+          "tags": [
+            "hair mask",
+            "eggs",
+            "protein",
+            "nourishing",
+            "shine"
+          ]
+        },
+        {
+          "id": 18,
+          "title": "Avocado Hair Mask",
+          "description": "Avocado is rich in oils and vitamins (A, E) that moisturize and nourish hair.",
+          "ingredients": [
+            "Ripe avocado (1/2, mashed)",
+            "Optional: coconut oil or olive oil (1 tsp)"
+          ],
+          "preparation": [
+            "Mash the avocado and mix with oil if using.",
+            "Apply paste to hair and scalp.",
+            "Wrap hair in a warm towel or shower cap for 20-30 minutes.",
+            "Rinse out and shampoo hair."
+          ],
+          "usage": "Use once weekly to restore moisture and shine to hair.",
+          "ageSuitability": "Adults.",
+          "dosage": "1 mask per use.",
+          "precautions": "Allergy risk for latex-sensitive individuals (cross-reactivity with avocado).",
+          "contraindications": "None significant (patch-test for allergens).",
+          "imageURL": "",
+          "preparationTime": "35 minutes",
+          "difficulty": "Medium",
+          "tags": [
+            "hair mask",
+            "avocado",
+            "moisturizing",
+            "shine",
+            "nourish"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Sleep and Relaxation",
+      "remedies": [
+        {
+          "id": 19,
+          "title": "Chamomile Tea",
+          "description": "A gentle herbal tea made from chamomile flowers. Chamomile has mild sedative properties and can help relax the body and mind before bedtime.",
+          "ingredients": [
+            "Dried chamomile flowers (1 tablespoon) or chamomile tea bag",
+            "Water (1 cup)"
+          ],
+          "preparation": [
+            "Steep chamomile in hot water for 5-10 minutes.",
+            "Strain and pour into a cup.",
+            "Optional: add honey or lemon."
+          ],
+          "usage": "Drink 1 cup 30-60 minutes before bedtime to help induce relaxation.",
+          "ageSuitability": "Adults and children (older, check with pediatrician for kids).",
+          "dosage": "1 cup (8 oz).",
+          "precautions": "Allergic reactions possible in people sensitive to ragweed/pollen. Do not give honey to infants under 1 year.",
+          "contraindications": "Not recommended during pregnancy/lactation without medical advice.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "insomnia",
+            "relaxation",
+            "sleep",
+            "calming",
+            "herbal tea"
+          ]
+        },
+        {
+          "id": 20,
+          "title": "Warm Milk with Honey",
+          "description": "A traditional sleep aid. Warm milk contains tryptophan and melatonin precursors, and honey provides glucose. Some evidence suggests this combination can improve sleep quality and promote relaxation.",
+          "ingredients": [
+            "Milk (1 cup)",
+            "Honey (1 teaspoon)"
+          ],
+          "preparation": [
+            "Warm the milk (do not boil).",
+            "Stir in honey until dissolved.",
+            "Drink warm, ideally 30 minutes before bedtime."
+          ],
+          "usage": "Drink 1 cup at bedtime.",
+          "ageSuitability": "Adults and older children (no honey for infants under 1 year).",
+          "dosage": "1 cup per night.",
+          "precautions": "Do not use if lactose intolerant (try lactose-free milk). Avoid sugar if diabetic (consider alternatives).",
+          "contraindications": "Honey not for babies <1 year. Milk allergy: avoid or use substitute.",
+          "imageURL": "",
+          "preparationTime": "5 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "sleep",
+            "insomnia",
+            "tryptophan",
+            "warm drink",
+            "natural sleep aid"
+          ]
+        },
+        {
+          "id": 21,
+          "title": "Lavender Tea",
+          "description": "An herbal tea made from lavender flowers. Lavender has calming and sedative properties, and drinking lavender tea or inhaling its aroma can help ease anxiety and improve sleep.",
+          "ingredients": [
+            "Dried lavender buds (1 tablespoon)",
+            "Water (1 cup)"
+          ],
+          "preparation": [
+            "Steep lavender buds in hot water for 5-10 minutes.",
+            "Strain and drink warm."
+          ],
+          "usage": "Drink 1 cup 30 minutes before bedtime to promote relaxation.",
+          "ageSuitability": "Adults and older children.",
+          "dosage": "1 cup per night.",
+          "precautions": "Allergic reactions possible (avoid if allergic to lavender or related plants).",
+          "contraindications": "Not recommended during pregnancy without medical guidance.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "sleep",
+            "anxiety",
+            "relaxation",
+            "herbal tea",
+            "calming"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Joint and Muscle Pain Relief",
+      "remedies": [
+        {
+          "id": 22,
+          "title": "Turmeric-Ginger Paste",
+          "description": "A topical paste made from turmeric and ginger, both with anti-inflammatory properties. Applying this warm paste to aching joints or muscles can help reduce pain and inflammation.",
+          "ingredients": [
+            "Turmeric powder (2 tbsp)",
+            "Fresh ginger (grated, 1 inch piece)",
+            "Olive oil or warm water (to mix)"
+          ],
+          "preparation": [
+            "Mix turmeric powder and grated ginger with enough oil or water to make a paste.",
+            "Warm the paste slightly (optional).",
+            "Apply to sore joint or muscle and wrap with a cloth.",
+            "Leave on for 30 minutes, then wipe off."
+          ],
+          "usage": "Use 1-2 times daily on the painful area.",
+          "ageSuitability": "Adults.",
+          "dosage": "Apply to area; no fixed amount.",
+          "precautions": "Turmeric can stain skin/clothes. Do a patch test. Avoid open wounds. Clean area after use.",
+          "contraindications": "Avoid if skin is irritated or infected.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "joint pain",
+            "inflammation",
+            "turmeric",
+            "ginger",
+            "natural remedy"
+          ]
+        },
+        {
+          "id": 23,
+          "title": "Epsom Salt Bath",
+          "description": "A warm bath with Epsom salt (magnesium sulfate) can help relax muscles and relieve pain and stiffness.",
+          "ingredients": [
+            "Epsom salt (1-2 cups)",
+            "Warm bath water"
+          ],
+          "preparation": [
+            "Fill bath with warm water and add Epsom salt.",
+            "Stir to dissolve and soak in the bath for 15-20 minutes."
+          ],
+          "usage": "Use as needed for sore muscles or joint aches, 2-3 times per week.",
+          "ageSuitability": "Adults (children under supervision).",
+          "dosage": "1-2 cups Epsom salt per bath.",
+          "precautions": "Water should be warm, not hot. Stay hydrated. Slippery surfaces: be careful exiting.",
+          "contraindications": "Avoid if open cuts/wounds (sterilize water) or low blood pressure (heat).",
+          "imageURL": "",
+          "preparationTime": "5 minutes prep + soak",
+          "difficulty": "Easy",
+          "tags": [
+            "muscle pain",
+            "relaxation",
+            "Epsom salt",
+            "bath",
+            "magnesium"
+          ]
+        },
+        {
+          "id": 24,
+          "title": "Hot & Cold Compress",
+          "description": "Alternating hot and cold compresses can help relieve joint and muscle pain. Cold therapy reduces inflammation and numbs pain; heat increases blood flow and relaxes muscles.",
+          "ingredients": [
+            "Hot water bottle or warm towel",
+            "Ice pack or bag of ice",
+            "Towel"
+          ],
+          "preparation": [
+            "For acute pain/swelling: apply a cold pack (wrapped in cloth) to the area for 15 minutes.",
+            "For muscle stiffness or chronic ache: apply a warm compress (hot water bottle/towel) for 15 minutes.",
+            "Alternate heat and cold: e.g., cold for 10-15 minutes followed by heat for 10-15 minutes."
+          ],
+          "usage": "Use cold for injuries and inflammation, heat for muscle relaxation. Limit each application to 15-20 minutes and allow skin to rest between.",
+          "ageSuitability": "All ages (use carefully for children, supervise).",
+          "dosage": "15-20 minutes per application.",
+          "precautions": "Always wrap ice to protect skin. Avoid extreme temperatures. Check skin regularly to avoid burns or frostbite.",
+          "contraindications": "Do not use heat on a new injury (first 48h), or cold on stiff joints chronically (then use heat). Not on numb skin.",
+          "imageURL": "",
+          "preparationTime": "15-20 minutes per application",
+          "difficulty": "Easy",
+          "tags": [
+            "pain relief",
+            "alternating compress",
+            "cold therapy",
+            "heat therapy",
+            "inflammation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Stress and Mental Wellness",
+      "remedies": [
+        {
+          "id": 25,
+          "title": "Ashwagandha Supplement",
+          "description": "Ashwagandha (Withania somnifera) is an adaptogenic herb used in Ayurveda to reduce stress and anxiety. Clinical studies have found it can significantly lower cortisol levels and improve stress resilience.",
+          "ingredients": [
+            "Ashwagandha root powder or extract (e.g., capsule or tincture)"
+          ],
+          "preparation": [
+            "If using powder: mix 1/2-1 teaspoon of ashwagandha powder in a glass of warm water, milk or tea. If capsule: take as directed."
+          ],
+          "usage": "Take once or twice daily with meals. Common dose: 300-600 mg of standardized extract per day.",
+          "ageSuitability": "Adults (generally not recommended for children).",
+          "dosage": "1 capsule (300 mg) 1-2 times per day, or 1 tsp powder.",
+          "precautions": "May cause drowsiness, stomach upset, or allergic reaction in some. Avoid driving if sleepy. Interactions with sedatives.",
+          "contraindications": "Avoid during pregnancy or if on thyroid medications without doctor’s advice.",
+          "imageURL": "",
+          "preparationTime": "N/A (capsule) or 5 minutes (powder)",
+          "difficulty": "Easy",
+          "tags": [
+            "stress",
+            "anxiety",
+            "adaptogen",
+            "Ayurveda",
+            "ashwagandha"
+          ]
+        },
+        {
+          "id": 26,
+          "title": "Lemon Balm Tea",
+          "description": "An herbal tea made from lemon balm leaves (Melissa officinalis). Lemon balm has mild anxiolytic effects and may help ease stress and promote calmness.",
+          "ingredients": [
+            "Dried lemon balm leaves (1-2 teaspoons)",
+            "Water (1 cup)"
+          ],
+          "preparation": [
+            "Steep lemon balm leaves in hot water for 5-10 minutes.",
+            "Strain and drink warm."
+          ],
+          "usage": "Drink 1 cup when feeling anxious or before bedtime to help relax.",
+          "ageSuitability": "Adults and children (older, small doses for children).",
+          "dosage": "1 cup per use.",
+          "precautions": "May cause nausea or dizziness if consumed in excess.",
+          "contraindications": "Avoid during pregnancy or if taking sedatives without medical advice.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "anxiety",
+            "calm",
+            "herbal tea",
+            "nervine",
+            "stress relief"
+          ]
+        },
+        {
+          "id": 27,
+          "title": "Deep Breathing Exercises",
+          "description": "Practicing deep breathing (diaphragmatic breathing) can activate the parasympathetic nervous system, reducing stress hormones and promoting relaxation. Techniques like inhaling slowly through the nose and exhaling fully through the mouth can ease anxiety and improve mental wellness.",
+          "ingredients": [],
+          "preparation": [
+            "Sit or lie down comfortably with eyes closed.",
+            "Inhale slowly through the nose for a count of 4, filling the belly with air.",
+            "Hold breath for 1-2 seconds.",
+            "Exhale slowly through the mouth for a count of 5-6, feeling the belly fall.",
+            "Repeat for 5-10 minutes."
+          ],
+          "usage": "Practice deep breathing for 5-10 minutes, once or twice a day, or whenever feeling stressed.",
+          "ageSuitability": "All ages (children can practice simplified breathing).",
+          "dosage": "5-10 minutes per session.",
+          "precautions": "Do not hyperventilate. Stop if lightheaded (in that case, resume normal breathing).",
+          "contraindications": "None.",
+          "imageURL": "",
+          "preparationTime": "5 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "meditation",
+            "breathing",
+            "relaxation",
+            "yoga",
+            "calm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Women\u2019s Health",
+      "remedies": [
+        {
+          "id": 28,
+          "title": "Ginger Tea for Menstrual Cramps",
+          "description": "Ginger tea can help reduce menstrual pain due to its anti-inflammatory properties. Studies show ginger may inhibit prostaglandins, which cause cramps.",
+          "ingredients": [
+            "Fresh ginger (1-2 inch slice)",
+            "Water (1 cup)",
+            "Optional: honey"
+          ],
+          "preparation": [
+            "Boil water with ginger slices for 5-10 minutes.",
+            "Strain and add honey if desired."
+          ],
+          "usage": "Drink 1 cup of ginger tea 2-3 times on the first days of menstruation or whenever cramps occur.",
+          "ageSuitability": "Adults.",
+          "dosage": "1 cup per dose, up to 3 times a day.",
+          "precautions": "May cause mild stomach upset or heartburn. Not for prolonged use in high doses.",
+          "contraindications": "Avoid high doses if gallstones or on blood thinners.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "menstrual cramps",
+            "dysmenorrhea",
+            "ginger",
+            "tea",
+            "women health"
+          ]
+        },
+        {
+          "id": 29,
+          "title": "Fennel Seed Tea for Menstrual Cramp",
+          "description": "Fennel tea has antispasmodic properties that may ease uterine contractions and relieve menstrual cramps. Some studies found fennel as effective as painkillers for dysmenorrhea.",
+          "ingredients": [
+            "Fennel seeds (1-2 teaspoons)",
+            "Water (1 cup)"
+          ],
+          "preparation": [
+            "Lightly crush the fennel seeds.",
+            "Boil water and add fennel seeds. Simmer 5-10 minutes.",
+            "Strain and drink warm."
+          ],
+          "usage": "Drink 1 cup of fennel tea daily during menstruation to reduce cramping.",
+          "ageSuitability": "Adults.",
+          "dosage": "1 cup per day.",
+          "precautions": "May have mild diuretic effect (drink adequate water).",
+          "contraindications": "Not recommended during pregnancy unless advised. Avoid if allergic to fennel/anise.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "cramps",
+            "fennel",
+            "antispasmodic",
+            "women",
+            "relief"
+          ]
+        },
+        {
+          "id": 30,
+          "title": "Chamomile Tea for Menstrual Pain",
+          "description": "Chamomile tea is anti-inflammatory and antispasmodic. It can help relax smooth muscle and reduce menstrual cramps and anxiety during menstruation.",
+          "ingredients": [
+            "Chamomile tea bag or dried flowers (1 tablespoon)",
+            "Water (1 cup)"
+          ],
+          "preparation": [
+            "Steep chamomile in hot water for 5-10 minutes.",
+            "Strain and drink warm."
+          ],
+          "usage": "Drink 2-3 cups during menstruation to help alleviate cramps and irritability.",
+          "ageSuitability": "Adults and teens.",
+          "dosage": "1 cup per serving.",
+          "precautions": "Similar to general chamomile precautions (ragweed allergy, no honey <1yr).",
+          "contraindications": "None significant; avoid if allergic to chamomile or related plants.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "menstrual cramps",
+            "PMS",
+            "relaxation",
+            "herbal tea",
+            "antispasmodic"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Children\u2019s Common Ailments",
+      "remedies": [
+        {
+          "id": 31,
+          "title": "Honey-Lemon Drink for Cough",
+          "description": "A warm drink of honey and lemon in water. Honey soothes the throat and may reduce cough frequency, while lemon provides vitamin C. Safe for children over 1 year.",
+          "ingredients": [
+            "Warm water (1 cup)",
+            "Honey (1 teaspoon)",
+            "Lemon juice (1/2 tsp)"
+          ],
+          "preparation": [
+            "Mix honey and lemon juice into warm water until dissolved.",
+            "Stir well."
+          ],
+          "usage": "Give 1 teaspoon to children every few hours when coughing. Do not exceed 3-4 times a day.",
+          "ageSuitability": "Children over 1 year (do not give honey to infants).",
+          "dosage": "1 teaspoon per dose.",
+          "precautions": "Ensure water is warm but not hot. No honey for children under 1 year (botulism risk).",
+          "contraindications": "Not for infants; avoid if child has citrus allergy.",
+          "imageURL": "",
+          "preparationTime": "2 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "child cough",
+            "honey",
+            "soothing",
+            "lemon",
+            "sore throat"
+          ]
+        },
+        {
+          "id": 32,
+          "title": "Chamomile Tea for Tummy Ache",
+          "description": "Chamomile tea has mild antispasmodic effects that can soothe stomach upset and colic in children. It can ease pain and relax intestinal muscles.",
+          "ingredients": [
+            "Chamomile tea bag or dried flowers (1 teaspoon)",
+            "Warm water (1 cup)"
+          ],
+          "preparation": [
+            "Steep chamomile in warm water for 5-10 minutes, then strain.",
+            "Let it cool to drinking temperature."
+          ],
+          "usage": "Give small sips (1/4 to 1/2 cup) to a child when they have a stomach ache or colic.",
+          "ageSuitability": "Children (usually over 2 years, consult pediatrician for younger).",
+          "dosage": "1/4-1/2 cup per dose.",
+          "precautions": "Ensure tea is not hot. Check for ragweed/flower allergies.",
+          "contraindications": "Avoid if child is allergic to ragweed or related plants.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "tummy ache",
+            "colic",
+            "children",
+            "relaxation",
+            "herbal tea"
+          ]
+        },
+        {
+          "id": 33,
+          "title": "Pumpkin Purée for Constipation",
+          "description": "Pureed pumpkin is high in fiber and moisture, which can help relieve constipation in children.",
+          "ingredients": [
+            "Canned pure pumpkin (2 tablespoons)"
+          ],
+          "preparation": [
+            "Mix 2 tablespoons of pure pumpkin purée into the child\u2019s usual food (like cereal or yogurt)."
+          ],
+          "usage": "Give once daily until constipation resolves.",
+          "ageSuitability": "Toddlers and children (small portion depending on age).",
+          "dosage": "2 tablespoons once per day.",
+          "precautions": "Ensure adequate fluid intake. Do not add salt or sugar to the pumpkin.",
+          "contraindications": "Use plain pumpkin, not pumpkin pie filling (contains sugar/spices).",
+          "imageURL": "",
+          "preparationTime": "1 minute",
+          "difficulty": "Easy",
+          "tags": [
+            "constipation",
+            "fiber",
+            "stool softener",
+            "children",
+            "pumpkin"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "First Aid",
+      "remedies": [
+        {
+          "id": 34,
+          "title": "Aloe Vera Gel",
+          "description": "Applying aloe vera gel to minor burns or sunburns can soothe and promote healing. Aloe vera has anti-inflammatory properties effective for first-degree burns.",
+          "ingredients": [
+            "Fresh aloe vera gel or medical aloe vera gel"
+          ],
+          "preparation": [
+            "Gently apply a layer of aloe vera gel to the clean, burned area.",
+            "Let it dry and form a soothing layer over the burn. Reapply as needed."
+          ],
+          "usage": "Apply multiple times a day until burn heals.",
+          "ageSuitability": "All ages (for external use).",
+          "dosage": "Apply to affected area.",
+          "precautions": "Ensure the burn is mild (first-degree). Cool the burn with water first. If blisters form, seek medical care.",
+          "contraindications": "Do not apply to severe burns or deep cuts. Avoid aloe latex ingestion.",
+          "imageURL": "",
+          "preparationTime": "5 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "burn",
+            "soothing",
+            "first aid",
+            "skin healing",
+            "aloe"
+          ]
+        },
+        {
+          "id": 35,
+          "title": "Baking Soda Paste",
+          "description": "A paste of baking soda and water can relieve itching and irritation from insect bites, rashes or mild burns. It can also balance skin pH to ease discomfort.",
+          "ingredients": [
+            "Baking soda (1-2 teaspoons)",
+            "Water (few drops)"
+          ],
+          "preparation": [
+            "Mix baking soda with just enough water to form a thick paste.",
+            "Apply the paste to the affected area.",
+            "Leave on until it dries, then rinse off."
+          ],
+          "usage": "Apply to insect bites or mild skin irritation as needed; usually 1-2 times.",
+          "ageSuitability": "Adults and children.",
+          "dosage": "Apply thin layer to affected skin.",
+          "precautions": "May cause dryness; use sparingly. Avoid applying to eyes or mucous membranes.",
+          "contraindications": "None serious; avoid open wounds (unless as recommended by a doctor).",
+          "imageURL": "",
+          "preparationTime": "2 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "itching",
+            "bite",
+            "rash",
+            "soothing",
+            "antihistamine"
+          ]
+        },
+        {
+          "id": 36,
+          "title": "Honey on Cuts and Scrapes",
+          "description": "Applying medical-grade honey on minor cuts or scrapes can prevent infection and speed healing due to honey\u2019s antibacterial and anti-inflammatory properties.",
+          "ingredients": [
+            "Medical-grade honey (Manuka honey)"
+          ],
+          "preparation": [
+            "Clean the wound gently with water and mild soap.",
+            "Apply a thin layer of honey to the wound.",
+            "Cover with a sterile bandage."
+          ],
+          "usage": "Apply fresh honey dressing once or twice daily until wound heals.",
+          "ageSuitability": "All ages (ensure no allergy to bee products).",
+          "dosage": "Apply thin coat on wound.",
+          "precautions": "Use medical-grade or pasteurized honey to avoid contamination. Cover with bandage. Do not use honey on deep wounds or severe burns - seek medical care.",
+          "contraindications": "Not for people with allergy to bees or honey. Avoid unpasteurized honey in immunocompromised individuals.",
+          "imageURL": "",
+          "preparationTime": "5 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "wound care",
+            "antibacterial",
+            "healing",
+            "natural",
+            "honey"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Pet-Safe Remedies",
+      "remedies": [
+        {
+          "id": 37,
+          "title": "Oatmeal Bath (Dog)",
+          "description": "An oatmeal bath can soothe itchy, irritated skin in dogs. Colloidal oatmeal has anti-inflammatory properties to relieve dermatitis and dryness.",
+          "ingredients": [
+            "Ground oatmeal (colloidal oatmeal)"
+          ],
+          "preparation": [
+            "Grind plain oatmeal into a fine powder.",
+            "Mix oatmeal powder in a tub of warm water.",
+            "Bathtub-bathe the dog, allowing oat water to cover skin, for 10-15 minutes.",
+            "Rinse and towel-dry the dog."
+          ],
+          "usage": "Give an oatmeal bath 1-2 times weekly for itchy or flaky skin.",
+          "ageSuitability": "Dogs of any age (avoid puppies without vet clearance).",
+          "dosage": "Use about 1 cup of oats in a full tub.",
+          "precautions": "Ensure water is lukewarm. Rinse thoroughly to remove oat residue.",
+          "contraindications": "Avoid if open wounds are present (consult vet first).",
+          "imageURL": "",
+          "preparationTime": "20 minutes (including bath time)",
+          "difficulty": "Easy",
+          "tags": [
+            "dog",
+            "bath",
+            "itch relief",
+            "oatmeal",
+            "skin soothing"
+          ]
+        },
+        {
+          "id": 38,
+          "title": "Pumpkin for Dog Constipation",
+          "description": "Canned pumpkin (plain) is high in fiber and moisture, which can help relieve constipation in dogs.",
+          "ingredients": [
+            "Pure canned pumpkin (not pie filling)"
+          ],
+          "preparation": [
+            "Mix 1-2 tablespoons of pumpkin into the dog's food."
+          ],
+          "usage": "Give daily until constipation is relieved. If dog remains constipated, consult a vet.",
+          "ageSuitability": "Dogs (small to large breeds).",
+          "dosage": "1-2 tablespoons per 10 lbs of body weight.",
+          "precautions": "Ensure pure pumpkin without additives. Increase water intake too.",
+          "contraindications": "Not for dogs with diarrhea. Avoid spiced or sweetened pumpkin.",
+          "imageURL": "",
+          "preparationTime": "1 minute",
+          "difficulty": "Easy",
+          "tags": [
+            "dog",
+            "constipation",
+            "fiber",
+            "pumpkin",
+            "pet remedy"
+          ]
+        },
+        {
+          "id": 39,
+          "title": "Coconut Oil for Dog Digestive Health",
+          "description": "A small amount of coconut oil added to a dog's diet can act as a mild laxative and improve coat condition. It is generally safe and can ease occasional constipation.",
+          "ingredients": [
+            "Virgin coconut oil"
+          ],
+          "preparation": [
+            "Add 1 teaspoon of coconut oil to the dog's food and mix well."
+          ],
+          "usage": "Give daily (usually once per day with food). Observe stool consistency; reduce if loosened stool.",
+          "ageSuitability": "Dogs.",
+          "dosage": "1 teaspoon per day (small dogs), up to 1 tbsp for large dogs.",
+          "precautions": "High-fat; too much can cause loose stool or pancreatitis in sensitive dogs. Introduce gradually.",
+          "contraindications": "Not for dogs with pancreatitis or on low-fat diets. Monitor for diarrhea.",
+          "imageURL": "",
+          "preparationTime": "1 minute",
+          "difficulty": "Easy",
+          "tags": [
+            "dog",
+            "coconut oil",
+            "laxative",
+            "dietary supplement",
+            "pet health"
+          ]
+        },
+        {
+          "id": 40,
+          "title": "Pumpkin for Cat Constipation",
+          "description": "Just like for dogs, a small amount of pure pumpkin can help relieve constipation in cats by adding fiber and moisture to their diet.",
+          "ingredients": [
+            "Pure canned pumpkin (not pie filling)"
+          ],
+          "preparation": [
+            "Mix 1 teaspoon of pumpkin into the cat\u2019s food or feed directly."
+          ],
+          "usage": "Give daily until stools normalize.",
+          "ageSuitability": "Cats.",
+          "dosage": "1 teaspoon to 1 tablespoon (depending on cat size and preference).",
+          "precautions": "Use plain canned pumpkin (no spices, sugar). Ensure hydration.",
+          "contraindications": "Not for cats with diarrhea. Observe stool; if no improvement, see vet.",
+          "imageURL": "",
+          "preparationTime": "1 minute",
+          "difficulty": "Easy",
+          "tags": [
+            "cat",
+            "constipation",
+            "fiber",
+            "pumpkin",
+            "pet care"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Ayurveda-Based Treatments",
+      "remedies": [
+        {
+          "id": 41,
+          "title": "Triphala Powder",
+          "description": "Triphala is a classical Ayurvedic herbal formula of three fruits (amla, haritaki, bibhitaki). It has antioxidant, anti-inflammatory and mild laxative properties. It's traditionally used to support digestion, detoxification, and overall health.",
+          "ingredients": [
+            "Triphala powder (1 teaspoon)"
+          ],
+          "preparation": [
+            "Mix triphala powder in a glass of warm water. Stir well to dissolve."
+          ],
+          "usage": "Drink 1 cup of triphala tea (dissolved powder in warm water) before bedtime.",
+          "ageSuitability": "Adults.",
+          "dosage": "1 teaspoon per day (up to 3 g).",
+          "precautions": "May cause loose stools if overused. Use lower dose initially.",
+          "contraindications": "Not during pregnancy without medical advice. Avoid overuse to prevent diarrhea.",
+          "imageURL": "",
+          "preparationTime": "5 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "Ayurveda",
+            "digestive",
+            "detox",
+            "herbal supplement",
+            "antioxidant"
+          ]
+        },
+        {
+          "id": 42,
+          "title": "Brahmi (Bacopa) Powder",
+          "description": "Brahmi, also known as Bacopa monnieri, is an Ayurvedic herb used as a nootropic. Research suggests it can improve memory and reduce anxiety.",
+          "ingredients": [
+            "Brahmi powder (1/2 to 1 teaspoon)"
+          ],
+          "preparation": [
+            "Mix brahmi powder with warm water, milk, or honey.",
+            "Stir and drink."
+          ],
+          "usage": "Take once daily, preferably in the morning or as directed by a practitioner.",
+          "ageSuitability": "Adults and teens.",
+          "dosage": "1/2 to 1 teaspoon per day.",
+          "precautions": "May cause nausea or stomach upset in some. Use lower dose first.",
+          "contraindications": "Avoid in pregnancy and in conditions where CNS depression is a concern.",
+          "imageURL": "",
+          "preparationTime": "5 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "Ayurveda",
+            "nootropic",
+            "cognitive",
+            "herbal",
+            "memory"
+          ]
+        },
+        {
+          "id": 43,
+          "title": "Ashwagandha (Withania) Powder",
+          "description": "Ashwagandha is an Ayurvedic adaptogen that supports stress relief and vitality. Studies show it can reduce anxiety and improve energy.",
+          "ingredients": [
+            "Ashwagandha powder (1/2 to 1 teaspoon)"
+          ],
+          "preparation": [
+            "Mix the powder with warm milk or water and drink."
+          ],
+          "usage": "Take once or twice daily with meals.",
+          "ageSuitability": "Adults.",
+          "dosage": "300-600 mg extract (or 1 tsp powder) per day.",
+          "precautions": "May cause drowsiness; do not operate heavy machinery after taking. Start with low dose.",
+          "contraindications": "Avoid during pregnancy; consult doctor if on thyroid or sedative medications.",
+          "imageURL": "",
+          "preparationTime": "5 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "Ayurveda",
+            "stress relief",
+            "adaptogen",
+            "energy",
+            "herbal supplement"
+          ]
+        },
+        {
+          "id": 44,
+          "title": "Chyawanprash",
+          "description": "An Ayurvedic jam-like supplement containing amla (Indian gooseberry) and a blend of many herbs. Chyawanprash is traditionally taken daily to boost immunity, energy and respiratory health.",
+          "ingredients": [
+            "Amla (Indian gooseberry)",
+            "Herbal blend (e.g., Ayurvedic ingredients including ghee and honey)"
+          ],
+          "preparation": [
+            "Take by spoonful directly, or mix into warm milk or water."
+          ],
+          "usage": "1-2 teaspoons daily, preferably in the morning or before meals.",
+          "ageSuitability": "Adults and older children.",
+          "dosage": "1-2 tsp per day.",
+          "precautions": "High in sugar; diabetics should use only small amounts or consult doctor.",
+          "contraindications": "Use moderate amounts; avoid excessive intake if obese or diabetic.",
+          "imageURL": "",
+          "preparationTime": "N/A",
+          "difficulty": "Easy",
+          "tags": [
+            "Ayurveda",
+            "immunity",
+            "amla",
+            "herbal jam",
+            "supplement"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Disease-Specific Remedies",
+      "remedies": [
+        {
+          "id": 45,
+          "title": "Garlic Supplement for Cold Prevention",
+          "description": "Taking garlic daily may reduce the incidence of common colds. A clinical trial found that daily garlic supplements significantly lowered cold occurrences.",
+          "ingredients": [
+            "Raw garlic clove (1) or garlic capsule"
+          ],
+          "preparation": [
+            "Consume 1 raw garlic clove by itself or mixed in food daily."
+          ],
+          "usage": "Take one clove of garlic (minced) or capsule daily during cold season for preventative effect.",
+          "ageSuitability": "Adults.",
+          "dosage": "1 garlic clove or 300-500 mg aged garlic extract daily.",
+          "precautions": "Can cause breath/ body odor. May irritate stomach or cause heartburn.",
+          "contraindications": "Avoid if on blood thinners (garlic has mild anticoagulant effect). Do not give raw garlic to infants or children (choking hazard).",
+          "imageURL": "",
+          "preparationTime": "1 minute",
+          "difficulty": "Easy",
+          "tags": [
+            "common cold",
+            "immunity",
+            "garlic",
+            "antiviral",
+            "supplement"
+          ]
+        },
+        {
+          "id": 46,
+          "title": "Cinnamon Tea for Blood Sugar",
+          "description": "Cinnamon has been studied for its potential to lower blood sugar in type 2 diabetes. Some research indicates it can improve insulin sensitivity, though evidence is mixed.",
+          "ingredients": [
+            "Cinnamon sticks (1) or powder (1 tsp)",
+            "Water (1 cup)"
+          ],
+          "preparation": [
+            "Boil water and add cinnamon stick or powder.",
+            "Simmer for 5-10 minutes, then strain."
+          ],
+          "usage": "Drink 1 cup of cinnamon tea daily, preferably in the morning.",
+          "ageSuitability": "Adults.",
+          "dosage": "1 cup per day.",
+          "precautions": "Cassia cinnamon contains coumarin which can affect the liver in high doses. Do not overconsume cinnamon (keep under 1-2 grams daily).",
+          "contraindications": "Not a substitute for prescribed diabetes medication. Consult doctor before starting.",
+          "imageURL": "",
+          "preparationTime": "10 minutes",
+          "difficulty": "Easy",
+          "tags": [
+            "diabetes",
+            "blood sugar",
+            "cinnamon",
+            "insulin",
+            "herbal tea"
+          ]
+        },
+        {
+          "id": 47,
+          "title": "Banana for Acid Reflux",
+          "description": "Banana is a low-acid, high-fiber fruit that may help neutralize stomach acid and relieve reflux symptoms. It is alkaline and can soothe the digestive tract.",
+          "ingredients": [
+            "Ripe banana"
+          ],
+          "preparation": [
+            "Eat one ripe banana as a snack or part of a meal."
+          ],
+          "usage": "Consume 1 banana, preferably between meals or as needed for heartburn relief.",
+          "ageSuitability": "All ages.",
+          "dosage": "1 banana per dose.",
+          "precautions": "If diabetes is a concern, account for the sugar in bananas. Chew thoroughly.",
+          "contraindications": "Not effective for acute severe reflux; if symptoms persist, consult a doctor.",
+          "imageURL": "",
+          "preparationTime": "N/A",
+          "difficulty": "Easy",
+          "tags": [
+            "acid reflux",
+            "heartburn",
+            "alkaline food",
+            "banana",
+            "digestive health"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Herb Encyclopedia",
+      "remedies": [
+        {
+          "id": 48,
+          "title": "Aloe Vera",
+          "properties": [
+            "Anti-inflammatory",
+            "Antimicrobial",
+            "Antioxidant"
+          ],
+          "benefits": [
+            "Burn relief",
+            "Skin soothing",
+            "Moisturizing"
+          ],
+          "sideEffects": [
+            "Rare allergic reactions or skin irritation"
+          ]
+        },
+        {
+          "id": 49,
+          "title": "Ginger",
+          "properties": [
+            "Anti-nausea",
+            "Anti-inflammatory",
+            "Antioxidant"
+          ],
+          "benefits": [
+            "Relieves nausea",
+            "Improves digestion",
+            "Reduces inflammation"
+          ],
+          "sideEffects": [
+            "Can cause heartburn or indigestion in some people"
+          ]
+        },
+        {
+          "id": 50,
+          "title": "Turmeric",
+          "properties": [
+            "Anti-inflammatory",
+            "Antioxidant",
+            "Antimicrobial"
+          ],
+          "benefits": [
+            "Supports joint and skin health",
+            "Aids digestion"
+          ],
+          "sideEffects": [
+            "May cause gastrointestinal upset at high doses",
+            "May lower blood sugar (caution if diabetic)"
+          ]
+        },
+        {
+          "id": 51,
+          "title": "Chamomile",
+          "properties": [
+            "Mild sedative",
+            "Anti-inflammatory",
+            "Antispasmodic"
+          ],
+          "benefits": [
+            "Promotes relaxation and sleep",
+            "Soothes stomach pain and skin irritation"
+          ],
+          "sideEffects": [
+            "Possible ragweed/allergy cross-reaction",
+            "May cause drowsiness if combined with other sedatives"
+          ]
+        },
+        {
+          "id": 52,
+          "title": "Peppermint",
+          "properties": [
+            "Antispasmodic",
+            "Analgesic",
+            "Cooling effect"
+          ],
+          "benefits": [
+            "Relieves digestive discomfort and IBS symptoms",
+            "May alleviate headaches or nausea"
+          ],
+          "sideEffects": [
+            "Can worsen acid reflux",
+            "Possible allergic reaction in sensitive individuals"
+          ]
+        },
+        {
+          "id": 53,
+          "title": "Clove (Syzygium aromaticum)",
+          "properties": [
+            "Analgesic (eugenol)",
+            "Antibacterial",
+            "Antiseptic"
+          ],
+          "benefits": [
+            "Used topically for toothache pain relief",
+            "Has antiseptic and antifungal properties"
+          ],
+          "sideEffects": [
+            "Can irritate mucous membranes in high doses",
+            "Toxic if ingested in large amounts (liver/kidney damage potential)"
+          ]
+        },
+        {
+          "id": 54,
+          "title": "Cinnamon",
+          "properties": [
+            "Antioxidant",
+            "Anti-inflammatory",
+            "Metabolism-regulating"
+          ],
+          "benefits": [
+            "May help stabilize blood sugar levels in diabetes",
+            "Supports cardiovascular health in small amounts"
+          ],
+          "sideEffects": [
+            "High doses (coumarin in cassia cinnamon) can affect the liver",
+            "May cause mouth sores in sensitive individuals"
+          ]
+        },
+        {
+          "id": 55,
+          "title": "Garlic",
+          "properties": [
+            "Antimicrobial",
+            "Immune-modulating",
+            "Anti-inflammatory"
+          ],
+          "benefits": [
+            "May reduce severity of colds and infections",
+            "Supports heart health by lowering cholesterol"
+          ],
+          "sideEffects": [
+            "Can cause breath odor and heartburn",
+            "May increase bleeding risk (anticoagulant effect)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Common OTC Natural Products",
+      "remedies": [
+        {
+          "id": 56,
+          "title": "Dabur Chyawanprash",
+          "description": "An Ayurvedic herbal jam made primarily from amla (rich in vitamin C) and about 40 other herbs. It is used as a daily tonic to boost immunity, strength, and respiratory health.",
+          "ingredients": [
+            "Amla (Indian gooseberry) and various herbal ingredients",
+            "Honey",
+            "Ghee",
+            "Spices"
+          ],
+          "preparation": [
+            "Take by spoonful, or mix into warm milk or water."
+          ],
+          "usage": "1-2 teaspoons daily, preferably in the morning or before meals.",
+          "ageSuitability": "Adults and older children.",
+          "dosage": "1-2 tsp per day.",
+          "precautions": "High in sugar; use moderate amounts if diabetic or overweight. Store in a cool, dry place.",
+          "contraindications": "Not for infants or strict diabetics (due to sugar).",
+          "imageURL": "",
+          "preparationTime": "",
+          "difficulty": "Easy",
+          "tags": [
+            "Dabur",
+            "Chyawanprash",
+            "immunity",
+            "Ayurveda",
+            "herbal jam"
+          ]
+        },
+        {
+          "id": 57,
+          "title": "Dabur Honitus (Cough Syrup)",
+          "description": "An Ayurvedic cough syrup based on honey, Tulsi, Mulethi and other herbs. It is used to soothe cough and throat irritation.",
+          "ingredients": [
+            "Honey",
+            "Tulsi (Holy Basil)",
+            "Mulethi (Licorice)",
+            "Other herbs (Kantakari, Pippali, etc.)"
+          ],
+          "preparation": [
+            "Take 1-2 teaspoons as needed, usually 3-4 times per day."
+          ],
+          "usage": "Adults: 2 teaspoons; children: 1 teaspoon; up to 4 times daily.",
+          "ageSuitability": "Adults and children (check label age guidelines, typically not for infants).",
+          "dosage": "See above.",
+          "precautions": "May contain sugar (honey); avoid giving honey to infants <1 year. Check for herb allergies.",
+          "contraindications": "Not for infants under 2 years. Consult doctor if on other cough medications.",
+          "imageURL": "",
+          "preparationTime": "",
+          "difficulty": "Easy",
+          "tags": [
+            "Dabur",
+            "Honitus",
+            "cough",
+            "herbal syrup",
+            "Tulsi"
+          ]
+        },
+        {
+          "id": 58,
+          "title": "Himalaya Liv.52",
+          "description": "A herbal formulation intended to protect and strengthen the liver. It contains capers and chicory among other herbs. It is used to improve appetite and support liver function.",
+          "ingredients": [
+            "Chicory (Cichorium intybus)",
+            "Capparis spinosa (caper bush)",
+            "Other herbs"
+          ],
+          "preparation": [
+            "Take as directed on label (usually 2 tablets or 10 ml syrup twice daily)."
+          ],
+          "usage": "Tablets or syrup form: typically 2 tablets or 10 ml twice daily after meals.",
+          "ageSuitability": "Adults and children (syrup form suitable for children over 1 year).",
+          "dosage": "2 tablets (125 mg each) 2x daily; or 10 ml syrup 2x daily.",
+          "precautions": "Generally considered safe; no significant side effects known. Do not exceed recommended dose.",
+          "contraindications": "Not a substitute for medical treatment of serious liver conditions. Consult physician if on other medications.",
+          "imageURL": "",
+          "preparationTime": "",
+          "difficulty": "Easy",
+          "tags": [
+            "Himalaya",
+            "Liv.52",
+            "liver",
+            "hepatoprotection",
+            "supplement"
+          ]
+        },
+        {
+          "id": 59,
+          "title": "Baidyanath Ashokarishta",
+          "description": "An Ayurvedic liquid formulation (with natural alcohol) used for women's health, especially menstrual irregularities, pain and heavy periods.",
+          "ingredients": [
+            "Ashoka (Saraca indica) bark and other herbs",
+            "Natural fermentation alcohol (5-10%)"
+          ],
+          "preparation": [
+            "Take 5-10 ml with an equal amount of water after meals, as directed by a doctor."
+          ],
+          "usage": "5-10 ml twice daily during menstruation or as prescribed.",
+          "ageSuitability": "Adults.",
+          "dosage": "5-10 ml per dose.",
+          "precautions": "Contains natural alcohol (usually not intoxicating in small doses). Not to be used by those avoiding alcohol.",
+          "contraindications": "Avoid in pregnancy; use under medical guidance. Not for prolonged heavy bleeding without doctor\u2019s oversight.",
+          "imageURL": "",
+          "preparationTime": "",
+          "difficulty": "Easy",
+          "tags": [
+            "Baidyanath",
+            "Ashokarishta",
+            "menstrual health",
+            "Ayurveda",
+            "women\u2019s health"
+          ]
+        }
+      ]
+    }
+  ]
+}

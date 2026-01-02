@@ -51,7 +51,7 @@ class _MyAppointmentsScreenState extends ConsumerState<MyAppointmentsScreen>
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.textOnPrimary,
-          unselectedLabelColor: AppColors.textOnPrimary.withValues(alpha: 0.6),
+          unselectedLabelColor: AppColors.textOnPrimary.withOpacity(0.6),
           indicatorColor: AppColors.textOnPrimary,
           tabs: const [
             Tab(text: 'Upcoming'),
@@ -182,7 +182,7 @@ class _MyAppointmentsScreenState extends ConsumerState<MyAppointmentsScreen>
               children: [
                 CircleAvatar(
                   radius: 30,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
                   child: const Icon(Icons.person, color: AppColors.primary),
                 ),
                 const SizedBox(width: 12),
@@ -289,9 +289,9 @@ class _MyAppointmentsScreenState extends ConsumerState<MyAppointmentsScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Text(
         text,

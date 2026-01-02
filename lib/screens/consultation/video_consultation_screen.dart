@@ -5,6 +5,9 @@ import '../../utils/theme_utils.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../widgets/doctor/doctor_card.dart';
 import '../../providers/doctor_provider.dart';
+import '../../services/firebase/doctor_service.dart';
+import '../../models/doctor_model.dart';
+import '../../screens/video_consulting/appointment_booking_screen.dart' as video;
 
 /// Video consultation booking screen
 class VideoConsultationScreen extends ConsumerStatefulWidget {
@@ -34,10 +37,32 @@ class _VideoConsultationScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Try to load verified doctors first, then search if needed
+      _loadDoctors();
+    });
+  }
+
+  Future<void> _loadDoctors() async {
+    try {
+      // First try to get verified doctors
+      ref.invalidate(verifiedDoctorsProvider);
+      
+      // Check if we have any doctors, if not create sample ones
+      final verifiedDoctors = await DoctorService.getVerifiedDoctors();
+      if (verifiedDoctors.isEmpty) {
+        print('No doctors found, creating sample doctors...');
+        await DoctorService.createSampleDoctors();
+        // Refresh the provider after creating sample doctors
+        ref.invalidate(verifiedDoctorsProvider);
+      }
+      
+      // Also try the search provider as fallback
       ref
           .read(doctorSearchProvider.notifier)
           .searchDoctors(filters: const DoctorSearchFilters());
-    });
+    } catch (e) {
+      print('Error loading doctors: $e');
+    }
   }
 
   @override
@@ -75,7 +100,7 @@ class _VideoConsultationScreenState
                       decoration: BoxDecoration(
                         color: ThemeUtils.getTextOnPrimaryColor(
                           context,
-                        ).withValues(alpha: 0.2),
+                        ).withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -101,7 +126,7 @@ class _VideoConsultationScreenState
                             'Get instant medical consultation from home',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.9),
+                                  color: Colors.white.withOpacity(0.9),
                                 ),
                           ),
                         ],
@@ -139,13 +164,8 @@ class _VideoConsultationScreenState
                       selectedSpecialty = specialty;
                     });
 
-                    ref
-                        .read(doctorSearchProvider.notifier)
-                        .searchDoctors(
-                          filters: DoctorSearchFilters(
-                            specialty: specialty == 'All' ? null : specialty,
-                          ),
-                        );
+                    // Refresh both providers when specialty changes
+                    _loadDoctors();
                   },
                   child: Container(
                     margin: const EdgeInsets.only(right: 12),
@@ -192,7 +212,7 @@ class _VideoConsultationScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -213,144 +233,205 @@ class _VideoConsultationScreenState
   }
 
   Widget _buildDoctorsList(DoctorSearchState state) {
-    if (state.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    // Also watch verified doctors as fallback
+    final verifiedDoctorsAsync = ref.watch(verifiedDoctorsProvider);
+    
+    return verifiedDoctorsAsync.when(
+      data: (verifiedDoctors) {
+        // Use verified doctors if available, otherwise use search results
+        final doctorsToShow = verifiedDoctors.isNotEmpty ? verifiedDoctors : state.doctors;
+        
+        // Filter by specialty if selected
+        final filteredDoctors = selectedSpecialty == 'All' 
+            ? doctorsToShow
+            : doctorsToShow.where((doctor) => 
+                doctor.specialty == selectedSpecialty ||
+                (doctor.specialty?.toLowerCase().contains(selectedSpecialty.toLowerCase()) ?? false)
+              ).toList();
 
-    if (state.error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: ThemeUtils.getTextSecondaryColor(context),
+        if (state.isLoading && doctorsToShow.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state.error != null && doctorsToShow.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: ThemeUtils.getTextSecondaryColor(context),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Failed to load doctors',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  state.error!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: ThemeUtils.getTextSecondaryColor(context),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                CustomButton(
+                  text: 'Retry',
+                  onPressed: _loadDoctors,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Failed to load doctors',
-              style: Theme.of(context).textTheme.titleMedium,
+          );
+        }
+
+        if (filteredDoctors.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.video_call_outlined,
+                  size: 64,
+                  color: ThemeUtils.getTextSecondaryColor(context),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  selectedSpecialty == 'All' 
+                      ? 'No doctors available'
+                      : 'No $selectedSpecialty doctors available',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  selectedSpecialty == 'All'
+                      ? 'No doctors have registered for video consultations yet'
+                      : 'Try selecting a different specialty or check back later',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: ThemeUtils.getTextSecondaryColor(context),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                CustomButton(
+                  text: 'Refresh',
+                  onPressed: _loadDoctors,
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              state.error!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: ThemeUtils.getTextSecondaryColor(context),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: filteredDoctors.length,
+          itemBuilder: (context, index) {
+            final doctor = filteredDoctors[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: DoctorCard(
+                doctor: doctor,
+                onTap: () => _startVideoConsultation(doctor),
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            CustomButton(
-              text: 'Retry',
-              onPressed: () {
-                ref
-                    .read(doctorSearchProvider.notifier)
-                    .searchDoctors(
-                      filters: DoctorSearchFilters(
-                        specialty: selectedSpecialty == 'All'
-                            ? null
-                            : selectedSpecialty,
-                      ),
-                    );
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) {
+        // Fallback to search results if verified doctors fail
+        if (state.doctors.isNotEmpty) {
+          final filteredDoctors = selectedSpecialty == 'All' 
+              ? state.doctors
+              : state.doctors.where((doctor) => 
+                  doctor.specialty == selectedSpecialty ||
+                  (doctor.specialty?.toLowerCase().contains(selectedSpecialty.toLowerCase()) ?? false)
+                ).toList();
+
+          if (filteredDoctors.isNotEmpty) {
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: filteredDoctors.length,
+              itemBuilder: (context, index) {
+                final doctor = filteredDoctors[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: DoctorCard(
+                    doctor: doctor,
+                    onTap: () => _startVideoConsultation(doctor),
+                  ),
+                );
               },
-            ),
-          ],
-        ),
-      );
-    }
+            );
+          }
+        }
 
-    if (state.doctors.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.video_call_outlined,
-              size: 64,
-              color: ThemeUtils.getTextSecondaryColor(context),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No doctors available',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Try selecting a different specialty or check back later',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: ThemeUtils.getTextSecondaryColor(context),
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: ThemeUtils.getErrorColor(context),
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: state.doctors.length,
-      itemBuilder: (context, index) {
-        final doctor = state.doctors[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: DoctorCard(
-            doctor: doctor,
-            onTap: () => _startVideoConsultation(doctor),
+              const SizedBox(height: 16),
+              Text(
+                'Unable to load doctors',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Please check your internet connection and try again',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: ThemeUtils.getTextSecondaryColor(context),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              CustomButton(
+                text: 'Try Again',
+                onPressed: _loadDoctors,
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  void _startVideoConsultation(doctor) {
-    // TODO: Implement video consultation booking
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Book Video Consultation'),
-        content: Text('Book a video consultation with ${doctor.fullName}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+  void _startVideoConsultation(DoctorModel doctor) async {
+    try {
+      // Navigate directly to video consultation booking
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => video.AppointmentBookingScreen(
+            doctor: doctor,
+            consultationType: 'online',
           ),
-          CustomButton(
-            text: 'Book Now',
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Navigate to actual booking screen with doctor details
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Confirm Booking'),
-                  content: const Text(
-                    'You will be redirected to the appointment booking page to select a time slot.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Opening booking page...'),
-                          ),
-                        );
-                      },
-                      child: const Text('Continue'),
-                    ),
-                  ],
-                ),
-              );
-            },
+        ),
+      );
+
+      // If booking was successful, show confirmation
+      if (result == true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Video consultation booked with Dr. ${doctor.fullName}'),
+            backgroundColor: ThemeUtils.getSuccessColor(context),
           ),
-        ],
-      ),
-    );
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error booking consultation: $e'),
+            backgroundColor: ThemeUtils.getErrorColor(context),
+          ),
+        );
+      }
+    }
   }
 }

@@ -52,7 +52,6 @@ class _RoleBasedNavigationState extends ConsumerState<RoleBasedNavigation> {
       }
       
       final data = doc.data();
-      print('DEBUG: Doctor data: $data');
       
       // Check if doctor has completed onboarding by verifying essential fields
       // These fields are only set after completing all onboarding steps

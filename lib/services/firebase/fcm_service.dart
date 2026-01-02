@@ -222,9 +222,6 @@ class FCMService {
 
   /// Handle notification tap
   static void _handleNotificationTap(RemoteMessage message) {
-    debugPrint('Notification tapped: ${message.messageId}');
-    debugPrint('Data: ${message.data}');
-
     final type = message.data['type'];
     final data = message.data;
 

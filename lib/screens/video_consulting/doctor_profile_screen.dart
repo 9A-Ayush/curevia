@@ -70,7 +70,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                     end: Alignment.bottomCenter,
                     colors: [
                       AppColors.primary,
-                      AppColors.primary.withValues(alpha: 0.8),
+                      AppColors.primary.withOpacity(0.8),
                     ],
                   ),
                 ),
@@ -80,7 +80,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                     children: [
                       CircleAvatar(
                         radius: 50,
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        backgroundColor: Colors.white.withOpacity(0.2),
                         backgroundImage: widget.doctor.profileImageUrl != null
                             ? NetworkImage(widget.doctor.profileImageUrl!)
                             : null,
@@ -103,7 +103,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                         widget.doctor.specialty ?? 'General Physician',
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
+                              color: Colors.white.withOpacity(0.9),
                             ),
                       ),
                     ],
@@ -280,7 +280,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
@@ -372,7 +372,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
                       child: Text(
                         review.reviewerName.isNotEmpty
                             ? review.reviewerName[0].toUpperCase()

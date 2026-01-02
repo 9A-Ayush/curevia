@@ -66,7 +66,7 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen>
               end: Alignment.bottomCenter,
               colors: [
                 AppColors.primary,
-                AppColors.primary.withValues(alpha: 0.8),
+                AppColors.primary.withOpacity(0.8),
               ],
             ),
           ),

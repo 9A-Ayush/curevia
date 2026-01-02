@@ -86,7 +86,7 @@ class _DoctorPatientsScreenState extends ConsumerState<DoctorPatientsScreen> {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -112,7 +112,7 @@ class _DoctorPatientsScreenState extends ConsumerState<DoctorPatientsScreen> {
                               'Manage your patient records and history',
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
+                                    color: Colors.white.withOpacity(0.9),
                                   ),
                             ),
                           ],
@@ -263,7 +263,7 @@ class _DoctorPatientsScreenState extends ConsumerState<DoctorPatientsScreen> {
         contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
           radius: 25,
-          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+          backgroundColor: AppColors.primary.withOpacity(0.1),
           child: Text(
             _getInitials(patientName),
             style: TextStyle(
@@ -322,22 +322,22 @@ class _DoctorPatientsScreenState extends ConsumerState<DoctorPatientsScreen> {
 
     switch (status.toLowerCase()) {
       case 'pending':
-        backgroundColor = AppColors.warning.withValues(alpha: 0.1);
+        backgroundColor = AppColors.warning.withOpacity(0.1);
         textColor = AppColors.warning;
         displayText = 'Pending';
         break;
       case 'confirmed':
-        backgroundColor = AppColors.success.withValues(alpha: 0.1);
+        backgroundColor = AppColors.success.withOpacity(0.1);
         textColor = AppColors.success;
         displayText = 'Active';
         break;
       case 'completed':
-        backgroundColor = AppColors.primary.withValues(alpha: 0.1);
+        backgroundColor = AppColors.primary.withOpacity(0.1);
         textColor = AppColors.primary;
         displayText = 'Completed';
         break;
       case 'cancelled':
-        backgroundColor = AppColors.error.withValues(alpha: 0.1);
+        backgroundColor = AppColors.error.withOpacity(0.1);
         textColor = AppColors.error;
         displayText = 'Cancelled';
         break;
@@ -398,7 +398,7 @@ class _DoctorPatientsScreenState extends ConsumerState<DoctorPatientsScreen> {
                   children: [
                     CircleAvatar(
                       radius: 30,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
                       child: Text(
                         _getInitials(patient['patientName'] as String),
                         style: TextStyle(
@@ -573,7 +573,7 @@ class _DoctorPatientsScreenState extends ConsumerState<DoctorPatientsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

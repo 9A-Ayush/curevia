@@ -188,7 +188,7 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -214,7 +214,7 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
                           'Monitor steps, calories, and activities',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
+                                color: Colors.white.withOpacity(0.9),
                               ),
                         ),
                       ],
@@ -382,7 +382,7 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
           gradient: LinearGradient(
             colors: [
               AppColors.success,
-              AppColors.success.withValues(alpha: 0.8),
+              AppColors.success.withOpacity(0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -397,7 +397,7 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -422,7 +422,7 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
                       Text(
                         'Duration: ${progress['duration']} minutes',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: Colors.white.withOpacity(0.9),
                           fontSize: 14,
                         ),
                       ),
@@ -488,7 +488,7 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
   Widget _buildWorkoutStat(String label, String value, IconData icon) {
     return Column(
       children: [
-        Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 20),
+        Icon(icon, color: Colors.white.withOpacity(0.8), size: 20),
         const SizedBox(height: 4),
         Text(
           value,
@@ -501,7 +501,7 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.8),
+            color: Colors.white.withOpacity(0.8),
             fontSize: 12,
           ),
         ),
@@ -526,7 +526,7 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -790,7 +790,7 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
+                    color: AppColors.success.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -1353,7 +1353,7 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(

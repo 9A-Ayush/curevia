@@ -224,10 +224,10 @@ class _ReviewSubmitStepState extends ConsumerState<ReviewSubmitStep> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.info.withValues(alpha: 0.1),
+            color: AppColors.info.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppColors.info.withValues(alpha: 0.3),
+              color: AppColors.info.withOpacity(0.3),
             ),
           ),
           child: Row(

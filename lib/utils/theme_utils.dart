@@ -132,7 +132,7 @@ class ThemeUtils {
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isDark ? AppColors.darkPrimary : AppColors.primary;
-    return color.withValues(alpha: opacity);
+    return color.withOpacity(opacity);
   }
 
   /// Get surface color with opacity based on current theme
@@ -142,7 +142,7 @@ class ThemeUtils {
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isDark ? AppColors.darkSurface : AppColors.surface;
-    return color.withValues(alpha: opacity);
+    return color.withOpacity(opacity);
   }
 
   /// Get secondary color with opacity based on current theme
@@ -152,7 +152,7 @@ class ThemeUtils {
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isDark ? AppColors.darkSecondary : AppColors.secondary;
-    return color.withValues(alpha: opacity);
+    return color.withOpacity(opacity);
   }
 
   /// Check if current theme is dark

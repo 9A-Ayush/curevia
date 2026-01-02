@@ -119,7 +119,7 @@ class _MedicineDetailScreenState extends ConsumerState<MedicineDetailScreen>
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+                  color: AppColors.textOnPrimary.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -146,7 +146,7 @@ class _MedicineDetailScreenState extends ConsumerState<MedicineDetailScreen>
                       Text(
                         'Generic: ${widget.medicine.genericName}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textOnPrimary.withValues(alpha: 0.9),
+                          color: AppColors.textOnPrimary.withOpacity(0.9),
                         ),
                       ),
                     ],
@@ -155,7 +155,7 @@ class _MedicineDetailScreenState extends ConsumerState<MedicineDetailScreen>
                       Text(
                         'By ${widget.medicine.manufacturer}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textOnPrimary.withValues(alpha: 0.8),
+                          color: AppColors.textOnPrimary.withOpacity(0.8),
                         ),
                       ),
                     ],
@@ -169,7 +169,7 @@ class _MedicineDetailScreenState extends ConsumerState<MedicineDetailScreen>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+                    color: AppColors.textOnPrimary.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -216,7 +216,7 @@ class _MedicineDetailScreenState extends ConsumerState<MedicineDetailScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+        color: AppColors.textOnPrimary.withOpacity(0.2),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -416,7 +416,7 @@ class _MedicineDetailScreenState extends ConsumerState<MedicineDetailScreen>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -489,9 +489,9 @@ class _MedicineDetailScreenState extends ConsumerState<MedicineDetailScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
+        color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

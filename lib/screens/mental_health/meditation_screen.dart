@@ -54,7 +54,7 @@ class _MeditationScreenState extends State<MeditationScreen>
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.textOnPrimary,
-          unselectedLabelColor: AppColors.textOnPrimary.withValues(alpha: 0.7),
+          unselectedLabelColor: AppColors.textOnPrimary.withOpacity(0.7),
           indicatorColor: AppColors.textOnPrimary,
           tabs: const [
             Tab(text: 'Guided'),
@@ -146,7 +146,7 @@ class _MeditationScreenState extends State<MeditationScreen>
           Text(
             'Take a few minutes to center yourself and find inner peace.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textOnPrimary.withValues(alpha: 0.9),
+              color: AppColors.textOnPrimary.withOpacity(0.9),
             ),
           ),
         ],
@@ -170,7 +170,7 @@ class _MeditationScreenState extends State<MeditationScreen>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: session.color.withValues(alpha: 0.1),
+                  color: session.color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(session.icon, color: session.color, size: 24),
@@ -216,7 +216,7 @@ class _MeditationScreenState extends State<MeditationScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: ThemeUtils.getSurfaceColor(context).withValues(alpha: 0.5),
+        color: ThemeUtils.getSurfaceColor(context).withOpacity(0.5),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -271,7 +271,7 @@ class _MeditationScreenState extends State<MeditationScreen>
                             _selectedDuration = duration;
                           });
                         },
-                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                        selectedColor: AppColors.primary.withOpacity(0.2),
                         checkmarkColor: AppColors.primary,
                       );
                     }).toList(),
@@ -380,39 +380,43 @@ class _MeditationScreenState extends State<MeditationScreen>
 
   Widget _buildSoundsTab() {
     final sounds = [
-      AmbientSound('Rain', Icons.grain, AppColors.info),
-      AmbientSound('Ocean Waves', Icons.waves, AppColors.primary),
-      AmbientSound('Forest', Icons.park, AppColors.success),
-      AmbientSound('White Noise', Icons.graphic_eq, AppColors.secondary),
-      AmbientSound('Singing Bowls', Icons.music_note, AppColors.accent),
-      AmbientSound('Birds', Icons.flutter_dash, AppColors.warning),
-      AmbientSound('Thunderstorm', Icons.flash_on, const Color(0xFF6A1B9A)),
+      AmbientSound('Rain', Icons.grain, AppColors.info, 'rain.mp3'),
+      AmbientSound('Ocean Waves', Icons.waves, AppColors.primary, 'ocean waves.mp3'),
+      AmbientSound('Forest', Icons.park, AppColors.success, 'forest.mp3'),
+      AmbientSound('White Noise', Icons.graphic_eq, AppColors.secondary, 'White noise.mp3'),
+      AmbientSound('Singing Bowls', Icons.music_note, AppColors.accent, 'singing bowls.mp3'),
+      AmbientSound('Birds', Icons.flutter_dash, AppColors.warning, 'birds.mp3'),
+      AmbientSound('Thunderstorm', Icons.flash_on, const Color(0xFF6A1B9A), 'thunderstorm.mp3'),
       AmbientSound(
         'Campfire',
         Icons.local_fire_department,
         const Color(0xFFFF5722),
+        'campfire.mp3',
       ),
-      AmbientSound('Wind Chimes', Icons.air, const Color(0xFF00BCD4)),
-      AmbientSound('Waterfall', Icons.water_drop, const Color(0xFF2196F3)),
+      AmbientSound('Wind Chimes', Icons.air, const Color(0xFF00BCD4), 'wind chimes.mp3'),
+      AmbientSound('Waterfall', Icons.water_drop, const Color(0xFF2196F3), 'waterfalls.mp3'),
       AmbientSound(
         'Night Crickets',
         Icons.nights_stay,
         const Color(0xFF4CAF50),
+        'night cricket.mp3',
       ),
-      AmbientSound('Cafe Ambience', Icons.coffee, const Color(0xFF795548)),
-      AmbientSound('Piano Meditation', Icons.piano, const Color(0xFF9C27B0)),
+      AmbientSound('Cafe Ambience', Icons.coffee, const Color(0xFF795548), 'cafe ambience.mp3'),
+      AmbientSound('Piano Meditation', Icons.piano, const Color(0xFF9C27B0), 'piano.mp3'),
       AmbientSound(
         'Tibetan Chants',
         Icons.self_improvement,
         const Color(0xFFFF9800),
+        'Tibetan chants.mp3',
       ),
-      AmbientSound('Mountain Wind', Icons.landscape, const Color(0xFF607D8B)),
-      AmbientSound('River Stream', Icons.stream, const Color(0xFF009688)),
-      AmbientSound('Desert Wind', Icons.air, const Color(0xFFFFB74D)),
+      AmbientSound('Mountain Wind', Icons.landscape, const Color(0xFF607D8B), 'mountain winds.mp3'),
+      AmbientSound('River Stream', Icons.stream, const Color(0xFF009688), 'river stream.mp3'),
+      AmbientSound('Desert Wind', Icons.air, const Color(0xFFFFB74D), 'dessert wind.mp3'),
       AmbientSound(
         'Monastery Bells',
         Icons.notifications,
         const Color(0xFF8BC34A),
+        'Monastry bells.mp3',
       ),
     ];
 
@@ -443,6 +447,7 @@ class _MeditationScreenState extends State<MeditationScreen>
             MaterialPageRoute(
               builder: (context) => AmbientSoundPlayerScreen(
                 soundName: sound.name,
+                soundFile: sound.fileName,
                 icon: sound.icon,
                 color: sound.color,
               ),
@@ -459,7 +464,7 @@ class _MeditationScreenState extends State<MeditationScreen>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: sound.color.withValues(alpha: 0.1),
+                  color: sound.color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(sound.icon, color: sound.color, size: 24),
@@ -556,6 +561,7 @@ class AmbientSound {
   final String name;
   final IconData icon;
   final Color color;
+  final String fileName;
 
-  AmbientSound(this.name, this.icon, this.color);
+  AmbientSound(this.name, this.icon, this.color, this.fileName);
 }

@@ -91,7 +91,7 @@ class _VerificationPendingScreenState
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: _getStatusColor(status).withValues(alpha: 0.1),
+                    color: _getStatusColor(status).withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -234,10 +234,10 @@ class _VerificationPendingScreenState
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.info.withValues(alpha: 0.1),
+                    color: AppColors.info.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.info.withValues(alpha: 0.3),
+                      color: AppColors.info.withOpacity(0.3),
                     ),
                   ),
                   child: Column(

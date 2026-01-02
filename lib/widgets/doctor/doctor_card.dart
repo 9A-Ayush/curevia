@@ -3,6 +3,9 @@ import '../../constants/app_colors.dart';
 import '../../models/doctor_model.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../utils/theme_utils.dart';
+import '../../screens/appointment/appointment_booking_screen.dart';
+import '../../screens/video_consulting/appointment_booking_screen.dart' as video;
+import '../../services/firebase/notification_service.dart';
 
 /// Doctor card widget for displaying doctor information
 class DoctorCard extends StatelessWidget {
@@ -82,7 +85,7 @@ class DoctorCard extends StatelessWidget {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.success.withValues(alpha: 0.1),
+                                color: AppColors.success.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
@@ -195,7 +198,7 @@ class DoctorCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
+                    color: AppColors.success.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -229,8 +232,8 @@ class DoctorCard extends StatelessWidget {
                     CustomIconButton(
                       icon: Icons.video_call,
                       onPressed: () => _bookVideoConsultation(context),
-                      backgroundColor: AppColors.secondary.withValues(
-                        alpha: 0.1,
+                      backgroundColor: AppColors.secondary.withOpacity(
+                        0.1,
                       ),
                       iconColor: AppColors.secondary,
                       tooltip: 'Video Call',
@@ -282,32 +285,110 @@ class DoctorCard extends StatelessWidget {
   }
 
   void _navigateToDoctorProfile(BuildContext context) {
-    // TODO: Navigate to doctor profile screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Opening ${doctor.fullName}\'s profile'),
-        duration: const Duration(seconds: 1),
-      ),
+    // Navigate to doctor detail screen
+    Navigator.pushNamed(
+      context,
+      '/doctor-detail',
+      arguments: doctor,
     );
   }
 
-  void _bookAppointment(BuildContext context) {
-    // TODO: Navigate to appointment booking screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Booking appointment with ${doctor.fullName}'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
+  void _bookAppointment(BuildContext context) async {
+    try {
+      // Navigate to appointment booking screen
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AppointmentBookingScreen(
+            doctor: doctor,
+            consultationType: 'offline',
+          ),
+        ),
+      );
+
+      // If appointment was booked successfully, send notification to doctor
+      if (result == true) {
+        await _sendDoctorNotification(
+          context,
+          'New Appointment Request',
+          'You have a new appointment booking request from a patient.',
+          'appointment',
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error booking appointment: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
-  void _bookVideoConsultation(BuildContext context) {
-    // TODO: Navigate to video consultation booking
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Booking video call with ${doctor.fullName}'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
+  void _bookVideoConsultation(BuildContext context) async {
+    try {
+      // Navigate to video consultation booking screen
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => video.AppointmentBookingScreen(
+            doctor: doctor,
+            consultationType: 'online',
+          ),
+        ),
+      );
+
+      // If video consultation was booked successfully, send notification to doctor
+      if (result == true) {
+        await _sendDoctorNotification(
+          context,
+          'New Video Consultation Request',
+          'You have a new video consultation booking request from a patient.',
+          'video_consultation',
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error booking video consultation: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _sendDoctorNotification(
+    BuildContext context,
+    String title,
+    String body,
+    String type,
+  ) async {
+    try {
+      await NotificationService.sendNotificationToDoctor(
+        doctorId: doctor.uid,
+        title: title,
+        body: body,
+        data: {
+          'type': type,
+          'doctorId': doctor.uid,
+          'doctorName': doctor.fullName,
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+
+      // Show success message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Dr. ${doctor.fullName} has been notified'),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error sending notification to doctor: $e');
+      // Don't show error to user as the booking might still be successful
+    }
   }
 }

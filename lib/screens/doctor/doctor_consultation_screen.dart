@@ -28,7 +28,7 @@ class _DoctorConsultationScreenState
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black.withValues(alpha: 0.7),
+        backgroundColor: Colors.black.withOpacity(0.7),
         foregroundColor: Colors.white,
         title: Text(
           widget.appointment?.patientName ?? 'Video Consultation',
@@ -138,7 +138,7 @@ class _DoctorConsultationScreenState
         children: [
           CircleAvatar(
             radius: 60,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+            backgroundColor: AppColors.primary.withOpacity(0.2),
             child: Icon(Icons.person, size: 60, color: AppColors.primary),
           ),
           const SizedBox(height: 24),
@@ -179,7 +179,7 @@ class _DoctorConsultationScreenState
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.7),
+          color: Colors.black.withOpacity(0.7),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -300,7 +300,7 @@ class _DoctorConsultationScreenState
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),

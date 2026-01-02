@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../screens/consultation/video_consultation_screen.dart';
-import '../../screens/doctor/doctor_search_screen.dart';
+import '../../screens/patient/find_doctors_screen.dart';
 import '../../screens/health/symptom_checker_screen.dart';
 import '../../screens/health/medicine_directory_screen.dart';
 import '../../screens/health/home_remedies_screen.dart';
@@ -33,13 +33,13 @@ class QuickActionsGrid extends StatelessWidget {
         },
       ),
       QuickAction(
-        icon: Icons.location_on,
-        label: 'Find Doctors',
+        icon: Icons.calendar_today,
+        label: 'Book Appointment',
         color: AppColors.secondary,
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const DoctorSearchScreen()),
+            MaterialPageRoute(builder: (context) => const FindDoctorsScreen()),
           );
         },
       ),
@@ -325,7 +325,7 @@ class QuickActionItem extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: action.color.withValues(alpha: 0.1),
+                color: action.color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(action.icon, color: action.color, size: 20),
@@ -428,7 +428,7 @@ class _AnimatedQuickActionItemState extends State<AnimatedQuickActionItem>
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: widget.action.color.withValues(alpha: 0.1),
+                      color: widget.action.color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(

@@ -50,7 +50,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen>
           labelColor: ThemeUtils.getTextOnPrimaryColor(context),
           unselectedLabelColor: ThemeUtils.getTextOnPrimaryColor(
             context,
-          ).withValues(alpha: 0.7),
+          ).withOpacity(0.7),
           tabs: const [
             Tab(text: 'FAQs'),
             Tab(text: 'Contact'),

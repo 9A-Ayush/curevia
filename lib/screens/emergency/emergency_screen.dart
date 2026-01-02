@@ -94,7 +94,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
                 gradient: LinearGradient(
                   colors: [
                     AppColors.error,
-                    AppColors.error.withValues(alpha: 0.8),
+                    AppColors.error.withOpacity(0.8),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -110,7 +110,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+                      color: AppColors.textOnPrimary.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Icon(
@@ -131,7 +131,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
                   Text(
                     'Quick access to emergency contacts and services',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textOnPrimary.withValues(alpha: 0.9),
+                      color: AppColors.textOnPrimary.withOpacity(0.9),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -147,10 +147,10 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.1),
+                  color: AppColors.error.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.error.withValues(alpha: 0.3),
+                    color: AppColors.error.withOpacity(0.3),
                   ),
                 ),
                 child: Column(
@@ -274,7 +274,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
         decoration: BoxDecoration(
           color: ThemeUtils.getSurfaceColor(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: service.color.withValues(alpha: 0.3)),
+          border: Border.all(color: service.color.withOpacity(0.3)),
           boxShadow: [
             BoxShadow(
               color: ThemeUtils.getShadowLightColor(context),
@@ -291,7 +291,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: service.color.withValues(alpha: 0.1),
+                color: service.color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(service.icon, color: service.color, size: 18),
@@ -453,7 +453,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: AppColors.info.withValues(alpha: 0.1),
+                  color: AppColors.info.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(

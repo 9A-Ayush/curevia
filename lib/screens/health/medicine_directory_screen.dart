@@ -4,9 +4,7 @@ import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../models/medicine_model.dart';
-import '../../services/medicine/medicine_service.dart';
-import '../../widgets/common/loading_overlay.dart';
-import 'medicine_detail_screen.dart';
+import '../../providers/medicine_provider.dart';
 
 /// Medicine directory screen
 class MedicineDirectoryScreen extends ConsumerStatefulWidget {
@@ -21,109 +19,72 @@ class _MedicineDirectoryScreenState
     extends ConsumerState<MedicineDirectoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedCategory = 'All';
+  bool _isSeeding = false;
 
   @override
   void initState() {
     super.initState();
-    // Load sample data for demonstration
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadSampleData();
+    // Seed data on first load and wait for completion
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      setState(() {
+        _isSeeding = true;
+      });
+      try {
+        await ref.read(seedMedicineDataProvider.future);
+      } catch (e) {
+        print('Error seeding medicine data: $e');
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSeeding = false;
+          });
+        }
+      }
     });
   }
 
-  void _loadSampleData() {
-    // For demo purposes, we'll use sample data
-    // In production, this would load from Firestore
+  /// Force seed medicine data
+  Future<void> _forceSeedData() async {
+    setState(() {
+      _isSeeding = true;
+    });
+    
+    try {
+      // Invalidate all providers to force refresh
+      ref.invalidate(medicineCategoriesProvider);
+      ref.invalidate(allMedicinesProvider);
+      ref.invalidate(seedMedicineDataProvider);
+      
+      // Force seed data
+      await ref.read(seedMedicineDataProvider.future);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Medicine data refreshed successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to refresh data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSeeding = false;
+        });
+      }
+    }
   }
 
-  final List<String> _categories = [
-    'All',
-    'Pain Relief',
-    'Antibiotics',
-    'Vitamins',
-    'Cold & Flu',
-    'Digestive',
-    'Heart',
-    'Diabetes',
-    'Blood Pressure',
-  ];
 
-  final List<Medicine> _medicines = [
-    Medicine(
-      name: 'Paracetamol',
-      genericName: 'Acetaminophen',
-      category: 'Pain Relief',
-      description: 'Used to treat pain and reduce fever',
-      dosage: '500mg - 1000mg every 4-6 hours',
-      sideEffects: ['Nausea', 'Stomach upset', 'Allergic reactions'],
-      precautions: ['Do not exceed 4g per day', 'Avoid alcohol'],
-      price: '₹25 - ₹50',
-    ),
-    Medicine(
-      name: 'Amoxicillin',
-      genericName: 'Amoxicillin',
-      category: 'Antibiotics',
-      description: 'Antibiotic used to treat bacterial infections',
-      dosage: '250mg - 500mg every 8 hours',
-      sideEffects: ['Diarrhea', 'Nausea', 'Skin rash'],
-      precautions: ['Complete full course', 'Take with food'],
-      price: '₹80 - ₹150',
-    ),
-    Medicine(
-      name: 'Vitamin D3',
-      genericName: 'Cholecalciferol',
-      category: 'Vitamins',
-      description: 'Essential vitamin for bone health',
-      dosage: '1000 IU - 2000 IU daily',
-      sideEffects: ['Constipation', 'Kidney stones (high doses)'],
-      precautions: ['Take with fat-containing meal'],
-      price: '₹200 - ₹400',
-    ),
-    Medicine(
-      name: 'Cetirizine',
-      genericName: 'Cetirizine HCl',
-      category: 'Cold & Flu',
-      description: 'Antihistamine for allergies and cold symptoms',
-      dosage: '10mg once daily',
-      sideEffects: ['Drowsiness', 'Dry mouth', 'Fatigue'],
-      precautions: ['Avoid alcohol', 'May cause drowsiness'],
-      price: '₹30 - ₹80',
-    ),
-    Medicine(
-      name: 'Omeprazole',
-      genericName: 'Omeprazole',
-      category: 'Digestive',
-      description: 'Proton pump inhibitor for acid reflux',
-      dosage: '20mg once daily before meals',
-      sideEffects: ['Headache', 'Nausea', 'Diarrhea'],
-      precautions: ['Take before breakfast', 'Long-term use monitoring'],
-      price: '₹60 - ₹120',
-    ),
-  ];
-
-  List<Medicine> get _filteredMedicines {
-    var filtered = _medicines;
-
-    if (_selectedCategory != 'All') {
-      filtered = filtered
-          .where((m) => m.category == _selectedCategory)
-          .toList();
-    }
-
-    if (_searchController.text.isNotEmpty) {
-      final query = _searchController.text.toLowerCase();
-      filtered = filtered
-          .where(
-            (m) =>
-                m.name.toLowerCase().contains(query) ||
-                m.genericName.toLowerCase().contains(query) ||
-                m.description.toLowerCase().contains(query),
-          )
-          .toList();
-    }
-
-    return filtered;
-  }
 
   @override
   void dispose() {
@@ -140,6 +101,13 @@ class _MedicineDirectoryScreenState
         backgroundColor: ThemeUtils.getPrimaryColor(context),
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: _forceSeedData,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Data',
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -167,7 +135,7 @@ class _MedicineDirectoryScreenState
                       decoration: BoxDecoration(
                         color: ThemeUtils.getTextOnPrimaryColor(
                           context,
-                        ).withValues(alpha: 0.2),
+                        ).withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -197,7 +165,7 @@ class _MedicineDirectoryScreenState
                                 ?.copyWith(
                                   color: ThemeUtils.getTextOnPrimaryColor(
                                     context,
-                                  ).withValues(alpha: 0.9),
+                                  ).withOpacity(0.9),
                                 ),
                           ),
                         ],
@@ -211,12 +179,12 @@ class _MedicineDirectoryScreenState
                   decoration: BoxDecoration(
                     color: ThemeUtils.getWarningColor(
                       context,
-                    ).withValues(alpha: 0.2),
+                    ).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: ThemeUtils.getWarningColor(
                         context,
-                      ).withValues(alpha: 0.3),
+                      ).withOpacity(0.3),
                     ),
                   ),
                   child: Row(
@@ -260,55 +228,7 @@ class _MedicineDirectoryScreenState
           ),
 
           // Category filter
-          Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final category = _categories[index];
-                final isSelected = _selectedCategory == category;
-
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedCategory = category;
-                    });
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? ThemeUtils.getPrimaryColor(context)
-                          : ThemeUtils.getSurfaceColor(context),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected
-                            ? ThemeUtils.getPrimaryColor(context)
-                            : ThemeUtils.getBorderLightColor(context),
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        category,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isSelected
-                              ? ThemeUtils.getTextOnPrimaryColor(context)
-                              : ThemeUtils.getTextPrimaryColor(context),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+          _buildCategoryFilter(),
 
           // Medicines list
           Expanded(child: _buildMedicinesList()),
@@ -317,9 +237,109 @@ class _MedicineDirectoryScreenState
     );
   }
 
-  Widget _buildMedicinesList() {
-    final medicines = _filteredMedicines;
+  Widget _buildCategoryFilter() {
+    final categoriesAsync = ref.watch(medicineCategoriesProvider);
+    
+    return categoriesAsync.when(
+      data: (categories) {
+        final allCategories = ['All', ...categories];
+        
+        return Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: allCategories.length,
+            itemBuilder: (context, index) {
+              final category = allCategories[index];
+              final isSelected = _selectedCategory == category;
 
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedCategory = category;
+                  });
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? ThemeUtils.getPrimaryColor(context)
+                        : ThemeUtils.getSurfaceColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? ThemeUtils.getPrimaryColor(context)
+                          : ThemeUtils.getBorderLightColor(context),
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      category,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: isSelected
+                            ? ThemeUtils.getTextOnPrimaryColor(context)
+                            : ThemeUtils.getTextPrimaryColor(context),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+      loading: () => const SizedBox(height: 50),
+      error: (error, stack) => const SizedBox(height: 50),
+    );
+  }
+
+  Widget _buildMedicinesList() {
+    // Show loading during seeding
+    if (_isSeeding) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading medicine data...'),
+          ],
+        ),
+      );
+    }
+
+    // Use search if there's a query, otherwise use category filter
+    if (_searchController.text.isNotEmpty) {
+      final searchAsync = ref.watch(searchMedicinesProvider(_searchController.text));
+      return searchAsync.when(
+        data: (medicines) => _buildMedicinesGrid(medicines),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => _buildErrorState(),
+      );
+    } else if (_selectedCategory != 'All') {
+      final categoryAsync = ref.watch(medicinesByCategoryProvider(_selectedCategory));
+      return categoryAsync.when(
+        data: (medicines) => _buildMedicinesGrid(medicines),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => _buildErrorState(),
+      );
+    } else {
+      final allMedicinesAsync = ref.watch(allMedicinesProvider);
+      return allMedicinesAsync.when(
+        data: (medicines) => _buildMedicinesGrid(medicines),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => _buildErrorState(),
+      );
+    }
+  }
+
+  Widget _buildMedicinesGrid(List<MedicineModel> medicines) {
     if (medicines.isEmpty) {
       return Center(
         child: Column(
@@ -360,7 +380,68 @@ class _MedicineDirectoryScreenState
     );
   }
 
-  Widget _buildMedicineCard(Medicine medicine) {
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: ThemeUtils.getErrorColor(context),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Unable to load medicines',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: ThemeUtils.getTextPrimaryColor(context),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Please check your internet connection and try again',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: ThemeUtils.getTextSecondaryColor(context),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              // Force refresh all providers
+              ref.invalidate(medicineCategoriesProvider);
+              ref.invalidate(allMedicinesProvider);
+              ref.invalidate(seedMedicineDataProvider);
+              setState(() {
+                _isSeeding = true;
+              });
+              // Retry seeding
+              ref.read(seedMedicineDataProvider.future).then((_) {
+                if (mounted) {
+                  setState(() {
+                    _isSeeding = false;
+                  });
+                }
+              }).catchError((e) {
+                if (mounted) {
+                  setState(() {
+                    _isSeeding = false;
+                  });
+                }
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ThemeUtils.getPrimaryColor(context),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMedicineCard(MedicineModel medicine) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -385,13 +466,13 @@ class _MedicineDirectoryScreenState
                 height: 40,
                 decoration: BoxDecoration(
                   color: _getCategoryColor(
-                    medicine.category,
-                  ).withValues(alpha: 0.1),
+                    medicine.categoryName,
+                  ).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
-                  _getCategoryIcon(medicine.category),
-                  color: _getCategoryColor(medicine.category),
+                  _getCategoryIcon(medicine.categoryName),
+                  color: _getCategoryColor(medicine.categoryName),
                   size: 20,
                 ),
               ),
@@ -407,7 +488,7 @@ class _MedicineDirectoryScreenState
                       ),
                     ),
                     Text(
-                      medicine.genericName,
+                      medicine.chemical,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: ThemeUtils.getTextSecondaryColor(context),
                         fontStyle: FontStyle.italic,
@@ -420,14 +501,14 @@ class _MedicineDirectoryScreenState
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: _getCategoryColor(
-                    medicine.category,
-                  ).withValues(alpha: 0.1),
+                    medicine.categoryName,
+                  ).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  medicine.category,
+                  medicine.categoryName,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: _getCategoryColor(medicine.category),
+                    color: _getCategoryColor(medicine.categoryName),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -436,7 +517,7 @@ class _MedicineDirectoryScreenState
           ),
           const SizedBox(height: 12),
           Text(
-            medicine.description,
+            medicine.uses,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: ThemeUtils.getTextPrimaryColor(context),
             ),
@@ -491,12 +572,18 @@ class _MedicineDirectoryScreenState
         return AppColors.error;
       case 'Antibiotics':
         return AppColors.warning;
-      case 'Vitamins':
+      case 'Vitamins & Supplements':
         return AppColors.success;
-      case 'Cold & Flu':
+      case 'Common Cold & Flu':
         return AppColors.info;
-      case 'Digestive':
+      case 'Digestive Health':
         return AppColors.secondary;
+      case 'Heart (Cardiac Care)':
+        return AppColors.error;
+      case 'Diabetes':
+        return AppColors.warning;
+      case 'Blood Pressure':
+        return AppColors.primary;
       default:
         return AppColors.primary;
     }
@@ -508,18 +595,24 @@ class _MedicineDirectoryScreenState
         return Icons.healing;
       case 'Antibiotics':
         return Icons.biotech;
-      case 'Vitamins':
+      case 'Vitamins & Supplements':
         return Icons.eco;
-      case 'Cold & Flu':
+      case 'Common Cold & Flu':
         return Icons.ac_unit;
-      case 'Digestive':
+      case 'Digestive Health':
         return Icons.restaurant;
+      case 'Heart (Cardiac Care)':
+        return Icons.favorite;
+      case 'Diabetes':
+        return Icons.bloodtype;
+      case 'Blood Pressure':
+        return Icons.monitor_heart;
       default:
         return Icons.medication;
     }
   }
 
-  void _showMedicineDetails(Medicine medicine) {
+  void _showMedicineDetails(MedicineModel medicine) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -556,7 +649,7 @@ class _MedicineDirectoryScreenState
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      medicine.genericName,
+                      medicine.chemical,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: ThemeUtils.getTextSecondaryColor(context),
                         fontStyle: FontStyle.italic,
@@ -564,73 +657,40 @@ class _MedicineDirectoryScreenState
                     ),
                     const SizedBox(height: 20),
 
-                    _buildDetailSection('Description', medicine.description),
+                    _buildDetailSection('Uses', medicine.uses),
                     _buildDetailSection('Dosage', medicine.dosage),
                     _buildDetailSection('Price Range', medicine.price),
 
                     const SizedBox(height: 16),
                     Text(
-                      'Side Effects',
+                      'Available Brands',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: ThemeUtils.getTextPrimaryColor(context),
                       ),
                     ),
                     const SizedBox(height: 8),
-                    for (final effect in medicine.sideEffects)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.circle,
-                              size: 6,
-                              color: ThemeUtils.getErrorColor(context),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              effect,
-                              style: TextStyle(
-                                color: ThemeUtils.getTextPrimaryColor(context),
-                              ),
-                            ),
-                          ],
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: medicine.brands.map((brand) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: ThemeUtils.getPrimaryColorWithOpacity(context, 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: ThemeUtils.getPrimaryColor(context).withOpacity(0.3),
+                          ),
                         ),
-                      ),
-
-                    const SizedBox(height: 16),
-                    Text(
-                      'Precautions',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: ThemeUtils.getTextPrimaryColor(context),
-                      ),
+                        child: Text(
+                          brand,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: ThemeUtils.getPrimaryColor(context),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )).toList(),
                     ),
-                    const SizedBox(height: 8),
-                    for (final precaution in medicine.precautions)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.circle,
-                              size: 6,
-                              color: ThemeUtils.getWarningColor(context),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                precaution,
-                                style: TextStyle(
-                                  color: ThemeUtils.getTextPrimaryColor(
-                                    context,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -667,26 +727,4 @@ class _MedicineDirectoryScreenState
   }
 
 
-}
-
-class Medicine {
-  final String name;
-  final String genericName;
-  final String category;
-  final String description;
-  final String dosage;
-  final List<String> sideEffects;
-  final List<String> precautions;
-  final String price;
-
-  Medicine({
-    required this.name,
-    required this.genericName,
-    required this.category,
-    required this.description,
-    required this.dosage,
-    required this.sideEffects,
-    required this.precautions,
-    required this.price,
-  });
 }

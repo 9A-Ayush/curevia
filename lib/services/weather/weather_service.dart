@@ -39,7 +39,6 @@ class WeatherService {
       // Check cache first
       final cachedWeather = await _getCachedWeather(latitude, longitude);
       if (cachedWeather != null) {
-        debugPrint('Returning cached weather data');
         return cachedWeather;
       }
 

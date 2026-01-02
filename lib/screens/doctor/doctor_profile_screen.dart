@@ -4,6 +4,7 @@ import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/doctor/doctor_service.dart';
+import 'doctor_profile_edit_screen.dart';
 
 /// Doctor profile screen for managing doctor information
 class DoctorProfileScreen extends ConsumerStatefulWidget {
@@ -114,7 +115,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.person, color: Colors.white, size: 24),
@@ -134,15 +135,27 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 Text(
                   'Manage your professional information',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: Colors.white.withOpacity(0.9),
                   ),
                 ),
               ],
             ),
           ),
           IconButton(
-            onPressed: () {
-              // TODO: Navigate to edit profile
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DoctorProfileEditScreen(
+                    doctorProfile: _doctorProfile,
+                  ),
+                ),
+              );
+              
+              // Reload profile if changes were made
+              if (result == true) {
+                _loadDoctorProfile();
+              }
             },
             icon: const Icon(Icons.edit, color: Colors.white),
             tooltip: 'Edit Profile',
@@ -169,21 +182,38 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
             // Profile picture
             Stack(
               children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: AppColors.textOnPrimary.withValues(
-                    alpha: 0.2,
+                GestureDetector(
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DoctorProfileEditScreen(
+                          doctorProfile: _doctorProfile,
+                        ),
+                      ),
+                    );
+                    
+                    // Reload profile if changes were made
+                    if (result == true) {
+                      _loadDoctorProfile();
+                    }
+                  },
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundColor: AppColors.textOnPrimary.withOpacity(
+                      0.2,
+                    ),
+                    backgroundImage: user?.profileImageUrl != null
+                        ? NetworkImage(user!.profileImageUrl!)
+                        : null,
+                    child: user?.profileImageUrl == null
+                        ? Icon(
+                            Icons.person,
+                            size: 50,
+                            color: AppColors.textOnPrimary,
+                          )
+                        : null,
                   ),
-                  backgroundImage: user?.profileImageUrl != null
-                      ? NetworkImage(user!.profileImageUrl!)
-                      : null,
-                  child: user?.profileImageUrl == null
-                      ? Icon(
-                          Icons.person,
-                          size: 50,
-                          color: AppColors.textOnPrimary,
-                        )
-                      : null,
                 ),
                 Positioned(
                   bottom: 0,
@@ -202,6 +232,43 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                       Icons.verified,
                       size: 16,
                       color: AppColors.textOnPrimary,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  child: GestureDetector(
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DoctorProfileEditScreen(
+                            doctorProfile: _doctorProfile,
+                          ),
+                        ),
+                      );
+                      
+                      // Reload profile if changes were made
+                      if (result == true) {
+                        _loadDoctorProfile();
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.textOnPrimary,
+                          width: 2,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.camera_alt,
+                        size: 14,
+                        color: AppColors.textOnPrimary,
+                      ),
                     ),
                   ),
                 ),
@@ -224,7 +291,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
             Text(
               _doctorProfile?['specialty'] ?? 'General Medicine',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.textOnPrimary.withValues(alpha: 0.9),
+                color: AppColors.textOnPrimary.withOpacity(0.9),
               ),
             ),
 
@@ -239,20 +306,20 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 Text(
                   '${_doctorProfile?['rating'] ?? '4.8'} (${_doctorProfile?['totalReviews'] ?? '127'} reviews)',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textOnPrimary.withValues(alpha: 0.9),
+                    color: AppColors.textOnPrimary.withOpacity(0.9),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Icon(
                   Icons.work_outline,
-                  color: AppColors.textOnPrimary.withValues(alpha: 0.9),
+                  color: AppColors.textOnPrimary.withOpacity(0.9),
                   size: 20,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '${_doctorProfile?['experienceYears'] ?? '5'}+ years',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textOnPrimary.withValues(alpha: 0.9),
+                    color: AppColors.textOnPrimary.withOpacity(0.9),
                   ),
                 ),
               ],
@@ -343,9 +410,9 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Column(
         children: [

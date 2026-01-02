@@ -234,7 +234,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
                         _currentWeather!.condition,
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
+                              color: Colors.white.withOpacity(0.9),
                             ),
                       ),
                     ],
@@ -248,14 +248,14 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
                 Icon(
                   Icons.location_on,
                   size: 16,
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: Colors.white.withOpacity(0.8),
                 ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     '${_currentWeather!.location}${_currentWeather!.country.isNotEmpty ? ', ${_currentWeather!.country}' : ''}',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.8),
+                      color: Colors.white.withOpacity(0.8),
                     ),
                   ),
                 ),
@@ -265,7 +265,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
             Text(
               _currentWeather!.description,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.9),
+                color: Colors.white.withOpacity(0.9),
               ),
             ),
           ],
@@ -340,7 +340,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderLight.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.borderLight.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -364,7 +364,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontSize: 10,
-                    color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                    color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -497,7 +497,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
             Text(
               'Last updated: ${_formatTimestamp(_currentWeather!.timestamp)}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
               ),
             ),
             const SizedBox(height: 8),
@@ -570,7 +570,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen> {
         );
       default:
         return LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
+          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         );

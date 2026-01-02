@@ -156,8 +156,8 @@ class _DoctorScheduleScreenState extends ConsumerState<DoctorScheduleScreen> {
                           color: isToday
                               ? AppColors.primary
                               : hasSchedule
-                              ? AppColors.success.withValues(alpha: 0.1)
-                              : AppColors.borderLight.withValues(alpha: 0.3),
+                              ? AppColors.success.withOpacity(0.1)
+                              : AppColors.borderLight.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Center(
@@ -210,7 +210,7 @@ class _DoctorScheduleScreenState extends ConsumerState<DoctorScheduleScreen> {
           width: 12,
           height: 12,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.3),
+            color: color.withOpacity(0.3),
             borderRadius: BorderRadius.circular(6),
           ),
         ),
@@ -328,7 +328,7 @@ class _DoctorScheduleScreenState extends ConsumerState<DoctorScheduleScreen> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.info.withValues(alpha: 0.1),
+                          color: AppColors.info.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(

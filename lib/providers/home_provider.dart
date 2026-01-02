@@ -364,9 +364,6 @@ final homeProvider = StateNotifierProvider<HomeNotifier, HomeState>((ref) {
 /// Weather provider - now uses real API data with smart fallbacks
 final weatherProvider = FutureProvider<WeatherInfo?>((ref) async {
   try {
-    debugPrint('=== WEATHER PROVIDER DEBUG ===');
-    debugPrint('Attempting to fetch weather data...');
-
     // Try location-based weather first
     var weatherModel = await WeatherService.getCurrentWeatherByLocation();
 
@@ -395,7 +392,6 @@ final weatherProvider = FutureProvider<WeatherInfo?>((ref) async {
       );
     }
 
-    debugPrint('All weather attempts failed, using fallback data');
     // Fallback to mock data if all API calls fail
     return const WeatherInfo(
       temperature: 24.0,

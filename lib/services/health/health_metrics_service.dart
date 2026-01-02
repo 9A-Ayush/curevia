@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../firebase/patient_service.dart';
+import '../../models/user_model.dart';
 
 /// Health metrics model
 class HealthMetrics {
@@ -93,7 +95,14 @@ class HealthMetricsService {
   static Future<HealthMetrics?> getCurrentUserMetrics() async {
     try {
       final userId = _auth.currentUser?.uid;
-      if (userId == null) return null;
+      if (userId == null) {
+        print('=== HEALTH METRICS ERROR ===');
+        print('No user logged in');
+        return null;
+      }
+
+      print('=== FETCHING HEALTH METRICS ===');
+      print('User ID: $userId');
 
       final doc = await _firestore
           .collection('healthMetrics')
@@ -101,13 +110,68 @@ class HealthMetricsService {
           .get();
 
       if (!doc.exists) {
-        // Return default metrics if none exist
-        return _getDefaultMetrics(userId);
+        print('No health metrics found, creating default with patient data...');
+        try {
+          // Get patient data to fetch actual weight
+          final patientModel = await PatientService.getPatientById(userId);
+          final defaultMetrics = _getDefaultMetrics(userId, patientModel);
+          
+          // Save default metrics to Firestore for future use
+          await updateMetrics(defaultMetrics);
+          print('Default metrics created and saved');
+          
+          return defaultMetrics;
+        } catch (e) {
+          print('Error getting patient data: $e');
+          // Return basic default metrics if patient service fails
+          final basicMetrics = _getBasicDefaultMetrics(userId);
+          await updateMetrics(basicMetrics);
+          return basicMetrics;
+        }
       }
 
-      return HealthMetrics.fromMap(doc.data()!);
+      final healthMetrics = HealthMetrics.fromMap(doc.data()!);
+      print('Health metrics loaded:');
+      print('- Heart Rate: ${healthMetrics.heartRate} bpm');
+      print('- Weight: ${healthMetrics.weight} kg');
+      print('- BMI: ${healthMetrics.bmi}');
+      
+      // If weight is default (70) or 0, try to get actual weight from patient profile
+      if (healthMetrics.weight == 70.0 || healthMetrics.weight == 0.0) {
+        print('Default weight detected, fetching from patient profile...');
+        try {
+          final patientModel = await PatientService.getPatientById(userId);
+          if (patientModel?.weight != null && patientModel!.weight! > 0) {
+            print('Found patient weight: ${patientModel.weight} kg');
+            // Update health metrics with actual weight
+            final updatedMetrics = HealthMetrics(
+              userId: healthMetrics.userId,
+              heartRate: healthMetrics.heartRate,
+              steps: healthMetrics.steps,
+              bloodPressureSystolic: healthMetrics.bloodPressureSystolic,
+              bloodPressureDiastolic: healthMetrics.bloodPressureDiastolic,
+              bloodSugar: healthMetrics.bloodSugar,
+              weight: patientModel.weight!,
+              bmi: patientModel.bmi ?? _calculateBMI(patientModel.weight!, patientModel.height),
+              healthStatus: healthMetrics.healthStatus,
+              lastUpdated: DateTime.now(),
+            );
+            
+            // Save updated metrics to Firestore
+            await updateMetrics(updatedMetrics);
+            return updatedMetrics;
+          }
+        } catch (e) {
+          print('Error updating weight from patient profile: $e');
+          // Return original metrics if update fails
+        }
+      }
+
+      return healthMetrics;
     } catch (e) {
+      print('=== HEALTH METRICS ERROR ===');
       print('Error fetching health metrics: $e');
+      print('Stack trace: ${StackTrace.current}');
       return null;
     }
   }
@@ -121,6 +185,62 @@ class HealthMetricsService {
           .set(metrics.toMap(), SetOptions(merge: true));
     } catch (e) {
       print('Error updating health metrics: $e');
+      rethrow;
+    }
+  }
+
+  /// Update heart rate specifically
+  static Future<void> updateHeartRate(int heartRate) async {
+    try {
+      final userId = _auth.currentUser?.uid;
+      if (userId == null) return;
+
+      await _firestore
+          .collection('healthMetrics')
+          .doc(userId)
+          .set({
+        'heartRate': heartRate,
+        'lastUpdated': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      
+      print('Heart rate updated to $heartRate bpm');
+    } catch (e) {
+      print('Error updating heart rate: $e');
+      rethrow;
+    }
+  }
+
+  /// Update weight specifically
+  static Future<void> updateWeight(double weight) async {
+    try {
+      final userId = _auth.currentUser?.uid;
+      if (userId == null) return;
+
+      // Calculate BMI if height is available
+      final patientModel = await PatientService.getPatientById(userId);
+      double? bmi;
+      if (patientModel?.height != null && patientModel!.height! > 0) {
+        bmi = _calculateBMI(weight, patientModel.height);
+      }
+
+      // Update health metrics
+      final updateData = {
+        'weight': weight,
+        'lastUpdated': FieldValue.serverTimestamp(),
+      };
+      
+      if (bmi != null) {
+        updateData['bmi'] = bmi;
+      }
+
+      await _firestore
+          .collection('healthMetrics')
+          .doc(userId)
+          .set(updateData, SetOptions(merge: true));
+      
+      print('Weight updated to $weight kg${bmi != null ? ', BMI: ${bmi.toStringAsFixed(1)}' : ''}');
+    } catch (e) {
+      print('Error updating weight: $e');
       rethrow;
     }
   }
@@ -185,8 +305,42 @@ class HealthMetricsService {
     }
   }
 
+  /// Simulate real-time heart rate (for demo purposes)
+  /// In a real app, this would connect to a fitness tracker or health sensor
+  static Future<void> simulateRealTimeHeartRate() async {
+    try {
+      final userId = _auth.currentUser?.uid;
+      if (userId == null) return;
+
+      // Generate a realistic heart rate between 60-100 bpm
+      final random = DateTime.now().millisecondsSinceEpoch % 41;
+      final heartRate = 60 + random; // 60-100 bpm range
+      
+      await updateHeartRate(heartRate);
+    } catch (e) {
+      print('Error simulating heart rate: $e');
+    }
+  }
+
   /// Get default metrics for new users
-  static HealthMetrics _getDefaultMetrics(String userId) {
+  static HealthMetrics _getDefaultMetrics(String userId, [PatientModel? patientModel]) {
+    double weight = 70.0; // Default weight
+    double bmi = 22.5; // Default BMI
+    
+    // Use actual weight from patient profile if available
+    if (patientModel?.weight != null && patientModel!.weight! > 0) {
+      weight = patientModel.weight!;
+      print('Using patient weight: $weight kg');
+      
+      // Calculate BMI if height is available
+      if (patientModel.height != null && patientModel.height! > 0) {
+        bmi = patientModel.bmi ?? _calculateBMI(weight, patientModel.height);
+        print('Calculated BMI: $bmi');
+      }
+    } else {
+      print('Using default weight: $weight kg');
+    }
+    
     return HealthMetrics(
       userId: userId,
       heartRate: 75,
@@ -194,11 +348,34 @@ class HealthMetricsService {
       bloodPressureSystolic: 120,
       bloodPressureDiastolic: 80,
       bloodSugar: 90,
-      weight: 70,
+      weight: weight,
+      bmi: bmi,
+      healthStatus: 'Good',
+      lastUpdated: DateTime.now(),
+    );
+  }
+
+  /// Get basic default metrics without patient data (fallback)
+  static HealthMetrics _getBasicDefaultMetrics(String userId) {
+    return HealthMetrics(
+      userId: userId,
+      heartRate: 75,
+      steps: 0,
+      bloodPressureSystolic: 120,
+      bloodPressureDiastolic: 80,
+      bloodSugar: 90,
+      weight: 70.0,
       bmi: 22.5,
       healthStatus: 'Good',
       lastUpdated: DateTime.now(),
     );
+  }
+
+  /// Calculate BMI from weight and height
+  static double _calculateBMI(double weight, double? height) {
+    if (height == null || height <= 0) return 22.5; // Default BMI
+    final heightInMeters = height / 100;
+    return weight / (heightInMeters * heightInMeters);
   }
 
   /// Stream health metrics updates
@@ -210,8 +387,18 @@ class HealthMetricsService {
         .collection('healthMetrics')
         .doc(userId)
         .snapshots()
-        .map((doc) {
-      if (!doc.exists) return _getDefaultMetrics(userId);
+        .asyncMap((doc) async {
+      if (!doc.exists) {
+        try {
+          // Get patient data for default metrics
+          final patientModel = await PatientService.getPatientById(userId);
+          return _getDefaultMetrics(userId, patientModel);
+        } catch (e) {
+          print('Error getting patient data in stream: $e');
+          // Return basic default metrics if patient service fails
+          return _getBasicDefaultMetrics(userId);
+        }
+      }
       return HealthMetrics.fromMap(doc.data()!);
     });
   }

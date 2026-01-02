@@ -435,7 +435,7 @@ class _AddFamilyMemberScreenState extends ConsumerState<AddFamilyMemberScreen> {
               label: Text(item),
               deleteIcon: const Icon(Icons.close, size: 18),
               onDeleted: () => onRemove(item),
-              backgroundColor: ThemeUtils.getPrimaryColor(context).withValues(alpha: 0.1),
+              backgroundColor: ThemeUtils.getPrimaryColor(context).withOpacity(0.1),
               deleteIconColor: ThemeUtils.getPrimaryColor(context),
             )).toList(),
           ),

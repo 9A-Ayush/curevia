@@ -101,7 +101,7 @@ class _DoctorAppointmentsScreenState
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -127,7 +127,7 @@ class _DoctorAppointmentsScreenState
                               'View and manage your patient consultations',
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
+                                    color: Colors.white.withOpacity(0.9),
                                   ),
                             ),
                           ],
@@ -182,7 +182,7 @@ class _DoctorAppointmentsScreenState
                         context,
                       ),
                       indicator: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
+                        color: AppColors.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(25),
                       ),
                       dividerColor: Colors.transparent,
@@ -374,7 +374,7 @@ class _DoctorAppointmentsScreenState
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isToday
-              ? AppColors.primary.withValues(alpha: 0.3)
+              ? AppColors.primary.withOpacity(0.3)
               : AppColors.borderLight,
           width: isToday ? 2 : 1,
         ),
@@ -400,7 +400,7 @@ class _DoctorAppointmentsScreenState
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.primary.withValues(alpha: 0.8),
+                        AppColors.primary.withOpacity(0.8),
                         AppColors.primary,
                       ],
                     ),
@@ -481,10 +481,10 @@ class _DoctorAppointmentsScreenState
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.info.withValues(alpha: 0.1),
+                  color: AppColors.info.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppColors.info.withValues(alpha: 0.2),
+                    color: AppColors.info.withOpacity(0.2),
                   ),
                 ),
                 child: Column(
@@ -556,28 +556,28 @@ class _DoctorAppointmentsScreenState
 
     switch (status.toLowerCase()) {
       case 'pending':
-        backgroundColor = AppColors.warning.withValues(alpha: 0.1);
+        backgroundColor = AppColors.warning.withOpacity(0.1);
         textColor = AppColors.warning;
         displayText = 'Pending';
         break;
       case 'confirmed':
-        backgroundColor = AppColors.success.withValues(alpha: 0.1);
+        backgroundColor = AppColors.success.withOpacity(0.1);
         textColor = AppColors.success;
         displayText = 'Confirmed';
         break;
       case 'in_progress':
       case 'inprogress':
-        backgroundColor = AppColors.info.withValues(alpha: 0.1);
+        backgroundColor = AppColors.info.withOpacity(0.1);
         textColor = AppColors.info;
         displayText = 'In Progress';
         break;
       case 'completed':
-        backgroundColor = AppColors.primary.withValues(alpha: 0.1);
+        backgroundColor = AppColors.primary.withOpacity(0.1);
         textColor = AppColors.primary;
         displayText = 'Completed';
         break;
       case 'cancelled':
-        backgroundColor = AppColors.error.withValues(alpha: 0.1);
+        backgroundColor = AppColors.error.withOpacity(0.1);
         textColor = AppColors.error;
         displayText = 'Cancelled';
         break;
@@ -739,7 +739,7 @@ class _DoctorAppointmentsScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

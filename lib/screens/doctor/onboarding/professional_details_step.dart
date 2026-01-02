@@ -194,7 +194,7 @@ class _ProfessionalDetailsStepState
                           }
                         });
                       },
-                      selectedColor: AppColors.primary.withValues(alpha: 0.3),
+                      selectedColor: AppColors.primary.withOpacity(0.3),
                       backgroundColor: ThemeUtils.getSurfaceColor(context),
                       labelStyle: TextStyle(
                         color: isSelected
@@ -492,7 +492,7 @@ class _ProfessionalDetailsStepState
                                   (degree) => Chip(
                                     label: Text(degree),
                                     backgroundColor: AppColors.primary
-                                        .withValues(alpha: 0.1),
+                                        .withOpacity(0.1),
                                     deleteIcon: const Icon(Icons.close, size: 16),
                                     onDeleted: () {
                                       setState(() {

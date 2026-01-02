@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../models/appointment_model.dart';
 import '../../services/doctor/doctor_service.dart';
+import '../../services/firebase/appointment_service.dart';
 import '../../providers/doctor_navigation_provider.dart';
 import 'doctor_consultation_screen.dart';
 import 'doctor_schedule_screen.dart';
@@ -28,6 +31,15 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   void initState() {
     super.initState();
     _loadDashboardData();
+    
+    // Set up periodic refresh to catch new appointments
+    Timer.periodic(const Duration(minutes: 2), (timer) {
+      if (mounted) {
+        _loadDashboardData();
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
   Future<void> _loadDashboardData() async {
@@ -91,7 +103,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                     end: Alignment.bottomRight,
                     colors: [
                       AppColors.primary,
-                      AppColors.primary.withValues(alpha: 0.8),
+                      AppColors.primary.withOpacity(0.8),
                     ],
                   ),
                 ),
@@ -107,7 +119,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                             CircleAvatar(
                               radius: 30,
                               backgroundColor: AppColors.textOnPrimary
-                                  .withValues(alpha: 0.2),
+                                  .withOpacity(0.2),
                               backgroundImage: user?.profileImageUrl != null
                                   ? NetworkImage(user!.profileImageUrl!)
                                   : null,
@@ -131,7 +143,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                                         .bodyMedium
                                         ?.copyWith(
                                           color: AppColors.textOnPrimary
-                                              .withValues(alpha: 0.9),
+                                              .withOpacity(0.9),
                                         ),
                                   ),
                                   Text(
@@ -149,20 +161,83 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                                     style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(
                                           color: AppColors.textOnPrimary
-                                              .withValues(alpha: 0.8),
+                                              .withOpacity(0.8),
                                         ),
                                   ),
                                 ],
                               ),
                             ),
-                            IconButton(
-                              onPressed: () {
-                                _showNotificationsDialog();
+                            // Notification Icon with Badge
+                            Consumer(
+                              builder: (context, ref, child) {
+                                final user = ref.watch(authProvider).userModel;
+                                if (user == null) {
+                                  return IconButton(
+                                    onPressed: () => _showNotificationsDialog(),
+                                    icon: Icon(
+                                      Icons.notifications_outlined,
+                                      color: AppColors.textOnPrimary,
+                                    ),
+                                  );
+                                }
+
+                                final unreadCountAsync = ref.watch(
+                                  unreadNotificationsCountProvider(user.uid),
+                                );
+
+                                return unreadCountAsync.when(
+                                  data: (unreadCount) => Stack(
+                                    children: [
+                                      IconButton(
+                                        onPressed: () => _showNotificationsDialog(),
+                                        icon: Icon(
+                                          Icons.notifications_outlined,
+                                          color: AppColors.textOnPrimary,
+                                        ),
+                                      ),
+                                      if (unreadCount > 0)
+                                        Positioned(
+                                          right: 8,
+                                          top: 8,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(2),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.error,
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 16,
+                                              minHeight: 16,
+                                            ),
+                                            child: Text(
+                                              unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  loading: () => IconButton(
+                                    onPressed: () => _showNotificationsDialog(),
+                                    icon: Icon(
+                                      Icons.notifications_outlined,
+                                      color: AppColors.textOnPrimary,
+                                    ),
+                                  ),
+                                  error: (_, __) => IconButton(
+                                    onPressed: () => _showNotificationsDialog(),
+                                    icon: Icon(
+                                      Icons.notifications_outlined,
+                                      color: AppColors.textOnPrimary,
+                                    ),
+                                  ),
+                                );
                               },
-                              icon: Icon(
-                                Icons.notifications_outlined,
-                                color: AppColors.textOnPrimary,
-                              ),
                             ),
                           ],
                         ),
@@ -269,7 +344,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
-                'Revenue',
+                'Net Revenue',
                 '₹${_stats['monthlyRevenue']?.toString() ?? '0'}',
                 Icons.currency_rupee,
                 AppColors.warning,
@@ -405,11 +480,23 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
-            TextButton(
-              onPressed: () {
-                _navigateToAppointments();
-              },
-              child: const Text('View All'),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: _loadDashboardData,
+                  icon: Icon(
+                    Icons.refresh,
+                    color: AppColors.primary,
+                  ),
+                  tooltip: 'Refresh appointments',
+                ),
+                TextButton(
+                  onPressed: () {
+                    _navigateToAppointments();
+                  },
+                  child: const Text('View All'),
+                ),
+              ],
             ),
           ],
         ),
@@ -458,24 +545,77 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   }
 
   Widget _buildAppointmentCard(AppointmentModel appointment) {
-    return Card(
+    final isPayOnClinic = appointment.paymentStatus == 'pay_on_clinic';
+    
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-          child: Icon(Icons.person, color: AppColors.primary),
+      decoration: isPayOnClinic 
+          ? BoxDecoration(
+              border: Border.all(color: AppColors.warning, width: 2),
+              borderRadius: BorderRadius.circular(8),
+            )
+          : null,
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: ListTile(
+        leading: Stack(
+          children: [
+            CircleAvatar(
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              child: Icon(Icons.person, color: AppColors.primary),
+            ),
+            if (isPayOnClinic)
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.payments,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                ),
+              ),
+          ],
         ),
         title: Text(
           appointment.patientName,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(
-          '${_formatTime(appointment.appointmentDate)} • ${_getTypeDisplayText(appointment.consultationType)}',
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${_formatTime(appointment.appointmentDate)} • ${_getTypeDisplayText(appointment.consultationType)}',
+            ),
+            if (isPayOnClinic)
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'Payment pending at clinic',
+                  style: TextStyle(
+                    color: AppColors.warning,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
         ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: _getStatusColor(appointment.status).withValues(alpha: 0.1),
+            color: _getStatusColor(appointment.status).withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -490,6 +630,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
         onTap: () {
           _showAppointmentDetails(appointment);
         },
+        ),
       ),
     );
   }
@@ -766,7 +907,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -895,7 +1036,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   ) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+        backgroundColor: AppColors.primary.withOpacity(0.1),
         child: Icon(icon, color: AppColors.primary, size: 20),
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
@@ -984,7 +1125,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   children: [
                     CircleAvatar(
                       radius: 25,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
                       child: Icon(
                         Icons.person,
                         color: AppColors.primary,
@@ -1051,6 +1192,23 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                     const SizedBox(height: 24),
 
                     // Action buttons
+                    if (appointment.paymentStatus == 'pay_on_clinic') ...[
+                      // Special button for pay-on-clinic appointments
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: CustomButton(
+                          text: 'Mark Payment Received',
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _showMarkPaymentDialog(appointment);
+                          },
+                          backgroundColor: AppColors.success,
+                          textColor: AppColors.textOnPrimary,
+                          icon: Icons.payments,
+                        ),
+                      ),
+                    ],
                     Row(
                       children: [
                         Expanded(
@@ -1122,28 +1280,28 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
 
     switch (status.toLowerCase()) {
       case 'pending':
-        backgroundColor = AppColors.warning.withValues(alpha: 0.1);
+        backgroundColor = AppColors.warning.withOpacity(0.1);
         textColor = AppColors.warning;
         displayText = 'Pending';
         break;
       case 'confirmed':
-        backgroundColor = AppColors.success.withValues(alpha: 0.1);
+        backgroundColor = AppColors.success.withOpacity(0.1);
         textColor = AppColors.success;
         displayText = 'Confirmed';
         break;
       case 'in_progress':
       case 'inprogress':
-        backgroundColor = AppColors.info.withValues(alpha: 0.1);
+        backgroundColor = AppColors.info.withOpacity(0.1);
         textColor = AppColors.info;
         displayText = 'In Progress';
         break;
       case 'completed':
-        backgroundColor = AppColors.primary.withValues(alpha: 0.1);
+        backgroundColor = AppColors.primary.withOpacity(0.1);
         textColor = AppColors.primary;
         displayText = 'Completed';
         break;
       case 'cancelled':
-        backgroundColor = AppColors.error.withValues(alpha: 0.1);
+        backgroundColor = AppColors.error.withOpacity(0.1);
         textColor = AppColors.error;
         displayText = 'Cancelled';
         break;
@@ -1167,5 +1325,97 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
         ),
       ),
     );
+  }
+
+  void _showMarkPaymentDialog(AppointmentModel appointment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.payments, color: AppColors.success),
+            const SizedBox(width: 8),
+            const Text('Mark Payment Received'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Patient: ${appointment.patientName}'),
+            const SizedBox(height: 8),
+            Text('Consultation Fee: ₹${appointment.consultationFee?.round() ?? 0}'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.info.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.info.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.info, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'This will mark the payment as received and add it to your revenue.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _markPaymentReceived(appointment);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Mark as Paid'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _markPaymentReceived(AppointmentModel appointment) async {
+    try {
+      await AppointmentService.markPaymentReceived(
+        appointmentId: appointment.id,
+        paymentMethod: 'cash',
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment marked as received for ${appointment.patientName}'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        
+        // Refresh dashboard data
+        _loadDashboardData();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error marking payment: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 }

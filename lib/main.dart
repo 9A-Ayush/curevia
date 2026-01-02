@@ -11,6 +11,9 @@ import 'screens/auth/splash_screen.dart';
 import 'services/weather/weather_service.dart';
 import 'services/auth/app_lifecycle_biometric_service.dart';
 import 'services/navigation_service.dart';
+import 'services/firebase/medicine_service.dart';
+import 'services/firebase/home_remedies_service.dart';
+
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
 import 'firebase_options.dart';
@@ -32,6 +35,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize app data (medicines and home remedies)
+  await _initializeAppData();
 
   // Initialize Hive for local storage
   await Hive.initFlutter();
@@ -160,3 +166,48 @@ Future<void> _initializeWeatherService() async {
     print('Error initializing weather service: $e');
   }
 }
+
+/// Initialize app data (medicines and home remedies)
+Future<void> _initializeAppData() async {
+  try {
+    print('=== INITIALIZING APP DATA ===');
+    
+    // Check if medicine data exists
+    final hasMedicineData = await MedicineService.hasMedicineData();
+    print('Medicine data exists: $hasMedicineData');
+    
+    if (!hasMedicineData) {
+      print('Seeding medicine data...');
+      await MedicineService.seedMedicineData();
+      print('Medicine data seeded successfully');
+    }
+    
+    // Check if home remedies data exists
+    final hasRemediesData = await HomeRemediesService.hasRemediesData();
+    print('Remedies data exists: $hasRemediesData');
+    
+    if (!hasRemediesData) {
+      print('Seeding home remedies data...');
+      await HomeRemediesService.seedHomeRemediesData();
+      print('Home remedies data seeded successfully');
+    }
+    
+    print('=== APP DATA INITIALIZATION COMPLETED ===');
+  } catch (e) {
+    print('=== ERROR INITIALIZING APP DATA ===');
+    print('Error details: $e');
+    print('Stack trace: ${StackTrace.current}');
+    
+    // Try to force seed even if check fails
+    try {
+      print('Attempting force seed...');
+      await MedicineService.seedMedicineData();
+      await HomeRemediesService.seedHomeRemediesData();
+      print('Force seed completed');
+    } catch (forceError) {
+      print('Force seed also failed: $forceError');
+    }
+  }
+}
+
+

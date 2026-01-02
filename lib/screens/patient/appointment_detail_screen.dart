@@ -39,12 +39,12 @@ class AppointmentDetailScreen extends ConsumerWidget {
   Widget _buildDoctorInfo(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      color: AppColors.primary.withValues(alpha: 0.1),
+      color: AppColors.primary.withOpacity(0.1),
       child: Row(
         children: [
           CircleAvatar(
             radius: 40,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+            backgroundColor: AppColors.primary.withOpacity(0.2),
             child: const Icon(Icons.person, size: 40, color: AppColors.primary),
           ),
           const SizedBox(width: 16),

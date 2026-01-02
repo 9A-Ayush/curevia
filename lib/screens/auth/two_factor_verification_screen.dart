@@ -169,7 +169,7 @@ class _TwoFactorVerificationScreenState
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: ThemeUtils.getPrimaryColor(context).withValues(alpha: 0.1),
+                color: ThemeUtils.getPrimaryColor(context).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(40),
               ),
               child: Icon(
@@ -285,10 +285,10 @@ class _TwoFactorVerificationScreenState
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: ThemeUtils.getWarningColor(context).withValues(alpha: 0.1),
+                  color: ThemeUtils.getWarningColor(context).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: ThemeUtils.getWarningColor(context).withValues(alpha: 0.3),
+                    color: ThemeUtils.getWarningColor(context).withOpacity(0.3),
                   ),
                 ),
                 child: Row(

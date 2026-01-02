@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../models/home_remedy_model.dart';
-import '../../widgets/common/custom_button.dart';
 
 /// Detailed remedy information screen
 class RemedyDetailScreen extends ConsumerStatefulWidget {
@@ -38,7 +37,7 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(widget.remedy.name),
+        title: Text(widget.remedy.title),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
         elevation: 0,
@@ -97,7 +96,7 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+                  color: AppColors.textOnPrimary.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -112,7 +111,7 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.remedy.name,
+                      widget.remedy.title,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: AppColors.textOnPrimary,
                         fontWeight: FontWeight.bold,
@@ -120,58 +119,32 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'For ${widget.remedy.condition}',
+                      widget.remedy.description,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textOnPrimary.withValues(alpha: 0.9),
+                        color: AppColors.textOnPrimary.withOpacity(0.9),
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.remedy.category.toUpperCase(),
+                      widget.remedy.categoryName.toUpperCase(),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textOnPrimary.withValues(alpha: 0.8),
+                        color: AppColors.textOnPrimary.withOpacity(0.8),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
               ),
-              if (widget.remedy.isVerified)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.textOnPrimary.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.verified,
-                        size: 14,
-                        color: AppColors.textOnPrimary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Verified',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textOnPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+
             ],
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               _buildHeaderChip(
-                widget.remedy.formattedPreparationTime,
+                widget.remedy.preparationTime,
                 Icons.schedule,
               ),
               const SizedBox(width: 8),
@@ -181,8 +154,8 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
               ),
               const SizedBox(width: 8),
               _buildHeaderChip(
-                '${widget.remedy.effectiveness}/5',
-                Icons.star,
+                widget.remedy.ageSuitability,
+                Icons.person,
               ),
             ],
           ),
@@ -195,7 +168,7 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+        color: AppColors.textOnPrimary.withOpacity(0.2),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -247,22 +220,13 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
           ),
           const SizedBox(height: 20),
           
-          if (widget.remedy.symptoms.isNotEmpty) ...[
+          // Show tags as benefits
+          if (widget.remedy.tags.isNotEmpty) ...[
             _buildListSection(
-              'Treats These Symptoms',
-              widget.remedy.symptoms,
-              Icons.healing,
+              'Tags',
+              widget.remedy.tags,
+              Icons.label,
               AppColors.info,
-            ),
-            const SizedBox(height: 20),
-          ],
-          
-          if (widget.remedy.benefits.isNotEmpty) ...[
-            _buildListSection(
-              'Benefits',
-              widget.remedy.benefits,
-              Icons.favorite,
-              AppColors.success,
             ),
             const SizedBox(height: 20),
           ],
@@ -280,14 +244,7 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
             Icons.schedule,
           ),
           
-          if (widget.remedy.scientificEvidence != null) ...[
-            const SizedBox(height: 20),
-            _buildInfoSection(
-              'Scientific Evidence',
-              widget.remedy.scientificEvidence!,
-              Icons.science,
-            ),
-          ],
+          // Remove scientific evidence section as it's not in the model
         ],
       ),
     );
@@ -307,7 +264,9 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
           ),
           const SizedBox(height: 16),
           
-          ...widget.remedy.ingredients.map((ingredient) {
+          ...widget.remedy.ingredients.asMap().entries.map((entry) {
+            final index = entry.key;
+            final ingredient = entry.value;
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
@@ -322,56 +281,28 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: AppColors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
-                      Icons.eco,
-                      color: AppColors.primary,
-                      size: 20,
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          ingredient.formattedText,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (ingredient.notes != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            ingredient.notes!,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ],
+                    child: Text(
+                      ingredient,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  if (ingredient.isOptional)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'Optional',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.warning,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
                 ],
               ),
             );
@@ -395,7 +326,9 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
           ),
           const SizedBox(height: 16),
           
-          ...widget.remedy.preparationSteps.map((step) {
+          ...widget.remedy.preparation.asMap().entries.map((entry) {
+            final index = entry.key;
+            final step = entry.value;
             return Container(
               margin: const EdgeInsets.only(bottom: 16),
               child: Row(
@@ -410,7 +343,7 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
                     ),
                     child: Center(
                       child: Text(
-                        '${step.stepNumber}',
+                        '${index + 1}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.textOnPrimary,
                           fontWeight: FontWeight.bold,
@@ -427,62 +360,9 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Theme.of(context).dividerColor),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            step.instruction,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          if (step.tip != null) ...[
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.info.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.lightbulb_outline,
-                                    size: 16,
-                                    color: AppColors.info,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Tip: ${step.tip}',
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: AppColors.info,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                          if (step.duration != null) ...[
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.timer,
-                                  size: 16,
-                                  color: AppColors.textSecondary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${step.duration} minutes',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
+                      child: Text(
+                        step,
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ),
                   ),
@@ -502,21 +382,19 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.remedy.precautions.isNotEmpty) ...[
-            _buildListSection(
+            _buildInfoSection(
               'Precautions',
               widget.remedy.precautions,
               Icons.warning,
-              AppColors.warning,
             ),
             const SizedBox(height: 20),
           ],
           
           if (widget.remedy.contraindications.isNotEmpty) ...[
-            _buildListSection(
+            _buildInfoSection(
               'Contraindications',
               widget.remedy.contraindications,
               Icons.block,
-              AppColors.error,
             ),
             const SizedBox(height: 20),
           ],
@@ -524,9 +402,9 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.info.withValues(alpha: 0.1),
+              color: AppColors.info.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+              border: Border.all(color: AppColors.info.withOpacity(0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -596,9 +474,9 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
+        color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

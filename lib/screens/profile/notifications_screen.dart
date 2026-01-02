@@ -98,7 +98,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       ? Text(
                           '$count unread notifications',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: Colors.white.withOpacity(0.9),
                           ),
                         )
                       : const SizedBox.shrink(),
@@ -256,12 +256,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       decoration: BoxDecoration(
         color: notification.isRead
             ? ThemeUtils.getSurfaceColor(context)
-            : AppColors.primary.withValues(alpha: 0.05),
+            : AppColors.primary.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: notification.isRead
               ? AppColors.borderLight
-              : AppColors.primary.withValues(alpha: 0.2),
+              : AppColors.primary.withOpacity(0.2),
         ),
       ),
       child: ListTile(
@@ -272,7 +272,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           decoration: BoxDecoration(
             color: _getNotificationColor(
               notification.type,
-            ).withValues(alpha: 0.1),
+            ).withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(

@@ -21,8 +21,9 @@
     profiles, and book instantly.\
 -   📹 **Video & Voice Consultations** --- Agora-powered real-time calls
     with doctors.\
--   💳 **Payments** --- Stripe integration with support for multiple
-    bank accounts.\
+-   💳 **Payments** --- Razorpay integration with support for multiple
+    payment methods including UPI, cards, net banking, and digital
+    wallets.\
 -   💊 **Medicine Info** --- OpenFDA API for dosage, side effects,
     usage.\
 -   🌿 **Home Remedies** --- Verified herbal & natural treatments with
@@ -50,7 +51,7 @@
 
   🔐 **Auth**                                    ![Google](https://img.shields.io/badge/Auth-Google%20Sign--In-red?style=for-the-badge&logo=google)
 
-  💳 **Payments**                                ![Stripe](https://img.shields.io/badge/Stripe-6772E5?style=for-the-badge&logo=stripe&logoColor=white)
+  💳 **Payments**                                ![Razorpay](https://img.shields.io/badge/Razorpay-02042B?style=for-the-badge&logo=razorpay&logoColor=white)
 
   ☁ **Media**                                    ![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)
 

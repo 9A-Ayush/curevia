@@ -136,7 +136,7 @@ class _AppointmentManagementScreenState
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.textOnPrimary,
-          unselectedLabelColor: AppColors.textOnPrimary.withValues(alpha: 0.7),
+          unselectedLabelColor: AppColors.textOnPrimary.withOpacity(0.7),
           indicatorColor: AppColors.textOnPrimary,
           tabs: const [
             Tab(text: 'Upcoming'),
@@ -250,7 +250,7 @@ class _AppointmentManagementScreenState
               children: [
                 CircleAvatar(
                   radius: 25,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
                   child: Icon(Icons.person, color: AppColors.primary, size: 25),
                 ),
                 const SizedBox(width: 12),
@@ -355,7 +355,7 @@ class _AppointmentManagementScreenState
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: AppColors.info.withValues(alpha: 0.1),
+                                      color: AppColors.info.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
@@ -426,7 +426,7 @@ class _AppointmentManagementScreenState
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.1),
+                  color: AppColors.error.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -486,22 +486,22 @@ class _AppointmentManagementScreenState
 
     switch (status.toLowerCase()) {
       case 'pending':
-        backgroundColor = AppColors.warning.withValues(alpha: 0.1);
+        backgroundColor = AppColors.warning.withOpacity(0.1);
         textColor = AppColors.warning;
         displayText = 'Pending';
         break;
       case 'confirmed':
-        backgroundColor = AppColors.success.withValues(alpha: 0.1);
+        backgroundColor = AppColors.success.withOpacity(0.1);
         textColor = AppColors.success;
         displayText = 'Confirmed';
         break;
       case 'completed':
-        backgroundColor = AppColors.primary.withValues(alpha: 0.1);
+        backgroundColor = AppColors.primary.withOpacity(0.1);
         textColor = AppColors.primary;
         displayText = 'Completed';
         break;
       case 'cancelled':
-        backgroundColor = AppColors.error.withValues(alpha: 0.1);
+        backgroundColor = AppColors.error.withOpacity(0.1);
         textColor = AppColors.error;
         displayText = 'Cancelled';
         break;

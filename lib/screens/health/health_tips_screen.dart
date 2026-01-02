@@ -205,7 +205,7 @@ class _HealthTipsScreenState extends ConsumerState<HealthTipsScreen> {
                 });
               },
               backgroundColor: ThemeUtils.getSurfaceVariantColor(context),
-              selectedColor: ThemeUtils.getPrimaryColor(context).withValues(alpha: 0.2),
+              selectedColor: ThemeUtils.getPrimaryColor(context).withOpacity(0.2),
               checkmarkColor: ThemeUtils.getPrimaryColor(context),
               labelStyle: TextStyle(
                 color: isSelected 
@@ -249,7 +249,7 @@ class _HealthTipsScreenState extends ConsumerState<HealthTipsScreen> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: tip.color.withValues(alpha: 0.1),
+                      color: tip.color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -273,7 +273,7 @@ class _HealthTipsScreenState extends ConsumerState<HealthTipsScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: tip.color.withValues(alpha: 0.1),
+                            color: tip.color.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -398,7 +398,7 @@ class _HealthTipsScreenState extends ConsumerState<HealthTipsScreen> {
                           width: 60,
                           height: 60,
                           decoration: BoxDecoration(
-                            color: tip.color.withValues(alpha: 0.1),
+                            color: tip.color.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Icon(
@@ -422,7 +422,7 @@ class _HealthTipsScreenState extends ConsumerState<HealthTipsScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: tip.color.withValues(alpha: 0.1),
+                                  color: tip.color.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(

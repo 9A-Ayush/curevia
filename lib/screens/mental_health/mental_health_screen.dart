@@ -63,7 +63,7 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -89,7 +89,7 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
                             'Track mood, meditate, and find peace',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.9),
+                                  color: Colors.white.withOpacity(0.9),
                                 ),
                           ),
                         ],
@@ -194,7 +194,7 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
                     height: 60,
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? mood.color.withValues(alpha: 0.2)
+                          ? mood.color.withOpacity(0.2)
                           : ThemeUtils.getSurfaceColor(context),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
@@ -294,7 +294,7 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 24),
@@ -383,7 +383,7 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+          border: Border.all(color: AppColors.error.withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,16 +466,16 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.05),
+          color: color.withOpacity(0.05),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
+          border: Border.all(color: color.withOpacity(0.2)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
+                color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: color, size: 20),
@@ -583,7 +583,7 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.info.withValues(alpha: 0.1),
+                  color: AppColors.info.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -655,7 +655,7 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -703,7 +703,7 @@ class _MentalHealthScreenState extends State<MentalHealthScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.1),
+                  color: AppColors.success.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(

@@ -40,7 +40,7 @@ class HomeHeader extends ConsumerWidget {
                     Text(
                       _getGreeting(),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textOnPrimary.withValues(alpha: 0.9),
+                        color: AppColors.textOnPrimary.withOpacity(0.9),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -60,7 +60,7 @@ class HomeHeader extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+                          color: AppColors.textOnPrimary.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -118,10 +118,10 @@ class HomeHeader extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.textOnPrimary.withValues(alpha: 0.1),
+                color: AppColors.textOnPrimary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+                  color: AppColors.textOnPrimary.withOpacity(0.2),
                 ),
               ),
               child: Row(
@@ -167,8 +167,8 @@ class HomeHeader extends ConsumerWidget {
                           ),
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: AppColors.textOnPrimary.withValues(
-                                  alpha: 0.8,
+                                color: AppColors.textOnPrimary.withOpacity(
+                                  0.8,
                                 ),
                               ),
                         ),
@@ -178,7 +178,7 @@ class HomeHeader extends ConsumerWidget {
                   Container(
                     width: 1,
                     height: 40,
-                    color: AppColors.textOnPrimary.withValues(alpha: 0.3),
+                    color: AppColors.textOnPrimary.withOpacity(0.3),
                   ),
                   const SizedBox(width: 16),
                   Column(
@@ -199,7 +199,7 @@ class HomeHeader extends ConsumerWidget {
                       Text(
                         'Health',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textOnPrimary.withValues(alpha: 0.8),
+                          color: AppColors.textOnPrimary.withOpacity(0.8),
                         ),
                       ),
                     ],
@@ -224,7 +224,7 @@ class HomeHeader extends ConsumerWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+          color: AppColors.textOnPrimary.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Stack(
@@ -303,10 +303,10 @@ class WeatherWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.textOnPrimary.withValues(alpha: 0.1),
+        color: AppColors.textOnPrimary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+          color: AppColors.textOnPrimary.withOpacity(0.2),
         ),
       ),
       child: Row(
@@ -331,7 +331,7 @@ class WeatherWidget extends StatelessWidget {
                 Text(
                   description,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textOnPrimary.withValues(alpha: 0.8),
+                    color: AppColors.textOnPrimary.withOpacity(0.8),
                   ),
                 ),
               ],
@@ -383,7 +383,7 @@ class HealthStatusIndicator extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.2),
+            color: color.withOpacity(0.2),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(Icons.favorite, color: color, size: 20),
@@ -399,7 +399,7 @@ class HealthStatusIndicator extends StatelessWidget {
         Text(
           'Health',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: AppColors.textOnPrimary.withValues(alpha: 0.8),
+            color: AppColors.textOnPrimary.withOpacity(0.8),
           ),
         ),
       ],

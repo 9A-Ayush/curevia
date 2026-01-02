@@ -221,6 +221,47 @@ class NotificationService {
         );
   }
 
+  /// Send notification to a specific user
+  static Future<void> sendNotification({
+    required String userId,
+    required String title,
+    required String body,
+    String? type,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      await createNotification(
+        userId: userId,
+        title: title,
+        message: body,
+        type: type ?? 'general',
+        data: data,
+      );
+    } catch (e) {
+      throw Exception('Failed to send notification: $e');
+    }
+  }
+
+  /// Send notification to a specific doctor
+  static Future<void> sendNotificationToDoctor({
+    required String doctorId,
+    required String title,
+    required String body,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      await createNotification(
+        userId: doctorId,
+        title: title,
+        message: body,
+        type: 'appointment_request',
+        data: data,
+      );
+    } catch (e) {
+      throw Exception('Failed to send notification to doctor: $e');
+    }
+  }
+
   /// Create sample notifications for testing (development only)
   static Future<void> createSampleNotifications(String userId) async {
     try {

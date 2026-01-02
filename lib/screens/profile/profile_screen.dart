@@ -123,7 +123,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Container(
                 color: ThemeUtils.getTextPrimaryColor(
                   context,
-                ).withValues(alpha: 0.5),
+                ).withOpacity(0.5),
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -161,7 +161,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             decoration: BoxDecoration(
               color: ThemeUtils.getTextOnPrimaryColor(
                 context,
-              ).withValues(alpha: 0.2),
+              ).withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -195,7 +195,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             decoration: BoxDecoration(
               color: ThemeUtils.getTextOnPrimaryColor(
                 context,
-              ).withValues(alpha: 0.2),
+              ).withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -246,7 +246,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppColors.primary.withValues(alpha: 0.8),
+                    AppColors.primary.withOpacity(0.8),
                     AppColors.primary,
                   ],
                 ),
@@ -273,7 +273,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               height: 108,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: AppColors.primary.withValues(alpha: 0.1),
+                                color: AppColors.primary.withOpacity(0.1),
                               ),
                               child: const CircularProgressIndicator(),
                             ),
@@ -285,8 +285,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 height: 108,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.primary.withValues(
-                                    alpha: 0.1,
+                                  color: AppColors.primary.withOpacity(
+                                    0.1,
                                   ),
                                 ),
                                 child: const Icon(
@@ -303,7 +303,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           height: 108,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.primary.withValues(alpha: 0.1),
+                            color: AppColors.primary.withOpacity(0.1),
                           ),
                           child: const Icon(
                             Icons.person,
@@ -374,13 +374,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ? [
                       ThemeUtils.getSuccessColor(
                         context,
-                      ).withValues(alpha: 0.7),
+                      ).withOpacity(0.7),
                       ThemeUtils.getSuccessColor(context),
                     ]
                   : [
                       ThemeUtils.getWarningColor(
                         context,
-                      ).withValues(alpha: 0.7),
+                      ).withOpacity(0.7),
                       ThemeUtils.getWarningColor(context),
                     ],
             ),

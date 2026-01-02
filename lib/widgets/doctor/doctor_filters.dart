@@ -232,7 +232,7 @@ class _DoctorFiltersState extends ConsumerState<DoctorFilters> {
           },
           selectedColor: ThemeUtils.getPrimaryColor(
             context,
-          ).withValues(alpha: 0.2),
+          ).withOpacity(0.2),
           checkmarkColor: ThemeUtils.getPrimaryColor(context),
         );
       }).toList(),
@@ -310,7 +310,7 @@ class _DoctorFiltersState extends ConsumerState<DoctorFilters> {
           },
           selectedColor: ThemeUtils.getPrimaryColor(
             context,
-          ).withValues(alpha: 0.2),
+          ).withOpacity(0.2),
           checkmarkColor: ThemeUtils.getPrimaryColor(context),
         );
       }).toList(),

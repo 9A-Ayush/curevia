@@ -3,11 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../constants/app_colors.dart';
 import '../../models/doctor_model.dart';
+import '../../models/appointment_model.dart';
 import '../../providers/appointment_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../widgets/common/loading_overlay.dart';
+import '../../services/firebase/appointment_service.dart';
+import '../../services/firebase/notification_service.dart';
+import '../payment/payment_screen.dart';
 
 /// Appointment booking screen
 class AppointmentBookingScreen extends ConsumerStatefulWidget {
@@ -29,6 +33,7 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
   final TextEditingController _notesController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   String? _selectedTimeSlot;
+  String? _selectedPaymentMethod; // Add payment method selection
 
   @override
   void initState() {
@@ -96,6 +101,12 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
               // Booking Summary
               _buildBookingSummary(),
               
+              // Payment Method Selection (only for offline visits)
+              if (widget.consultationType == 'offline') ...[
+                const SizedBox(height: 24),
+                _buildPaymentMethodSelection(),
+              ],
+              
               const SizedBox(height: 24),
               
               // Book Button
@@ -134,7 +145,7 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+            backgroundColor: AppColors.primary.withOpacity(0.1),
             backgroundImage: widget.doctor.profileImageUrl != null
                 ? NetworkImage(widget.doctor.profileImageUrl!)
                 : null,
@@ -164,8 +175,8 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: widget.consultationType == 'online'
-                        ? AppColors.secondary.withValues(alpha: 0.1)
-                        : AppColors.primary.withValues(alpha: 0.1),
+                        ? AppColors.secondary.withOpacity(0.1)
+                        : AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -348,9 +359,9 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
+        color: AppColors.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -396,12 +407,131 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
     );
   }
 
+  Widget _buildPaymentMethodSelection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.info.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.info.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Payment Method',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // Online Payment Option
+          _buildPaymentMethodTile(
+            'online_payment',
+            'Pay Online',
+            'Secure payment with card, UPI, or net banking',
+            Icons.payment,
+            AppColors.primary,
+          ),
+          
+          const SizedBox(height: 8),
+          
+          // Pay on Clinic Option
+          _buildPaymentMethodTile(
+            'pay_on_clinic',
+            'Pay on Clinic',
+            'Pay directly at the clinic during your visit',
+            Icons.location_on,
+            AppColors.success,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentMethodTile(
+    String methodId,
+    String title,
+    String description,
+    IconData icon,
+    Color color,
+  ) {
+    final isSelected = _selectedPaymentMethod == methodId;
+    
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedPaymentMethod = methodId;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? color.withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected 
+                ? color
+                : AppColors.borderLight,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? color : null,
+                    ),
+                  ),
+                  Text(
+                    description,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                Icons.check_circle,
+                color: color,
+                size: 20,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBookButton(AppointmentBookingState bookingState, userModel) {
     final canBook = _selectedTimeSlot != null && !bookingState.isLoading;
     
+    // For offline visits, also check if payment method is selected
+    final canBookOffline = widget.consultationType == 'offline' 
+        ? (_selectedPaymentMethod != null && canBook)
+        : canBook;
+    
     return CustomButton(
       text: 'Book Appointment',
-      onPressed: canBook ? _bookAppointment : null,
+      onPressed: canBookOffline ? _bookAppointment : null,
       isLoading: bookingState.isLoading,
     );
   }
@@ -410,9 +540,9 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.1),
+        color: AppColors.error.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.error.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -435,9 +565,9 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.success.withValues(alpha: 0.1),
+        color: AppColors.success.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.success.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -460,6 +590,20 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
     final userModel = ref.read(currentUserModelProvider);
     if (userModel == null) return;
 
+    // Check if this is a "Pay on Clinic" booking
+    final isPayOnClinic = widget.consultationType == 'offline' && _selectedPaymentMethod == 'pay_on_clinic';
+
+    if (isPayOnClinic) {
+      // Direct booking without payment screen
+      await _bookWithPayOnClinic(userModel);
+    } else {
+      // Regular booking with payment screen
+      await _bookWithPayment(userModel);
+    }
+  }
+
+  Future<void> _bookWithPayOnClinic(userModel) async {
+    // Book appointment directly with "pay_on_clinic" status
     final appointmentId = await ref.read(appointmentBookingProvider.notifier).bookAppointment(
       patientId: userModel.uid,
       doctorId: widget.doctor.uid,
@@ -468,29 +612,231 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
       doctorSpecialty: widget.doctor.specialty ?? 'General Medicine',
       consultationType: widget.consultationType,
       consultationFee: widget.doctor.consultationFee,
+      paymentStatus: 'pay_on_clinic',
       symptoms: _symptomsController.text.trim().isEmpty ? null : _symptomsController.text.trim(),
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
     );
 
-    if (appointmentId != null && mounted) {
+    if (appointmentId != null) {
+      // Update appointment status to confirmed (no payment needed)
+      try {
+        await AppointmentService.updateAppointmentStatus(
+          appointmentId: appointmentId,
+          status: 'confirmed',
+          paymentStatus: 'pay_on_clinic',
+        );
+        
+        // Send notification to doctor
+        await NotificationService.sendNotification(
+          userId: widget.doctor.uid,
+          title: 'New Appointment Booked (Pay on Clinic)',
+          body: '${userModel.fullName} booked an appointment - Payment at clinic',
+          type: 'appointment',
+          data: {
+            'appointmentId': appointmentId,
+            'patientId': userModel.uid,
+            'patientName': userModel.fullName,
+            'paymentMethod': 'pay_on_clinic',
+          },
+        );
+        
+        if (mounted) {
+          // Show success dialog
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.check_circle, color: AppColors.success),
+                  const SizedBox(width: 8),
+                  const Text('Appointment Booked!'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Your appointment has been successfully booked.'),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: AppColors.warning, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Please bring the consultation fee (₹${widget.doctor.consultationFee?.round() ?? 0}) when you visit the clinic.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context, true); // Go back with success result
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+      } catch (e) {
+        print('Error updating appointment status: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Appointment booked but there was an error: $e'),
+              backgroundColor: AppColors.warning,
+            ),
+          );
+        }
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to book appointment. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _bookWithPayment(userModel) async {
+    // First, book the appointment with pending status
+    final appointmentId = await ref.read(appointmentBookingProvider.notifier).bookAppointment(
+      patientId: userModel.uid,
+      doctorId: widget.doctor.uid,
+      patientName: userModel.fullName,
+      doctorName: widget.doctor.fullName,
+      doctorSpecialty: widget.doctor.specialty ?? 'General Medicine',
+      consultationType: widget.consultationType,
+      consultationFee: widget.doctor.consultationFee,
+      paymentStatus: 'pending',
+      symptoms: _symptomsController.text.trim().isEmpty ? null : _symptomsController.text.trim(),
+      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+    );
+
+    if (appointmentId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to create appointment. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Create appointment object for payment
+    final appointment = AppointmentModel(
+      id: appointmentId,
+      patientId: userModel.uid,
+      doctorId: widget.doctor.uid,
+      patientName: userModel.fullName,
+      doctorName: widget.doctor.fullName,
+      doctorSpecialty: widget.doctor.specialty ?? 'General Medicine',
+      appointmentDate: _selectedDate,
+      timeSlot: _selectedTimeSlot ?? '',
+      consultationType: widget.consultationType,
+      status: 'pending',
+      consultationFee: widget.doctor.consultationFee,
+      paymentStatus: 'pending',
+      symptoms: _symptomsController.text.trim().isEmpty ? null : _symptomsController.text.trim(),
+      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    // Navigate to payment screen
+    final paymentId = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentScreen(
+          appointment: appointment,
+          doctor: widget.doctor,
+          patient: userModel,
+          onPaymentSuccess: (paymentId) async {
+            // Update appointment status to confirmed and add payment info
+            try {
+              await AppointmentService.updateAppointmentStatus(
+                appointmentId: appointmentId,
+                status: 'confirmed',
+              );
+              
+              // Send notification to doctor
+              await NotificationService.sendNotification(
+                userId: widget.doctor.uid,
+                title: 'New Appointment Booked',
+                body: 'You have a new appointment with ${userModel.fullName}',
+                type: 'appointment',
+                data: {
+                  'appointmentId': appointmentId,
+                  'patientId': userModel.uid,
+                  'patientName': userModel.fullName,
+                },
+              );
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Appointment booked successfully! Doctor has been notified.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            } catch (e) {
+              print('Error updating appointment status: $e');
+            }
+          },
+        ),
+      ),
+    );
+
+    if (paymentId != null && mounted) {
       // Show success dialog and navigate back
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
           title: const Text('Appointment Booked!'),
-          content: const Text('Your appointment has been successfully booked. You will receive a confirmation shortly.'),
+          content: const Text('Your appointment has been successfully booked and payment completed. You will receive a confirmation shortly.'),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Go back to previous screen
+                Navigator.pop(context, true); // Go back with success result
               },
               child: const Text('OK'),
             ),
           ],
         ),
       );
+    } else {
+      // Payment was cancelled or failed, cancel the appointment
+      try {
+        await AppointmentService.updateAppointmentStatus(
+          appointmentId: appointmentId,
+          status: 'cancelled',
+          cancellationReason: 'Payment failed or cancelled',
+          cancelledBy: 'patient',
+        );
+      } catch (e) {
+        print('Error cancelling appointment: $e');
+      }
     }
   }
 

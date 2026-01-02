@@ -241,7 +241,7 @@ class _WeatherSettingsScreenState extends State<WeatherSettingsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.info.withValues(alpha: 0.1),
+                color: AppColors.info.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -380,7 +380,7 @@ class _WeatherSettingsScreenState extends State<WeatherSettingsScreen> {
 
   Widget _buildTestResults() {
     return Card(
-      color: AppColors.success.withValues(alpha: 0.1),
+      color: AppColors.success.withOpacity(0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -428,7 +428,7 @@ class _WeatherSettingsScreenState extends State<WeatherSettingsScreen> {
 
   Widget _buildErrorMessage() {
     return Card(
-      color: AppColors.error.withValues(alpha: 0.1),
+      color: AppColors.error.withOpacity(0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -487,7 +487,7 @@ class _WeatherSettingsScreenState extends State<WeatherSettingsScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.1),
+                color: AppColors.warning.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -525,7 +525,7 @@ class _WeatherSettingsScreenState extends State<WeatherSettingsScreen> {
             width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: AppColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(

@@ -236,7 +236,7 @@ class _GuidedMeditationSessionScreenState
             end: Alignment.bottomCenter,
             colors: [
               Colors.black,
-              widget.color.withValues(alpha: 0.3),
+              widget.color.withOpacity(0.3),
               Colors.black,
             ],
           ),
@@ -275,7 +275,7 @@ class _GuidedMeditationSessionScreenState
           height: 120,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: widget.color.withValues(alpha: 0.2),
+            color: widget.color.withOpacity(0.2),
             border: Border.all(color: widget.color, width: 2),
           ),
           child: Icon(Icons.self_improvement, size: 60, color: widget.color),
@@ -294,7 +294,7 @@ class _GuidedMeditationSessionScreenState
         Text(
           widget.description,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.8),
+            color: Colors.white.withOpacity(0.8),
             fontSize: 16,
             height: 1.5,
           ),
@@ -304,9 +304,9 @@ class _GuidedMeditationSessionScreenState
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: widget.color.withValues(alpha: 0.2),
+            color: widget.color.withOpacity(0.2),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: widget.color.withValues(alpha: 0.5)),
+            border: Border.all(color: widget.color.withOpacity(0.5)),
           ),
           child: Text(
             'Duration: ${widget.duration}',
@@ -338,7 +338,7 @@ class _GuidedMeditationSessionScreenState
                     decoration: BoxDecoration(
                       color: index <= _currentStepIndex
                           ? widget.color
-                          : Colors.white.withValues(alpha: 0.3),
+                          : Colors.white.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -361,7 +361,7 @@ class _GuidedMeditationSessionScreenState
                     height: 150,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: widget.color.withValues(alpha: 0.3),
+                      color: widget.color.withOpacity(0.3),
                       border: Border.all(color: widget.color, width: 2),
                     ),
                     child: Icon(Icons.air, size: 60, color: widget.color),
@@ -378,7 +378,7 @@ class _GuidedMeditationSessionScreenState
               height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: widget.color.withValues(alpha: 0.2),
+                color: widget.color.withOpacity(0.2),
                 border: Border.all(color: widget.color, width: 2),
               ),
               child: Center(
@@ -410,7 +410,7 @@ class _GuidedMeditationSessionScreenState
             Text(
               currentStep.instruction,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.9),
+                color: Colors.white.withOpacity(0.9),
                 fontSize: 16,
                 height: 1.6,
               ),

@@ -149,8 +149,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           AppConstants.appTagline,
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(
-                                color: AppColors.textOnPrimary.withValues(
-                                  alpha: 0.9,
+                                color: AppColors.textOnPrimary.withOpacity(
+                                  0.9,
                                 ),
                               ),
                           textAlign: TextAlign.center,

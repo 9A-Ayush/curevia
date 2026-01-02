@@ -131,7 +131,7 @@ class _FamilyMembersScreenState extends ConsumerState<FamilyMembersScreen> {
               decoration: BoxDecoration(
                 color: ThemeUtils.getPrimaryColor(
                   context,
-                ).withValues(alpha: 0.1),
+                ).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -223,7 +223,7 @@ class _FamilyMembersScreenState extends ConsumerState<FamilyMembersScreen> {
                     radius: 30,
                     backgroundColor: ThemeUtils.getPrimaryColor(
                       context,
-                    ).withValues(alpha: 0.1),
+                    ).withOpacity(0.1),
                     child: Icon(
                       _getFamilyMemberIcon(member.relationship),
                       size: 30,

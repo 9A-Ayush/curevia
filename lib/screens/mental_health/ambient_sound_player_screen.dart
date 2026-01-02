@@ -7,12 +7,14 @@ import 'package:audioplayers/audioplayers.dart';
 /// Ambient Sound Player Screen for meditation and relaxation
 class AmbientSoundPlayerScreen extends StatefulWidget {
   final String soundName;
+  final String soundFile;
   final IconData icon;
   final Color color;
 
   const AmbientSoundPlayerScreen({
     super.key,
     required this.soundName,
+    required this.soundFile,
     required this.icon,
     required this.color,
   });
@@ -85,45 +87,17 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
       await _audioPlayer.setVolume(_volume);
 
-      // Try to load audio from URL
-      final audioUrl = _getAudioUrl();
-      if (audioUrl != null) {
-        await _audioPlayer.setSource(UrlSource(audioUrl));
-      }
+      // Load audio from local assets
+      final assetPath = 'sounds/${widget.soundFile}';
+      await _audioPlayer.setSource(AssetSource(assetPath));
+      
+      print('Audio initialized successfully: $assetPath');
     } catch (e) {
+      print('Audio initialization failed: $e');
       // Audio initialization failed - will use visual-only mode
-      // This is expected if audio URLs are not accessible
     }
   }
 
-  String? _getAudioUrl() {
-    // Using working audio URLs from reliable sources
-    final audioUrls = {
-      'Rain': 'https://www.soundjay.com/misc/sounds/rain-01.mp3',
-      'Ocean Waves': 'https://www.soundjay.com/misc/sounds/ocean-waves.mp3',
-      'Forest': 'https://www.soundjay.com/misc/sounds/forest-birds.mp3',
-      'White Noise': 'https://bigsoundbank.com/UPLOAD/mp3/1946.mp3',
-      'Singing Bowls': 'https://www.soundjay.com/misc/sounds/singing-bowl.mp3',
-      'Birds': 'https://www.soundjay.com/misc/sounds/birds-chirping.mp3',
-      'Thunderstorm': 'https://www.soundjay.com/misc/sounds/thunder-storm.mp3',
-      'Campfire': 'https://www.soundjay.com/misc/sounds/fire-crackling.mp3',
-      'Wind Chimes': 'https://www.soundjay.com/misc/sounds/wind-chimes.mp3',
-      'Waterfall': 'https://www.soundjay.com/misc/sounds/waterfall.mp3',
-      'Night Crickets': 'https://www.soundjay.com/misc/sounds/crickets.mp3',
-      'Cafe Ambience': 'https://www.soundjay.com/misc/sounds/cafe-ambience.mp3',
-      'Piano Meditation':
-          'https://www.soundjay.com/misc/sounds/piano-meditation.mp3',
-      'Tibetan Chants':
-          'https://www.soundjay.com/misc/sounds/tibetan-chant.mp3',
-      'Mountain Wind': 'https://www.soundjay.com/misc/sounds/mountain-wind.mp3',
-      'River Stream': 'https://www.soundjay.com/misc/sounds/river-stream.mp3',
-      'Desert Wind': 'https://www.soundjay.com/misc/sounds/desert-wind.mp3',
-      'Monastery Bells':
-          'https://www.soundjay.com/misc/sounds/monastery-bells.mp3',
-    };
-
-    return audioUrls[widget.soundName];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +124,7 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
             center: Alignment.center,
             radius: 1.0,
             colors: [
-              widget.color.withValues(alpha: 0.3),
+              widget.color.withOpacity(0.3),
               Colors.black,
               Colors.black,
             ],
@@ -226,12 +200,12 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: widget.color.withValues(alpha: 0.2),
+                  color: widget.color.withOpacity(0.2),
                   border: Border.all(color: widget.color, width: 3),
                   boxShadow: _isPlaying
                       ? [
                           BoxShadow(
-                            color: widget.color.withValues(alpha: 0.5),
+                            color: widget.color.withOpacity(0.5),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
@@ -251,7 +225,7 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
             height: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.black.withValues(alpha: 0.7),
+              color: Colors.black.withOpacity(0.7),
             ),
             child: const Icon(Icons.play_arrow, color: Colors.white, size: 30),
           ),
@@ -263,9 +237,9 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: widget.color.withValues(alpha: 0.2),
+        color: widget.color.withOpacity(0.2),
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: widget.color.withValues(alpha: 0.5)),
+        border: Border.all(color: widget.color.withOpacity(0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -290,14 +264,14 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
       children: [
         Row(
           children: [
-            Icon(Icons.volume_down, color: Colors.white.withValues(alpha: 0.7)),
+            Icon(Icons.volume_down, color: Colors.white.withOpacity(0.7)),
             Expanded(
               child: SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   activeTrackColor: widget.color,
-                  inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
+                  inactiveTrackColor: Colors.white.withOpacity(0.3),
                   thumbColor: widget.color,
-                  overlayColor: widget.color.withValues(alpha: 0.2),
+                  overlayColor: widget.color.withOpacity(0.2),
                 ),
                 child: Slider(
                   value: _volume,
@@ -311,13 +285,13 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
                 ),
               ),
             ),
-            Icon(Icons.volume_up, color: Colors.white.withValues(alpha: 0.7)),
+            Icon(Icons.volume_up, color: Colors.white.withOpacity(0.7)),
           ],
         ),
         Text(
           'Volume: ${(_volume * 100).round()}%',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+            color: Colors.white.withOpacity(0.7),
             fontSize: 14,
           ),
         ),
@@ -336,7 +310,7 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
           color: widget.color,
           boxShadow: [
             BoxShadow(
-              color: widget.color.withValues(alpha: 0.3),
+              color: widget.color.withOpacity(0.3),
               blurRadius: 15,
               spreadRadius: 2,
             ),
@@ -406,7 +380,7 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
           descriptions[widget.soundName] ??
               'Relaxing ambient sound for meditation.',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.8),
+            color: Colors.white.withOpacity(0.8),
             fontSize: 16,
             height: 1.5,
           ),
@@ -416,14 +390,14 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: widget.color.withValues(alpha: 0.1),
+            color: widget.color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: widget.color.withValues(alpha: 0.3)),
+            border: Border.all(color: widget.color.withOpacity(0.3)),
           ),
           child: Text(
             '💡 Tip: Focus on the breathing animation and imagine the peaceful sounds of ${widget.soundName.toLowerCase()}. Let your mind relax and follow the rhythm.',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: Colors.white.withOpacity(0.9),
               fontSize: 14,
               height: 1.4,
             ),
@@ -440,7 +414,7 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
       try {
         await _audioPlayer.pause();
       } catch (e) {
-        // Audio not available, continue with visual-only
+        print('Error pausing audio: $e');
       }
 
       _pulseController.stop();
@@ -467,16 +441,14 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
       });
 
       try {
-        // Try to play audio
+        // Try to play audio from local assets
         await _audioPlayer.setVolume(_volume);
         await _audioPlayer.resume();
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                '🎵 Attempting to play ${widget.soundName} audio...',
-              ),
+              content: Text('🎵 Playing ${widget.soundName}...'),
               duration: const Duration(seconds: 2),
               backgroundColor: widget.color,
               behavior: SnackBarBehavior.floating,
@@ -484,43 +456,27 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
           );
         }
 
-        // Wait a moment to see if audio actually starts
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        // Check if audio is actually playing
-        final isActuallyPlaying = await _audioPlayer.getCurrentPosition();
+        // Give a moment for audio to start
+        await Future.delayed(const Duration(milliseconds: 300));
 
         if (mounted) {
-          if (isActuallyPlaying != null &&
-              isActuallyPlaying.inMilliseconds > 0) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('✅ ${widget.soundName} audio is now playing!'),
-                duration: const Duration(seconds: 2),
-                backgroundColor: Colors.green,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '🧘‍♀️ Audio not available. Enjoy the visual meditation for ${widget.soundName}.',
-                ),
-                duration: const Duration(seconds: 3),
-                backgroundColor: Colors.orange,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ ${widget.soundName} is now playing!'),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         }
       } catch (e) {
+        print('Error playing audio: $e');
         // Audio failed, show visual-only message
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '🧘‍♀️ ${widget.soundName} visual meditation started. Imagine the peaceful sounds.',
+                '🧘‍♀️ ${widget.soundName} visual meditation started. Audio may not be available.',
               ),
               duration: const Duration(seconds: 4),
               backgroundColor: widget.color,
@@ -583,6 +539,7 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
   }
 
   void _startTimer() {
+    _sessionTimer?.cancel(); // Cancel any existing timer
     _sessionTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         _timeRemaining--;
@@ -590,6 +547,7 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
 
       if (_timeRemaining <= 0) {
         _sessionTimer?.cancel();
+        _audioPlayer.pause(); // Stop the audio
         setState(() {
           _isPlaying = false;
           _hasTimer = false;
@@ -597,12 +555,15 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
         _pulseController.stop();
         _waveController.stop();
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Timer finished. Sound stopped.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🧘‍♀️ Timer finished. Meditation session completed!'),
+              duration: Duration(seconds: 3),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       }
     });
   }
@@ -624,7 +585,7 @@ class WaveRipplePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final paint = Paint()
-      ..color = color.withValues(alpha: 0.3)
+      ..color = color.withOpacity(0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
@@ -633,7 +594,7 @@ class WaveRipplePainter extends CustomPainter {
       final radius = (size.width / 2) * (animation + i * 0.3) % 1.5;
       final opacity = (1.0 - (animation + i * 0.3) % 1.0) * 0.5;
 
-      paint.color = color.withValues(alpha: opacity);
+      paint.color = color.withOpacity(opacity);
       canvas.drawCircle(center, radius * 100, paint);
     }
   }

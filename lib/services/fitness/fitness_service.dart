@@ -179,9 +179,8 @@ class FitnessService {
     try {
       // Health plugin temporarily disabled due to compatibility issues
       // Using pedometer and sensor data instead for fitness tracking
-      debugPrint('Health data initialization skipped - using pedometer data');
     } catch (e) {
-      debugPrint('Error initializing health data: $e');
+      // Error initializing health data - using fallback
     }
   }
 
@@ -302,7 +301,7 @@ class FitnessService {
       final today = DateTime.now().toIso8601String().split('T')[0];
       await prefs.setString('fitness_date', today);
     } catch (e) {
-      debugPrint('Error saving fitness data: $e');
+      // Error saving fitness data - continue silently
     }
   }
 
@@ -336,7 +335,7 @@ class FitnessService {
       _distanceGoal =
           prefs.getDouble('fitness_distance_goal') ?? defaultDistanceGoal;
     } catch (e) {
-      debugPrint('Error loading fitness data: $e');
+      // Error loading fitness data - use defaults
     }
   }
 

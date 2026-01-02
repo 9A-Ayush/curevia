@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../../models/appointment_model.dart';
 import '../../constants/app_constants.dart';
+import '../firebase/revenue_service.dart';
 
 /// Service for doctor-specific operations
 class DoctorService {
@@ -36,7 +37,6 @@ class DoctorService {
 
       final uniquePatients = <String>{};
       int completedConsultations = 0;
-      double monthlyRevenue = 0;
 
       for (final doc in allAppointmentsQuery.docs) {
         final appointment = AppointmentModel.fromMap(doc.data());
@@ -44,19 +44,21 @@ class DoctorService {
 
         if (appointment.status == 'completed') {
           completedConsultations++;
-
-          // Calculate monthly revenue
-          if (appointment.appointmentDate.isAfter(startOfMonth)) {
-            monthlyRevenue += appointment.consultationFee ?? 0;
-          }
         }
       }
+
+      // Get monthly revenue from revenue service
+      final revenueData = await RevenueService.getDoctorRevenue(
+        doctorId: doctorId,
+        startDate: startOfMonth,
+        endDate: DateTime(now.year, now.month + 1, 0),
+      );
 
       return {
         'todayAppointments': todayAppointmentsQuery.docs.length,
         'totalPatients': uniquePatients.length,
         'completedConsultations': completedConsultations,
-        'monthlyRevenue': monthlyRevenue.round(),
+        'monthlyRevenue': (revenueData['totalRevenue'] as double).round(),
       };
     } catch (e) {
       debugPrint('Error getting doctor stats: $e');
@@ -334,6 +336,9 @@ class DoctorService {
           startDate = DateTime(now.year, now.month, 1);
       }
 
+      final endDate = DateTime(now.year, now.month + 1, 0);
+
+      // Get appointment data
       final appointmentsQuery = await _firestore
           .collection(AppConstants.appointmentsCollection)
           .where('doctorId', isEqualTo: doctorId)
@@ -343,11 +348,21 @@ class DoctorService {
           )
           .get();
 
+      // Get revenue data from revenue service
+      final revenueData = await RevenueService.getDoctorRevenue(
+        doctorId: doctorId,
+        startDate: startDate,
+        endDate: endDate,
+      );
+
+      final revenueByType = await RevenueService.getRevenueByType(
+        doctorId: doctorId,
+        startDate: startDate,
+        endDate: endDate,
+      );
+
       int totalConsultations = 0;
       int completedConsultations = 0;
-      double totalRevenue = 0;
-      double onlineRevenue = 0;
-      double offlineRevenue = 0;
       final uniquePatients = <String>{};
       final newPatients = <String>{};
 
@@ -357,15 +372,6 @@ class DoctorService {
 
         if (appointment.status == 'completed') {
           completedConsultations++;
-          final fee = appointment.consultationFee ?? 0;
-          totalRevenue += fee;
-
-          if (appointment.consultationType?.toLowerCase() == 'online' ||
-              appointment.consultationType?.toLowerCase() == 'video') {
-            onlineRevenue += fee;
-          } else {
-            offlineRevenue += fee;
-          }
         }
 
         uniquePatients.add(appointment.patientId);
@@ -387,8 +393,10 @@ class DoctorService {
         }
       }
 
-      final avgConsultationFee =
-          completedConsultations > 0 ? totalRevenue / completedConsultations : 0;
+      final totalRevenue = revenueData['totalRevenue'] as double;
+      final avgConsultationFee = revenueData['confirmedAppointments'] > 0 
+          ? totalRevenue / revenueData['confirmedAppointments'] 
+          : 0.0;
 
       return {
         'totalConsultations': totalConsultations,
@@ -397,11 +405,14 @@ class DoctorService {
         'avgResponseTime': 5.0, // TODO: Calculate from actual data
         'revenue': totalRevenue.round(),
         'avgConsultationFee': avgConsultationFee.round(),
-        'onlineRevenue': onlineRevenue.round(),
-        'offlineRevenue': offlineRevenue.round(),
+        'onlineRevenue': (revenueByType['online'] ?? 0).round(),
+        'offlineRevenue': (revenueByType['offline'] ?? 0).round(),
         'totalPatients': uniquePatients.length,
         'newPatients': newPatients.length,
         'returningPatients': uniquePatients.length - newPatients.length,
+        'confirmedAppointments': revenueData['confirmedAppointments'],
+        'cancelledAppointments': revenueData['cancelledAppointments'],
+        'netRevenue': totalRevenue.round(),
         'consultationsChange': '+0%', // TODO: Calculate change from previous period
         'satisfactionChange': '+0.0', // TODO: Calculate change
         'responseTimeChange': '-0.0 min', // TODO: Calculate change

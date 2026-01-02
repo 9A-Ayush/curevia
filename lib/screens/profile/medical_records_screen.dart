@@ -77,7 +77,7 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -103,7 +103,7 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
                             'Access your health history and documents',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.9),
+                                  color: Colors.white.withOpacity(0.9),
                                 ),
                           ),
                         ],
@@ -573,7 +573,7 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
               decoration: BoxDecoration(
                 color: ThemeUtils.getPrimaryColor(
                   context,
-                ).withValues(alpha: 0.1),
+                ).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -683,7 +683,7 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
               decoration: BoxDecoration(
                 color: ThemeUtils.getPrimaryColor(
                   context,
-                ).withValues(alpha: 0.1),
+                ).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -964,7 +964,7 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: ThemeUtils.getSuccessColor(context).withValues(alpha: 0.1),
+            color: ThemeUtils.getSuccessColor(context).withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -997,7 +997,7 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: statusColor.withValues(alpha: 0.1),
+          backgroundColor: statusColor.withOpacity(0.1),
           child: Icon(Icons.assignment, color: statusColor),
         ),
         title: Text(
@@ -1242,7 +1242,7 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -1306,7 +1306,7 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
                       decoration: BoxDecoration(
                         color: ThemeUtils.getPrimaryColor(
                           context,
-                        ).withValues(alpha: 0.1),
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -1339,7 +1339,7 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
                       decoration: BoxDecoration(
                         color: ThemeUtils.getPrimaryColor(
                           context,
-                        ).withValues(alpha: 0.1),
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -1372,7 +1372,7 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
                       decoration: BoxDecoration(
                         color: ThemeUtils.getPrimaryColor(
                           context,
-                        ).withValues(alpha: 0.1),
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(

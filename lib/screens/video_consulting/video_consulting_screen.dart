@@ -240,7 +240,7 @@ class _VideoConsultingScreenState extends ConsumerState<VideoConsultingScreen> {
           _searchDoctors();
         },
         backgroundColor: AppColors.surface,
-        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+        selectedColor: AppColors.primary.withOpacity(0.2),
         checkmarkColor: AppColors.primary,
         labelStyle: TextStyle(
           color: isSelected ? AppColors.primary : AppColors.textSecondary,
@@ -275,7 +275,7 @@ class _VideoConsultingScreenState extends ConsumerState<VideoConsultingScreen> {
                   // Doctor avatar
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    backgroundColor: AppColors.primary.withOpacity(0.1),
                     backgroundImage: doctor.profileImageUrl != null
                         ? NetworkImage(doctor.profileImageUrl!)
                         : null,
@@ -322,7 +322,7 @@ class _VideoConsultingScreenState extends ConsumerState<VideoConsultingScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.1),
+                            color: AppColors.success.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(

@@ -86,7 +86,7 @@ class _VideoCallWaitingScreenState extends ConsumerState<VideoCallWaitingScreen>
             // Doctor Avatar
             CircleAvatar(
               radius: 60,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+              backgroundColor: AppColors.primary.withOpacity(0.1),
               child: const Icon(Icons.person, size: 60, color: AppColors.primary),
             ),
             
@@ -117,9 +117,9 @@ class _VideoCallWaitingScreenState extends ConsumerState<VideoCallWaitingScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                border: Border.all(color: AppColors.primary.withOpacity(0.3)),
               ),
               child: Column(
                 children: [
@@ -177,9 +177,9 @@ class _VideoCallWaitingScreenState extends ConsumerState<VideoCallWaitingScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.1),
+                  color: AppColors.warning.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                  border: Border.all(color: AppColors.warning.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [

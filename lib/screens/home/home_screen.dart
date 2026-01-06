@@ -6,6 +6,7 @@ import '../../constants/app_constants.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/home_provider.dart';
+import '../../providers/appointment_provider.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../utils/theme_utils.dart';
 import '../../widgets/home/home_header.dart';
@@ -27,12 +28,13 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Load home data when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(homeProvider.notifier).loadHomeData();
@@ -41,8 +43,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Use a post-frame callback to avoid modifying providers during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final user = ref.read(currentUserModelProvider);
+          if (user != null) {
+            ref.invalidate(upcomingAppointmentsProvider(user.uid));
+          }
+        }
+      });
+    }
   }
 
   @override

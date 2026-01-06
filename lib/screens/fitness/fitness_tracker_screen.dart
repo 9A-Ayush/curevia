@@ -294,7 +294,7 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Fitness tracking requires access to your device sensors and activity data.',
+              'Fitness tracking requires access to your device sensors and activity data to monitor your steps, calories, and workouts.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: ThemeUtils.getTextSecondaryColor(context),
               ),
@@ -303,11 +303,24 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () async {
-                final granted = await FitnessPermissions.requestAllPermissions(
-                  context,
-                );
-                if (granted) {
-                  _initializeFitnessTracking();
+                // Check if permissions can be requested directly
+                final canRequest = await FitnessPermissions.canRequestPermissions();
+                
+                if (canRequest) {
+                  // First try to request permissions directly
+                  final granted = await _fitnessService.requestPermissions();
+                  if (granted) {
+                    _initializeFitnessTracking();
+                  } else {
+                    // If direct request fails, try the fitness permissions flow
+                    final fitnessGranted = await FitnessPermissions.requestAllPermissions(context);
+                    if (fitnessGranted) {
+                      _initializeFitnessTracking();
+                    }
+                  }
+                } else {
+                  // Permissions are permanently denied, show settings
+                  await FitnessPermissions.showPermissionSettings(context);
                 }
               },
               icon: const Icon(Icons.security),
@@ -320,6 +333,13 @@ class _FitnessTrackerScreenState extends State<FitnessTrackerScreen> {
                   vertical: 12,
                 ),
               ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () async {
+                await FitnessPermissions.showPermissionSettings(context);
+              },
+              child: const Text('View Permission Status'),
             ),
           ],
         ),

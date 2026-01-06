@@ -138,5 +138,9 @@ class AppConstants {
   // Emergency Contact
   static const String emergencyNumber = '108';
   static const String supportEmail = 'support@curevia.com';
-  static const String supportPhone = '+91-9876543210';
+  static const String supportPhone = '1800-599-0019';
+  
+  // Complaint Contact
+  static const String complaintEmail = 'wemayush@gmail.com';
+  static const String complaintWhatsApp = '9472548097';
 }

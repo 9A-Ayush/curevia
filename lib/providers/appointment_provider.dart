@@ -335,11 +335,19 @@ class AppointmentsListNotifier extends StateNotifier<AppointmentsListState> {
     required String newTimeSlot,
   }) async {
     try {
+      // Check if the notifier is still mounted before proceeding
+      if (!mounted) {
+        throw Exception('Operation cancelled - screen was closed');
+      }
+
       await AppointmentService.rescheduleAppointment(
         appointmentId: appointmentId,
         newDate: newDate,
         newTimeSlot: newTimeSlot,
       );
+
+      // Check again before updating state
+      if (!mounted) return;
 
       // Update local state
       final updatedAppointments = state.appointments.map((appointment) {
@@ -347,7 +355,7 @@ class AppointmentsListNotifier extends StateNotifier<AppointmentsListState> {
           return appointment.copyWith(
             appointmentDate: newDate,
             timeSlot: newTimeSlot,
-            status: 'rescheduled',
+            status: 'confirmed', // Keep as confirmed after reschedule
             updatedAt: DateTime.now(),
           );
         }
@@ -356,7 +364,10 @@ class AppointmentsListNotifier extends StateNotifier<AppointmentsListState> {
 
       state = state.copyWith(appointments: updatedAppointments);
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      if (mounted) {
+        state = state.copyWith(error: e.toString());
+      }
+      rethrow; // Re-throw so the UI can handle it
     }
   }
 
@@ -367,7 +378,7 @@ class AppointmentsListNotifier extends StateNotifier<AppointmentsListState> {
 }
 
 /// Provider instances
-final appointmentBookingProvider = StateNotifierProvider<AppointmentBookingNotifier, AppointmentBookingState>((ref) {
+final appointmentBookingProvider = StateNotifierProvider.autoDispose<AppointmentBookingNotifier, AppointmentBookingState>((ref) {
   return AppointmentBookingNotifier();
 });
 
@@ -380,9 +391,50 @@ final appointmentProvider = FutureProvider.family<AppointmentModel?, String>((re
   return await AppointmentService.getAppointmentById(appointmentId);
 });
 
-/// Upcoming appointments provider
-final upcomingAppointmentsProvider = FutureProvider.family<List<AppointmentModel>, String>((ref, userId) async {
-  return await AppointmentService.getUpcomingAppointments(userId: userId);
+/// Upcoming appointments provider with stream for real-time updates and fallback
+final upcomingAppointmentsProvider = StreamProvider.family.autoDispose<List<AppointmentModel>, String>((ref, userId) {
+  final stopwatch = Stopwatch()..start();
+  return AppointmentService.getAppointmentsStream(
+    userId: userId,
+    status: null, // Get all appointments and filter client-side for better performance
+  ).map((appointments) {
+    final now = DateTime.now();
+    print('Total appointments fetched: ${appointments.length}');
+    
+    // Debug: Print all appointments with their status and dates
+    for (var appointment in appointments) {
+      print('Appointment: ${appointment.doctorName}, Status: ${appointment.status}, Date: ${appointment.appointmentDate}, IsAfter: ${appointment.appointmentDate.isAfter(now)}');
+    }
+    
+    final filtered = appointments
+        .where((appointment) {
+          final isValidStatus = appointment.status == 'confirmed' || appointment.status == 'pending';
+          final isUpcoming = appointment.appointmentDate.isAfter(now.subtract(const Duration(hours: 1))); // Allow appointments within 1 hour
+          
+          print('Filtering ${appointment.doctorName}: Status OK: $isValidStatus, Upcoming: $isUpcoming');
+          return isValidStatus && isUpcoming;
+        })
+        .toList();
+    
+    stopwatch.stop();
+    print('Upcoming appointments loaded in ${stopwatch.elapsedMilliseconds}ms (${filtered.length} items)');
+    return filtered;
+  }).handleError((error) {
+    print('Error in upcomingAppointmentsProvider stream: $error');
+    // Return empty list on error to prevent crashes
+    return <AppointmentModel>[];
+  });
+});
+
+/// Fallback upcoming appointments provider using the original method
+final upcomingAppointmentsFallbackProvider = FutureProvider.family.autoDispose<List<AppointmentModel>, String>((ref, userId) async {
+  try {
+    print('Using fallback provider for upcoming appointments');
+    return await AppointmentService.getUpcomingAppointments(userId: userId);
+  } catch (e) {
+    print('Error in fallback provider: $e');
+    return <AppointmentModel>[];
+  }
 });
 
 /// Available slots provider

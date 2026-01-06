@@ -541,30 +541,51 @@ class AppointmentService {
     }
   }
 
-  /// Stream of appointments for real-time updates
+  /// Stream of appointments for real-time updates with optimized query
   static Stream<List<AppointmentModel>> getAppointmentsStream({
     required String userId,
     String? status,
   }) {
+    print('getAppointmentsStream called for userId: $userId, status: $status');
+    
     Query query = _firestore
         .collection(AppConstants.appointmentsCollection)
         .where('patientId', isEqualTo: userId);
 
+    // Only add status filter if specified to avoid composite index requirements
     if (status != null) {
       query = query.where('status', isEqualTo: status);
     }
 
     return query
         .orderBy('appointmentDate', descending: true)
+        .limit(50) // Limit to improve performance
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) => AppointmentModel.fromMap(
-                  doc.data() as Map<String, dynamic>,
-                ),
-              )
-              .toList(),
+          (snapshot) {
+            print('Firestore snapshot received: ${snapshot.docs.length} documents');
+            final appointments = snapshot.docs
+                .map(
+                  (doc) {
+                    try {
+                      final appointment = AppointmentModel.fromMap(
+                        doc.data() as Map<String, dynamic>,
+                      );
+                      print('Parsed appointment: ${appointment.doctorName}, Status: ${appointment.status}, Date: ${appointment.appointmentDate}');
+                      return appointment;
+                    } catch (e) {
+                      print('Error parsing appointment: $e');
+                      return null;
+                    }
+                  },
+                )
+                .where((appointment) => appointment != null)
+                .cast<AppointmentModel>()
+                .toList();
+            
+            print('Total valid appointments: ${appointments.length}');
+            return appointments;
+          },
         );
   }
 

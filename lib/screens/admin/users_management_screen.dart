@@ -24,8 +24,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    
     return Column(
       children: [
         // Header with filters
@@ -42,56 +40,52 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Users Management',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+              // Search bar
+              SizedBox(
+                width: double.infinity,
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search by name or email...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() => _searchQuery = value.toLowerCase());
+                  },
+                ),
               ),
               const SizedBox(height: 16),
               
-              // Search and filters
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  // Search bar
-                  SizedBox(
-                    width: isMobile ? double.infinity : 300,
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search by name or email...',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() => _searchQuery = '');
-                                },
-                              )
-                            : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() => _searchQuery = value.toLowerCase());
-                      },
-                    ),
-                  ),
-                  
-                  // Role filter chips
-                  _buildFilterChip('All', 'all'),
-                  _buildFilterChip('Patients', 'patient'),
-                  _buildFilterChip('Doctors', 'doctor'),
-                  _buildFilterChip('Admins', 'admin'),
-                ],
+              // Horizontally scrollable role filters
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('All', 'all'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Patients', 'patient'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Doctors', 'doctor'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Admins', 'admin'),
+                  ],
+                ),
               ),
             ],
           ),
@@ -113,12 +107,19 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       onSelected: (selected) {
         setState(() => _selectedRole = value);
       },
-      selectedColor: AppColors.primary.withOpacity(0.2),
+      selectedColor: ThemeUtils.getPrimaryColor(context).withOpacity(0.2),
+      backgroundColor: ThemeUtils.getSurfaceVariantColor(context),
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.primary : ThemeUtils.getTextPrimaryColor(context),
+        color: isSelected 
+            ? ThemeUtils.getPrimaryColor(context) 
+            : ThemeUtils.getTextPrimaryColor(context),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
-      backgroundColor: ThemeUtils.getSurfaceColor(context),
+      side: BorderSide(
+        color: isSelected 
+            ? ThemeUtils.getPrimaryColor(context) 
+            : ThemeUtils.getBorderLightColor(context),
+      ),
     );
   }
 

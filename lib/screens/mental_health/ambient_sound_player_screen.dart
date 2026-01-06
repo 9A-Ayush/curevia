@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
+import '../../services/meditation_audio_service.dart';
 
 /// Ambient Sound Player Screen for meditation and relaxation
 class AmbientSoundPlayerScreen extends StatefulWidget {
@@ -33,6 +34,7 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
   bool _hasTimer = false;
 
   late AudioPlayer _audioPlayer;
+  final MeditationAudioService _audioService = MeditationAudioService();
 
   late AnimationController _pulseController;
   late AnimationController _waveController;
@@ -52,6 +54,7 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
     super.initState();
     _audioPlayer = AudioPlayer();
     _initializeAudio();
+    _initializeAudioService();
 
     _pulseController = AnimationController(
       duration: const Duration(seconds: 2),
@@ -72,9 +75,15 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
     ).animate(CurvedAnimation(parent: _waveController, curve: Curves.linear));
   }
 
+  Future<void> _initializeAudioService() async {
+    await _audioService.initialize();
+    await _audioService.configureBackgroundAudio();
+  }
+
   @override
   void dispose() {
     _audioPlayer.dispose();
+    _audioService.dispose();
     _pulseController.dispose();
     _waveController.dispose();
     _sessionTimer?.cancel();
@@ -327,6 +336,8 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
 
   Widget _buildSoundDescription() {
     final descriptions = {
+      'Om':
+          'Sacred Om chanting creates deep spiritual connection and inner peace for meditation.',
       'Rain':
           'Gentle rainfall creates a peaceful atmosphere, perfect for relaxation and focus.',
       'Ocean Waves':
@@ -349,8 +360,6 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
           'Cascading water sounds provide a continuous, refreshing natural backdrop.',
       'Night Crickets':
           'Evening cricket songs create a serene nighttime atmosphere for deep relaxation.',
-      'Cafe Ambience':
-          'Gentle coffee shop sounds with soft chatter and ambient noise for focus.',
       'Piano Meditation':
           'Soft, contemplative piano melodies designed specifically for meditation.',
       'Tibetan Chants':
@@ -554,6 +563,9 @@ class _AmbientSoundPlayerScreenState extends State<AmbientSoundPlayerScreen>
         });
         _pulseController.stop();
         _waveController.stop();
+
+        // Play calming completion sound
+        _audioService.playTimerCompletionSound();
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

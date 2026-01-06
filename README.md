@@ -35,8 +35,89 @@
     tracks.\
 -   🌦 **Weather & AQI Alerts** --- OpenWeatherMap/Open-Meteo with health
     tips.\
--   🔔 **Notifications** --- Real-time alerts via Firebase Cloud
-    Messaging.
+-   🔔 **Smart Notifications** --- Role-based push notifications with sound support for patients, doctors, and admins.\
+-   🛡️ **Admin Panel** --- Complete administrative control with doctor verification, user management, and analytics.
+
+------------------------------------------------------------------------
+
+## 🔔 Advanced Notification System
+
+Curevia features a comprehensive **role-based push notification system** powered by Firebase Cloud Messaging (FCM) with intelligent targeting and sound support.
+
+### 📱 **Patient Notifications**
+- **Appointment Confirmations** --- Instant booking confirmations with appointment details
+- **Appointment Reminders** --- Smart reminders before scheduled appointments  
+- **Payment Success** --- Confirmation notifications for successful payments
+- **Health Tips** --- Periodic wellness reminders and health advice
+- **Doctor Rescheduling** --- Notifications when doctors reschedule appointments
+- **Engagement Messages** --- Motivational check-ins and wellness wishes
+- **Fitness Achievements** --- Celebration notifications for completed fitness goals
+
+### 🩺 **Doctor Notifications**  
+- **New Bookings** --- Instant alerts for new patient appointments
+- **Payment Received** --- Notifications when payments are processed
+- **Appointment Changes** --- Updates when patients reschedule or cancel
+- **Verification Status** --- Updates on doctor verification approval/rejection
+
+### 🛡️ **Admin Notifications**
+- **Verification Requests** --- High-priority alerts for new doctor verification submissions
+
+### 🔊 **Smart Sound System**
+- **Priority-Based Sounds** --- Different notification sounds based on urgency and type
+- **Multi-State Support** --- Works in foreground, background, and terminated app states
+- **Sound Categories** --- Appointment alerts, payment confirmations, and admin notifications
+
+### 🧪 **Developer Tools**
+- **Notification Test Center** --- Debug screen for testing all notification types (debug mode only)
+- **Comprehensive Testing** --- Built-in tools for testing role-based notifications
+- **System Monitoring** --- Real-time status monitoring and diagnostics
+
+------------------------------------------------------------------------
+
+## 🏗️ Notification System Architecture
+
+### **Service Layer Structure**
+```
+lib/services/notifications/
+├── notification_integration_service.dart    # Main integration interface
+├── role_based_notification_service.dart     # Role-specific notifications
+├── notification_initialization_service.dart # System setup & lifecycle
+├── notification_testing_service.dart        # Development & testing tools
+├── notification_manager.dart               # Core notification management
+├── fcm_service.dart                        # Firebase Cloud Messaging
+├── notification_handler.dart              # Navigation & UI handling
+└── notification_scheduler.dart            # Scheduled notifications
+```
+
+### **Notification Types & Targeting**
+- **15+ Notification Types** covering all user interactions
+- **Role-Based Targeting** using FCM topics and device tokens
+- **Priority Levels** with appropriate sound and UI treatment
+- **Cross-Platform Support** for Android and iOS with native sounds
+
+### **Key Features**
+- ✅ **Production Ready** - Handles all app states (foreground, background, terminated)
+- ✅ **Sound Enabled** - Custom sounds for different notification categories
+- ✅ **Role Aware** - Intelligent targeting based on user roles
+- ✅ **Scalable** - Easy to add new notification types and targeting rules
+- ✅ **Testable** - Comprehensive testing tools for development
+- ✅ **Monitored** - Real-time system status and diagnostics
+
+### **Usage Example**
+```dart
+// Send appointment confirmation to patient
+await RoleBasedNotificationService.instance.sendAppointmentBookingConfirmation(
+  patientId: 'patient_123',
+  patientFCMToken: 'fcm_token_here',
+  doctorName: 'Dr. Smith',
+  appointmentId: 'apt_456',
+  appointmentTime: DateTime.now().add(Duration(days: 1)),
+  appointmentType: 'Consultation',
+);
+
+// Test notifications in debug mode
+await NotificationTestingService.instance.testAllPatientNotifications();
+```
 
 ------------------------------------------------------------------------
 
@@ -60,6 +141,10 @@
   🌦 **Weather API**                              ![OpenWeatherMap](https://img.shields.io/badge/OpenWeatherMap-FF7E00?style=for-the-badge&logo=openstreetmap&logoColor=white)
 
   💊 **Medicine API**                             ![openFDA](https://img.shields.io/badge/openFDA-003366?style=for-the-badge)
+
+  🔔 **Notifications**                           ![FCM](https://img.shields.io/badge/Firebase%20Cloud%20Messaging-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+
+  🎵 **Audio**                                   ![Flutter Local Notifications](https://img.shields.io/badge/Local%20Notifications-02569B?style=for-the-badge&logo=flutter&logoColor=white)
   -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
@@ -83,6 +168,47 @@ flutter pub get
 # Run the app
 flutter run
 ```
+
+### 🧪 **Testing Notifications (Debug Mode)**
+
+Access the **Notification Test Center** in debug builds to test all notification types:
+
+1. **Build in debug mode**: `flutter run --debug`
+2. **Navigate to**: Debug → Notification Test Screen
+3. **Test Features**:
+   - Test individual notification types by role
+   - Run comprehensive test suites
+   - Monitor system status and FCM token
+   - Test sound playback and priorities
+   - Simulate different app states
+
+### 🔧 **Development Setup**
+
+The notification system automatically initializes when the app starts. Key integration points:
+
+- **Main App**: `lib/main.dart` - System initialization
+- **Auth Flow**: `lib/providers/auth_provider.dart` - User-specific setup
+- **Debug Tools**: `lib/screens/debug/notification_test_screen.dart` - Testing interface
+
+------------------------------------------------------------------------
+
+## 🆕 Recent Updates
+
+### **v1.0.0 - FCM Push Notification System** (Latest)
+- 🔔 **Complete Notification Overhaul** - Implemented comprehensive role-based push notification system
+- 📱 **15+ Notification Types** - Covering all user interactions for patients, doctors, and admins
+- 🔊 **Smart Sound System** - Priority-based notification sounds with multi-state support
+- 🧪 **Developer Tools** - Built-in testing center for notification development and debugging
+- 🎯 **Role-Based Targeting** - Intelligent notification delivery using FCM topics and device tokens
+- ⚡ **Production Ready** - Handles foreground, background, and terminated app states
+- 🛡️ **Admin Panel Integration** - Seamless integration with existing admin verification workflows
+
+### **Previous Updates**
+- 🏥 **Admin Panel** - Complete administrative control with doctor verification and analytics
+- 📹 **Video Consultations** - Agora-powered real-time video and voice calls
+- 💳 **Payment Integration** - Razorpay support with multiple payment methods
+- 🏃 **Fitness Tracking** - Comprehensive health and fitness monitoring
+- 🎧 **Meditation Sounds** - Relaxation and wellness audio features
 
 ------------------------------------------------------------------------
 

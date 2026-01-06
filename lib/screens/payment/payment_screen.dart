@@ -4,10 +4,13 @@ import 'dart:async';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../services/payment/razorpay_service.dart';
+import '../../services/firebase/appointment_service.dart';
 import '../../models/appointment_model.dart';
 import '../../models/doctor_model.dart';
 import '../../models/user_model.dart';
+import '../../models/notification_model.dart';
 import '../../widgets/common/custom_button.dart';
+import '../../services/notifications/notification_manager.dart';
 
 /// Payment screen for appointment booking
 class PaymentScreen extends ConsumerStatefulWidget {
@@ -133,7 +136,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: CustomButton(
-                    text: _isProcessing ? 'Processing...' : 'Pay Now',
+                    text: _isProcessing 
+                        ? 'Processing...' 
+                        : _selectedPaymentMethod == 'pay_on_clinic' 
+                            ? 'Confirm Booking' 
+                            : 'Pay Now',
                     onPressed: _isProcessing ? null : _processPayment,
                     isLoading: _isProcessing,
                   ),
@@ -332,6 +339,18 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
 
   Widget _buildPaymentMethods() {
     final paymentMethods = RazorpayService.getSupportedPaymentMethods();
+    
+    // Add "Pay on Clinic" option for in-person visits
+    final allPaymentMethods = <Map<String, dynamic>>[
+      ...paymentMethods,
+      if (widget.appointment.consultationType == 'offline')
+        {
+          'id': 'pay_on_clinic',
+          'name': 'Pay on Clinic',
+          'description': 'Pay directly at the clinic during your visit',
+          'icon': 'local_hospital',
+        },
+    ];
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -352,7 +371,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          ...paymentMethods.map((method) => _buildPaymentMethodTile(method)),
+          ...allPaymentMethods.map((method) => _buildPaymentMethodTile(method)),
           
           // Show payment method specific options when selected
           if (_selectedPaymentMethod != null) ...[
@@ -485,6 +504,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         return 'Digital Wallet';
       case 'emi':
         return 'EMI Payment';
+      case 'pay_on_clinic':
+        return 'Pay on Clinic';
       default:
         return 'Payment Options';
     }
@@ -502,6 +523,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         return 'Pay using your digital wallet balance. Instant payment confirmation.';
       case 'emi':
         return 'Convert your payment into easy monthly installments. No cost EMI available.';
+      case 'pay_on_clinic':
+        return 'Pay directly at the clinic during your visit. Cash or card accepted at clinic.';
       default:
         return 'Choose your preferred payment method for secure transaction.';
     }
@@ -585,6 +608,34 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             ),
           ],
         );
+      case 'pay_on_clinic':
+        return Column(
+          children: [
+            Row(
+              children: [
+                Icon(Icons.location_on, size: 16, color: Colors.green),
+                const SizedBox(width: 4),
+                Text('Pay at clinic reception', style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.payment, size: 16, color: Colors.blue),
+                const SizedBox(width: 4),
+                Text('Cash or card accepted', style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.schedule, size: 16, color: Colors.orange),
+                const SizedBox(width: 4),
+                Text('Payment due before consultation', style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ],
+        );
       default:
         return const SizedBox.shrink();
     }
@@ -601,6 +652,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         return Icons.account_balance_wallet;
       case 'payment':
         return Icons.payment;
+      case 'local_hospital':
+        return Icons.local_hospital;
       default:
         return Icons.payment;
     }
@@ -638,10 +691,16 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '• Payment is secure and processed by Razorpay\n'
-            '• Refunds will be processed within 5-7 business days\n'
-            '• Cancellation charges may apply as per policy\n'
-            '• By proceeding, you agree to our Terms & Conditions',
+            widget.appointment.consultationType == 'offline'
+                ? '• Online payments are secure and processed by Razorpay\n'
+                  '• Pay on Clinic option allows payment at clinic reception\n'
+                  '• Refunds will be processed within 5-7 business days\n'
+                  '• Cancellation charges may apply as per policy\n'
+                  '• By proceeding, you agree to our Terms & Conditions'
+                : '• Payment is secure and processed by Razorpay\n'
+                  '• Refunds will be processed within 5-7 business days\n'
+                  '• Cancellation charges may apply as per policy\n'
+                  '• By proceeding, you agree to our Terms & Conditions',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: ThemeUtils.getTextSecondaryColor(context),
             ),
@@ -669,7 +728,13 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       print('Patient: ${widget.patient.fullName}');
       print('Fee: ₹${widget.appointment.consultationFee}');
 
-      // Simulate payment processing with 5-second maximum
+      // Handle "Pay on Clinic" option
+      if (_selectedPaymentMethod == 'pay_on_clinic') {
+        await _processPayOnClinicBooking();
+        return;
+      }
+
+      // Simulate payment processing with 5-second maximum for other payment methods
       await Future.any([
         _simulatePaymentProcess(),
         Future.delayed(const Duration(seconds: 5)).then((_) {
@@ -683,6 +748,56 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         _isProcessing = false;
       });
       _showErrorDialog('Payment failed: ${e.toString()}');
+    }
+  }
+
+  Future<void> _processPayOnClinicBooking() async {
+    try {
+      print('=== PROCESSING PAY ON CLINIC BOOKING ===');
+      
+      // Book the appointment with pay_on_clinic status
+      final appointmentId = await AppointmentService.bookAppointment(
+        patientId: widget.patient.uid,
+        doctorId: widget.doctor.uid,
+        patientName: widget.patient.fullName,
+        doctorName: widget.doctor.fullName,
+        doctorSpecialty: widget.doctor.specialty ?? 'General Medicine',
+        appointmentDate: widget.appointment.appointmentDate,
+        timeSlot: widget.appointment.timeSlot,
+        consultationType: widget.appointment.consultationType,
+        consultationFee: widget.appointment.consultationFee,
+        paymentStatus: 'pay_on_clinic',
+        symptoms: widget.appointment.symptoms,
+        notes: widget.appointment.notes,
+      );
+      
+      print('Pay on Clinic booking confirmed: $appointmentId');
+      
+      // Send notification to doctor for pay on clinic booking
+      await NotificationManager.instance.sendTestNotification(
+        title: 'New Appointment Booked (Pay on Clinic)',
+        body: '${widget.patient.fullName} booked an appointment - Payment at clinic',
+        type: NotificationType.appointmentReminder,
+        data: {
+          'appointmentId': appointmentId,
+          'patientId': widget.patient.uid,
+          'patientName': widget.patient.fullName,
+          'type': 'appointment',
+          'paymentType': 'pay_on_clinic',
+        },
+      );
+      
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+        
+        // Show booking confirmation dialog
+        _showPayOnClinicSuccessDialog(appointmentId);
+      }
+    } catch (e) {
+      print('Pay on Clinic booking error: $e');
+      throw Exception('Failed to confirm booking: $e');
     }
   }
 
@@ -701,9 +816,125 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         _isProcessing = false;
       });
       
+      // Call the success callback first
+      widget.onPaymentSuccess(paymentId);
+      
       // Show success message
       _showPaymentSuccessDialog(paymentId);
     }
+  }
+
+  void _showPayOnClinicSuccessDialog(String bookingId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.check_circle,
+              color: Colors.green,
+              size: 28,
+            ),
+            const SizedBox(width: 8),
+            const Text('Booking Confirmed!'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Your appointment has been confirmed successfully.'),
+            const SizedBox(height: 8),
+            Text(
+              'Booking ID: $bookingId',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontFamily: 'monospace',
+                color: ThemeUtils.getTextSecondaryColor(context),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.payment, color: Colors.orange, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Payment Required at Clinic',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Please pay ₹${widget.appointment.consultationFee?.toStringAsFixed(0) ?? '0'} at the clinic reception before your consultation.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Cash and card payments are accepted.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.orange.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'The doctor has been notified and will be ready for your appointment.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              // Don't call onPaymentSuccess here for pay on clinic - it's handled differently
+              Navigator.pop(context, bookingId); // Return to previous screen
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showPaymentSuccessDialog(String paymentId) {
@@ -764,7 +995,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context); // Close dialog
-              widget.onPaymentSuccess(paymentId);
+              // Don't call onPaymentSuccess here - it's already called in _processPayment
               Navigator.pop(context, paymentId); // Return to previous screen
             },
             style: ElevatedButton.styleFrom(

@@ -328,22 +328,35 @@ class _GuidedMeditationSessionScreenState
         children: [
           // Progress Indicator
           Container(
-            margin: const EdgeInsets.only(bottom: 32),
-            child: Row(
-              children: List.generate(_steps.length, (index) {
-                return Expanded(
-                  child: Container(
-                    height: 4,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(
-                      color: index <= _currentStepIndex
-                          ? widget.color
-                          : Colors.white.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+            margin: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              children: [
+                Row(
+                  children: List.generate(_steps.length, (index) {
+                    return Expanded(
+                      child: Container(
+                        height: 4,
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        decoration: BoxDecoration(
+                          color: index <= _currentStepIndex
+                              ? widget.color
+                              : Colors.white.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Step ${_currentStepIndex + 1} of ${_steps.length}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
-                );
-              }),
+                ),
+              ],
             ),
           ),
 
@@ -351,23 +364,55 @@ class _GuidedMeditationSessionScreenState
           if (widget.title == 'Mindful Breathing' &&
               _isSessionActive &&
               !_isPaused)
-            AnimatedBuilder(
-              animation: _breathingAnimation,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _breathingAnimation.value,
-                  child: Container(
-                    width: 150,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: widget.color.withOpacity(0.3),
-                      border: Border.all(color: widget.color, width: 2),
-                    ),
-                    child: Icon(Icons.air, size: 60, color: widget.color),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                AnimatedBuilder(
+                  animation: _breathingAnimation,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _breathingAnimation.value,
+                      child: Container(
+                        width: 150,
+                        height: 150,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: widget.color.withOpacity(0.3),
+                          border: Border.all(color: widget.color, width: 2),
+                        ),
+                        child: Icon(Icons.air, size: 60, color: widget.color),
+                      ),
+                    );
+                  },
+                ),
+                // Timer overlay for breathing meditation
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black.withOpacity(0.8),
+                    border: Border.all(color: widget.color, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.color.withOpacity(0.3),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
-                );
-              },
+                  child: Center(
+                    child: Text(
+                      _formatTime(_stepTimeRemaining),
+                      style: TextStyle(
+                        color: widget.color,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
           if (widget.title != 'Mindful Breathing' ||
@@ -416,6 +461,27 @@ class _GuidedMeditationSessionScreenState
               ),
               textAlign: TextAlign.center,
             ),
+            
+            // Additional breathing guidance for mindful breathing
+            if (widget.title == 'Mindful Breathing' && _isSessionActive && !_isPaused) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: widget.color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: widget.color.withOpacity(0.5)),
+                ),
+                child: Text(
+                  'Follow the breathing circle rhythm',
+                  style: TextStyle(
+                    color: widget.color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ],
         ],
       ),

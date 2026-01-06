@@ -4,13 +4,14 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../constants/app_colors.dart';
 import '../../models/doctor_model.dart';
 import '../../models/appointment_model.dart';
+import '../../models/notification_model.dart';
 import '../../providers/appointment_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../widgets/common/loading_overlay.dart';
 import '../../services/firebase/appointment_service.dart';
-import '../../services/firebase/notification_service.dart';
+import '../../services/notifications/notification_manager.dart';
 import '../payment/payment_screen.dart';
 
 /// Appointment booking screen
@@ -131,11 +132,11 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight,
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -145,12 +146,16 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
             backgroundImage: widget.doctor.profileImageUrl != null
                 ? NetworkImage(widget.doctor.profileImageUrl!)
                 : null,
             child: widget.doctor.profileImageUrl == null
-                ? const Icon(Icons.person, color: AppColors.primary, size: 30)
+                ? Icon(
+                    Icons.person, 
+                    color: Theme.of(context).primaryColor, 
+                    size: 30,
+                  )
                 : null,
           ),
           const SizedBox(width: 16),
@@ -167,7 +172,7 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
                 Text(
                   widget.doctor.specialty ?? 'General Medicine',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -175,16 +180,16 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: widget.consultationType == 'online'
-                        ? AppColors.secondary.withOpacity(0.1)
-                        : AppColors.primary.withOpacity(0.1),
+                        ? Colors.blue.withOpacity(0.1)
+                        : Theme.of(context).primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     widget.consultationType == 'online' ? 'Video Consultation' : 'In-Person Visit',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: widget.consultationType == 'online'
-                          ? AppColors.secondary
-                          : AppColors.primary,
+                          ? Colors.blue
+                          : Theme.of(context).primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -196,7 +201,7 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
             Text(
               widget.doctor.consultationFeeText,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.primary,
+                color: Theme.of(context).primaryColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -218,11 +223,11 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: AppColors.shadowLight,
+                color: Theme.of(context).shadowColor.withOpacity(0.1),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -242,20 +247,38 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
                 _loadAvailableSlots();
               }
             },
-            calendarStyle: const CalendarStyle(
+            calendarStyle: CalendarStyle(
               outsideDaysVisible: false,
               selectedDecoration: BoxDecoration(
-                color: AppColors.primary,
+                color: Theme.of(context).primaryColor,
                 shape: BoxShape.circle,
               ),
               todayDecoration: BoxDecoration(
-                color: AppColors.secondary,
+                color: Theme.of(context).primaryColor.withOpacity(0.7),
                 shape: BoxShape.circle,
               ),
+              defaultTextStyle: Theme.of(context).textTheme.bodyMedium!,
+              weekendTextStyle: Theme.of(context).textTheme.bodyMedium!,
+              outsideTextStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium!.color!.withOpacity(0.3),
+              ),
             ),
-            headerStyle: const HeaderStyle(
+            headerStyle: HeaderStyle(
               formatButtonVisible: false,
               titleCentered: true,
+              titleTextStyle: Theme.of(context).textTheme.titleMedium!,
+              leftChevronIcon: Icon(
+                Icons.chevron_left,
+                color: Theme.of(context).iconTheme.color,
+              ),
+              rightChevronIcon: Icon(
+                Icons.chevron_right,
+                color: Theme.of(context).iconTheme.color,
+              ),
+            ),
+            daysOfWeekStyle: DaysOfWeekStyle(
+              weekdayStyle: Theme.of(context).textTheme.bodySmall!,
+              weekendStyle: Theme.of(context).textTheme.bodySmall!,
             ),
           ),
         ),
@@ -280,14 +303,14 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
               child: Text(
                 'No available slots for this date',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
               ),
             ),
@@ -309,21 +332,21 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.primary
-                        : AppColors.surface,
+                        ? Theme.of(context).primaryColor
+                        : Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isSelected
-                          ? AppColors.primary
-                          : AppColors.borderLight,
+                          ? Theme.of(context).primaryColor
+                          : Theme.of(context).dividerColor,
                     ),
                   ),
                   child: Text(
                     slot,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: isSelected
-                          ? AppColors.textOnPrimary
-                          : AppColors.textPrimary,
+                          ? Colors.white
+                          : Theme.of(context).textTheme.bodyMedium?.color,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -626,19 +649,7 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
           paymentStatus: 'pay_on_clinic',
         );
         
-        // Send notification to doctor
-        await NotificationService.sendNotification(
-          userId: widget.doctor.uid,
-          title: 'New Appointment Booked (Pay on Clinic)',
-          body: '${userModel.fullName} booked an appointment - Payment at clinic',
-          type: 'appointment',
-          data: {
-            'appointmentId': appointmentId,
-            'patientId': userModel.uid,
-            'patientName': userModel.fullName,
-            'paymentMethod': 'pay_on_clinic',
-          },
-        );
+        // Notification is already sent in the payment screen, no need to send again here
         
         if (mounted) {
           // Show success dialog
@@ -777,16 +788,26 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
                 status: 'confirmed',
               );
               
-              // Send notification to doctor
-              await NotificationService.sendNotification(
-                userId: widget.doctor.uid,
+              // Send payment success notification to patient
+              await NotificationManager.instance.sendPaymentSuccessNotification(
+                paymentId: paymentId,
+                orderId: appointmentId,
+                amount: widget.doctor.consultationFee?.toDouble() ?? 0.0,
+                currency: 'INR',
+                paymentMethod: 'Online Payment',
+                userFCMToken: 'patient_token', // TODO: Get actual FCM token
+              );
+              
+              // Send appointment notification to doctor (only once)
+              await NotificationManager.instance.sendTestNotification(
                 title: 'New Appointment Booked',
                 body: 'You have a new appointment with ${userModel.fullName}',
-                type: 'appointment',
+                type: NotificationType.appointmentReminder,
                 data: {
                   'appointmentId': appointmentId,
                   'patientId': userModel.uid,
                   'patientName': userModel.fullName,
+                  'type': 'appointment',
                 },
               );
               

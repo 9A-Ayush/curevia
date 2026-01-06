@@ -14,18 +14,32 @@ class DoctorOnboardingService {
   static Future<void> initializeDoctorDocument(
     String doctorId,
     String email,
-    String fullName,
-  ) async {
+    String fullName, {
+    String? phoneNumber,
+  }) async {
     try {
       // Check if document already exists
       final doc = await _firestore.collection('doctors').doc(doctorId).get();
       
       if (!doc.exists) {
+        // If no phone number provided, try to get it from user document
+        if (phoneNumber == null) {
+          try {
+            final userDoc = await _firestore.collection('users').doc(doctorId).get();
+            if (userDoc.exists) {
+              phoneNumber = userDoc.data()?['phoneNumber'];
+            }
+          } catch (e) {
+            // Ignore error, phoneNumber will remain null
+          }
+        }
+
         // Create initial doctor document
         await _firestore.collection('doctors').doc(doctorId).set({
           'uid': doctorId,
           'email': email,
           'fullName': fullName,
+          'phoneNumber': phoneNumber,
           'role': 'doctor',
           'profileComplete': false,
           'onboardingCompleted': false,
@@ -36,6 +50,25 @@ class DoctorOnboardingService {
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
+      } else {
+        // If document exists but doesn't have phone number, try to sync from user document
+        final existingData = doc.data();
+        if (existingData?['phoneNumber'] == null) {
+          try {
+            final userDoc = await _firestore.collection('users').doc(doctorId).get();
+            if (userDoc.exists) {
+              final userPhoneNumber = userDoc.data()?['phoneNumber'];
+              if (userPhoneNumber != null) {
+                await _firestore.collection('doctors').doc(doctorId).update({
+                  'phoneNumber': userPhoneNumber,
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
+              }
+            }
+          } catch (e) {
+            // Ignore error if sync fails
+          }
+        }
       }
     } catch (e) {
       throw Exception('Error initializing doctor document: $e');
@@ -103,6 +136,42 @@ class DoctorOnboardingService {
       return true;
     } catch (e) {
       throw Exception('Error saving onboarding step: $e');
+    }
+  }
+
+  /// Sync phone numbers from user documents to doctor documents (utility method)
+  static Future<void> syncPhoneNumbersFromUserDocuments() async {
+    try {
+      // Get all doctor documents
+      final doctorsSnapshot = await _firestore.collection('doctors').get();
+      
+      for (final doctorDoc in doctorsSnapshot.docs) {
+        final doctorData = doctorDoc.data();
+        final doctorId = doctorDoc.id;
+        
+        // If doctor document doesn't have phone number, try to sync from user document
+        if (doctorData['phoneNumber'] == null || doctorData['phoneNumber'] == '') {
+          try {
+            final userDoc = await _firestore.collection('users').doc(doctorId).get();
+            if (userDoc.exists) {
+              final userData = userDoc.data();
+              final userPhoneNumber = userData?['phoneNumber'];
+              
+              if (userPhoneNumber != null && userPhoneNumber != '') {
+                await _firestore.collection('doctors').doc(doctorId).update({
+                  'phoneNumber': userPhoneNumber,
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
+                print('Synced phone number for doctor: $doctorId');
+              }
+            }
+          } catch (e) {
+            print('Error syncing phone number for doctor $doctorId: $e');
+          }
+        }
+      }
+    } catch (e) {
+      print('Error syncing phone numbers: $e');
     }
   }
 

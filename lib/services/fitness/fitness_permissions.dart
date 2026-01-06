@@ -4,6 +4,18 @@ import 'package:permission_handler/permission_handler.dart';
 
 /// Fitness permissions management
 class FitnessPermissions {
+  /// Check if permissions can be requested (not permanently denied)
+  static Future<bool> canRequestPermissions() async {
+    try {
+      final activityStatus = await Permission.activityRecognition.status;
+      final sensorsStatus = await Permission.sensors.status;
+      
+      return !activityStatus.isPermanentlyDenied && !sensorsStatus.isPermanentlyDenied;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /// Check if all required permissions are granted
   static Future<bool> arePermissionsGranted() async {
     try {
@@ -25,15 +37,14 @@ class FitnessPermissions {
 
       // Request activity recognition permission
       final activityStatus = await Permission.activityRecognition.request();
-
+      
       // Request sensors permission
       final sensorsStatus = await Permission.sensors.request();
 
-      // Request health permissions (simplified - health plugin disabled)
+      // Check health permissions (simplified - health plugin disabled)
       final healthGranted = await _requestHealthPermissions();
 
-      final allGranted =
-          activityStatus.isGranted && sensorsStatus.isGranted && healthGranted;
+      final allGranted = activityStatus.isGranted && sensorsStatus.isGranted && healthGranted;
 
       if (!allGranted && context.mounted) {
         await _showPermissionDeniedDialog(context);
@@ -41,6 +52,7 @@ class FitnessPermissions {
 
       return allGranted;
     } catch (e) {
+      debugPrint('Error requesting fitness permissions: $e');
       return false;
     }
   }
@@ -132,9 +144,9 @@ class FitnessPermissions {
         return AlertDialog(
           title: const Row(
             children: [
-              Icon(Icons.warning, color: Colors.orange),
+              Icon(Icons.info, color: Colors.blue),
               SizedBox(width: 8),
-              Text('Permissions Required'),
+              Text('Permission Status'),
             ],
           ),
           content: const Column(
@@ -142,11 +154,11 @@ class FitnessPermissions {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Some permissions were not granted. The fitness tracker may not work properly.',
+                'Some fitness permissions were not granted. This may affect the accuracy of fitness tracking.',
               ),
               SizedBox(height: 16),
               Text(
-                'You can enable permissions later in:',
+                'You can still use basic fitness features, or grant permissions later in:',
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
               SizedBox(height: 8),
@@ -156,7 +168,7 @@ class FitnessPermissions {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: const Text('Continue Anyway'),
             ),
             ElevatedButton(
               onPressed: () {

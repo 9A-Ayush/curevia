@@ -158,6 +158,16 @@ class _DoctorProfileEditScreenState
                 label: 'Phone Number',
                 prefixIcon: Icons.phone,
                 keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    // Basic phone number validation
+                    final phoneRegex = RegExp(r'^[+]?[0-9]{10,15}$');
+                    if (!phoneRegex.hasMatch(value.replaceAll(RegExp(r'[\s\-\(\)]'), ''))) {
+                      return 'Please enter a valid phone number';
+                    }
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 24),
 
@@ -467,13 +477,20 @@ class _DoctorProfileEditScreenState
         photoURL: _profileImageUrl,
         additionalData: {
           'fullName': _nameController.text.trim(),
-          'phoneNumber': _phoneController.text.trim(),
+          'phoneNumber': _phoneController.text.trim().isEmpty 
+              ? null 
+              : _phoneController.text.trim(),
           'profileImageUrl': _profileImageUrl,
         },
       );
 
       // Update doctor profile data
       final doctorProfileData = {
+        'fullName': _nameController.text.trim(),
+        'phoneNumber': _phoneController.text.trim().isEmpty 
+            ? null 
+            : _phoneController.text.trim(),
+        'profileImageUrl': _profileImageUrl,
         'specialty': _specialtyController.text.trim(),
         'qualification': _qualificationController.text.trim(),
         'experienceYears': int.tryParse(_experienceController.text.trim()) ?? 0,

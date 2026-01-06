@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../screens/consultation/video_consultation_screen.dart';
@@ -11,13 +12,35 @@ import '../../screens/appointment/appointments_screen.dart';
 import '../../screens/profile/medical_records_screen.dart';
 import '../../screens/fitness/fitness_tracker_screen.dart';
 import '../../screens/mental_health/mental_health_screen.dart';
+import '../../screens/health/bmi_calculator_screen.dart';
+import '../../providers/home_provider.dart';
+import '../../providers/appointment_provider.dart';
+import '../../providers/auth_provider.dart';
 
 /// Quick actions grid for home screen
-class QuickActionsGrid extends StatelessWidget {
+class QuickActionsGrid extends ConsumerWidget {
   const QuickActionsGrid({super.key});
 
+  /// Refresh home data after successful appointment booking
+  void _refreshHomeData(BuildContext context, WidgetRef ref) {
+    // Use post-frame callback to avoid modifying providers during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        // Refresh home provider data
+        ref.read(homeProvider.notifier).refreshData();
+        
+        // Get current user and invalidate their appointments
+        final user = ref.read(currentUserModelProvider);
+        if (user != null) {
+          ref.invalidate(upcomingAppointmentsProvider(user.uid));
+        }
+        ref.invalidate(appointmentsListProvider);
+      }
+    });
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final actions = [
       QuickAction(
         icon: Icons.video_call,
@@ -33,14 +56,20 @@ class QuickActionsGrid extends StatelessWidget {
         },
       ),
       QuickAction(
-        icon: Icons.calendar_today,
-        label: 'Book Appointment',
+        icon: Icons.search,
+        label: 'Find',
         color: AppColors.secondary,
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const FindDoctorsScreen()),
           );
+          
+          // If appointment was booked successfully, refresh home data
+          if (result == true) {
+            // Trigger a refresh of the home screen data
+            _refreshHomeData(context, ref);
+          }
         },
       ),
       QuickAction(
@@ -147,7 +176,9 @@ class QuickActionsGrid extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
         decoration: BoxDecoration(
           color: ThemeUtils.getSurfaceColor(context),
           borderRadius: const BorderRadius.only(
@@ -156,21 +187,21 @@ class QuickActionsGrid extends StatelessWidget {
           ),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
+            // Handle bar
             Container(
               width: 40,
               height: 4,
-              margin: const EdgeInsets.only(top: 12),
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
                 color: ThemeUtils.getBorderMediumColor(context),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
+            // Header
             Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
                 children: [
                   Text(
                     'More Options',
@@ -178,7 +209,22 @@ class QuickActionsGrid extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(
+                      Icons.close,
+                      color: ThemeUtils.getTextSecondaryColor(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Scrollable list
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                children: [
                   _buildMoreOption(
                     context,
                     icon: Icons.health_and_safety,
@@ -224,6 +270,23 @@ class QuickActionsGrid extends StatelessWidget {
                       );
                     },
                   ),
+                  _buildMoreOption(
+                    context,
+                    icon: Icons.calculate,
+                    title: 'BMI Calculator',
+                    subtitle: 'Calculate your Body Mass Index',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BmiCalculatorScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  // Bottom padding for safe scrolling
+                  SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
                 ],
               ),
             ),
@@ -243,7 +306,7 @@ class QuickActionsGrid extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: ThemeUtils.getSurfaceVariantColor(context),
@@ -325,7 +388,7 @@ class QuickActionItem extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: action.color.withOpacity(0.1),
+                color: action.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(action.icon, color: action.color, size: 20),
@@ -428,7 +491,7 @@ class _AnimatedQuickActionItemState extends State<AnimatedQuickActionItem>
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: widget.action.color.withOpacity(0.1),
+                      color: widget.action.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(

@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../services/video_consulting_service.dart';
 import '../video_call/video_call_screen.dart';
+import 'reschedule_appointment_screen.dart';
 
 /// Appointment detail screen for patients
 class AppointmentDetailScreen extends ConsumerWidget {
@@ -39,13 +40,17 @@ class AppointmentDetailScreen extends ConsumerWidget {
   Widget _buildDoctorInfo(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      color: AppColors.primary.withOpacity(0.1),
+      color: Theme.of(context).primaryColor.withOpacity(0.1),
       child: Row(
         children: [
           CircleAvatar(
             radius: 40,
-            backgroundColor: AppColors.primary.withOpacity(0.2),
-            child: const Icon(Icons.person, size: 40, color: AppColors.primary),
+            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
+            child: Icon(
+              Icons.person, 
+              size: 40, 
+              color: Theme.of(context).primaryColor,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -62,7 +67,7 @@ class AppointmentDetailScreen extends ConsumerWidget {
                 Text(
                   appointment.doctorSpecialty,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.primary,
+                    color: Theme.of(context).primaryColor,
                   ),
                 ),
               ],
@@ -78,9 +83,9 @@ class AppointmentDetailScreen extends ConsumerWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,7 +127,7 @@ class AppointmentDetailScreen extends ConsumerWidget {
               Icons.payment,
               'Consultation Fee',
               appointment.formattedFee,
-              valueColor: AppColors.primary,
+              valueColor: Theme.of(context).primaryColor,
             ),
           ],
           if (appointment.meetingId != null) ...[
@@ -148,7 +153,11 @@ class AppointmentDetailScreen extends ConsumerWidget {
   }) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: AppColors.textSecondary),
+        Icon(
+          icon, 
+          size: 20, 
+          color: Theme.of(context).primaryColor,
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -157,7 +166,7 @@ class AppointmentDetailScreen extends ConsumerWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
               ),
               const SizedBox(height: 2),
@@ -165,7 +174,7 @@ class AppointmentDetailScreen extends ConsumerWidget {
                 value,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: valueColor,
+                  color: valueColor ?? Theme.of(context).textTheme.bodyMedium?.color,
                 ),
               ),
             ],
@@ -180,16 +189,20 @@ class AppointmentDetailScreen extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.medical_services, size: 20, color: AppColors.primary),
+              Icon(
+                Icons.medical_services, 
+                size: 20, 
+                color: Theme.of(context).primaryColor,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Symptoms',
@@ -214,16 +227,20 @@ class AppointmentDetailScreen extends ConsumerWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.note, size: 20, color: AppColors.primary),
+              Icon(
+                Icons.note, 
+                size: 20, 
+                color: Theme.of(context).primaryColor,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Additional Notes',
@@ -288,15 +305,15 @@ class AppointmentDetailScreen extends ConsumerWidget {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'pending':
-        return AppColors.warning;
+        return Colors.orange;
       case 'confirmed':
-        return AppColors.info;
+        return Colors.blue;
       case 'completed':
-        return AppColors.success;
+        return Colors.green;
       case 'cancelled':
-        return AppColors.error;
+        return Colors.red;
       default:
-        return AppColors.textSecondary;
+        return Colors.grey;
     }
   }
 
@@ -426,18 +443,25 @@ class AppointmentDetailScreen extends ConsumerWidget {
   }
 
   void _showRescheduleDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reschedule Appointment'),
-        content: const Text('Rescheduling feature coming soon!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RescheduleAppointmentScreen(
+          appointment: appointment,
+        ),
       ),
-    );
+    ).then((result) {
+      if (result == true) {
+        // Refresh the appointment data
+        ref.invalidate(appointmentsListProvider);
+        Navigator.pop(context); // Go back to appointments list
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Appointment rescheduled successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
   }
 }

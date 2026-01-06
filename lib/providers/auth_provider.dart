@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/firebase/auth_service.dart';
 import '../services/auth/app_lifecycle_biometric_service.dart';
-import '../services/firebase/fcm_service.dart';
+import '../services/notifications/notification_integration_service.dart';
+import '../services/notifications/fcm_service.dart';
 
 /// Authentication state
 class AuthState {
@@ -43,24 +44,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _init();
   }
 
-  /// Initialize FCM service for the logged-in user
-  Future<void> _initializeFCM(String userId) async {
+  /// Initialize notification system for the logged-in user
+  Future<void> _initializeNotifications(UserModel userModel) async {
     try {
-      await FCMService.initialize();
-      await FCMService.saveFCMToken(userId);
-      
-      // Subscribe to user-specific topic
-      await FCMService.subscribeToTopic('user_$userId');
-      
-      // Subscribe to general topics based on user role
-      if (state.userModel?.role == 'patient') {
-        await FCMService.subscribeToTopic('patients');
-        await FCMService.subscribeToTopic('health_tips');
-      } else if (state.userModel?.role == 'doctor') {
-        await FCMService.subscribeToTopic('doctors');
-      }
+      await NotificationIntegrationService.instance.setupUserNotifications(
+        user: userModel,
+        specializations: userModel.role == 'doctor' ? ['General Medicine'] : null,
+        location: null, // Can be added later from user preferences
+      );
+      print('✅ Notifications initialized for user: ${userModel.fullName} (${userModel.role})');
     } catch (e) {
-      print('Error initializing FCM: $e');
+      print('❌ Error initializing notifications: $e');
     }
   }
 
@@ -93,8 +87,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
                 error: null,
               );
               
-              // Initialize FCM after successful login
-              await _initializeFCM(user.uid);
+              // Initialize notifications after successful login
+              await _initializeNotifications(retryUserModel);
               return;
             }
             
@@ -124,8 +118,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
               error: null,
             );
             
-            // Initialize FCM after successful login
-            await _initializeFCM(user.uid);
+            // Initialize notifications after successful login
+            await _initializeNotifications(userModel);
           }
         } catch (e) {
           // If Firestore fails, create fallback user model from Firebase Auth
@@ -221,6 +215,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> signOut() async {
     try {
       state = state.copyWith(isLoading: true, error: null);
+      
+      // Cleanup notifications before signing out
+      if (state.userModel != null) {
+        await NotificationIntegrationService.instance.cleanupUserNotifications(
+          userId: state.userModel!.uid,
+          userRole: state.userModel!.role,
+          specializations: state.userModel!.role == 'doctor' ? ['General Medicine'] : null,
+          location: null,
+        );
+      }
+      
       await AuthService.signOut();
       // Reset biometric authentication state
       AppLifecycleBiometricService.reset();
@@ -274,6 +279,47 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
       } else {
         state = state.copyWith(isLoading: false);
+      }
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  /// Update user role
+  Future<void> updateUserRole(String role) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+
+      if (state.firebaseUser != null) {
+        // Update role in Firestore
+        await AuthService.updateUserDocument(
+          uid: state.firebaseUser!.uid,
+          data: {
+            'role': role,
+            'updatedAt': DateTime.now(),
+          },
+        );
+
+        // Refresh user data to get updated role
+        final updatedUserModel = await AuthService.getUserDocument(
+          state.firebaseUser!.uid,
+        );
+        
+        state = state.copyWith(
+          isLoading: false,
+          userModel: updatedUserModel,
+          error: null,
+        );
+
+        // Update FCM token with new role
+        if (updatedUserModel != null) {
+          await FCMService.instance.sendTokenToServer(
+            state.firebaseUser!.uid,
+            role,
+          );
+        }
+      } else {
+        throw Exception('User not authenticated');
       }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());

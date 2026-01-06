@@ -15,6 +15,7 @@ import '../role_based_navigation.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'two_factor_verification_screen.dart';
+import 'role_selection_screen.dart';
 
 /// Login screen for user authentication
 class LoginScreen extends ConsumerStatefulWidget {
@@ -30,6 +31,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = false;
+  bool _isGoogleSignIn = false; // Track if this is a Google sign-in
 
   String? _savedEmail;
 
@@ -119,34 +121,58 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         );
       } else if (mounted) {
-        // No two-factor authentication, proceed to main app
-        // Set authentication state for biometric service
-        AppLifecycleBiometricService.setAuthenticated(true);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const RoleBasedNavigation()),
-        );
+        // No two-factor authentication, check if we need role selection
+        _navigateAfterAuthentication();
       }
     } catch (e) {
       print('Error checking two-factor authentication: $e');
-      // Proceed to main app if there's an error
+      // Proceed to navigation if there's an error
       if (mounted) {
-        // Set authentication state for biometric service
-        AppLifecycleBiometricService.setAuthenticated(true);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const RoleBasedNavigation()),
-        );
+        _navigateAfterAuthentication();
       }
     }
   }
 
+  void _navigateAfterAuthentication() {
+    final userModel = ref.read(authProvider).userModel;
+    
+    // Check if user needs to select a role (empty or null role)
+    if (userModel != null && (userModel.role.isEmpty || userModel.role == '')) {
+      // User needs to select a role - navigate to role selection screen
+      setState(() {
+        _isGoogleSignIn = false; // Reset the flag
+      });
+      AppLifecycleBiometricService.setAuthenticated(true);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
+      );
+    } else {
+      // User has a role - go to main app
+      setState(() {
+        _isGoogleSignIn = false; // Reset the flag
+      });
+      AppLifecycleBiometricService.setAuthenticated(true);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const RoleBasedNavigation()),
+      );
+    }
+  }
+
   void _handleGoogleSignIn() async {
+    setState(() {
+      _isGoogleSignIn = true;
+    });
+    
     await ref.read(authProvider.notifier).signInWithGoogle();
 
     // Check for errors
     final error = ref.read(authErrorProvider);
     if (error != null && mounted) {
+      setState(() {
+        _isGoogleSignIn = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error), backgroundColor: AppColors.error),
       );
@@ -191,16 +217,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Column(
                       children: [
                         Container(
-                          width: 80,
-                          height: 80,
+                          width: 100,
+                          height: 100,
                           decoration: BoxDecoration(
-                            color: ThemeUtils.getPrimaryColor(context),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(25),
+                            boxShadow: [
+                              BoxShadow(
+                                color: ThemeUtils.getPrimaryColor(context).withOpacity(0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
-                          child: const Icon(
-                            Icons.local_hospital,
-                            size: 40,
-                            color: AppColors.textOnPrimary,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(25),
+                            child: Image.asset(
+                              'assets/icons/curevia_icon.png',
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                // Fallback to the old icon if image fails to load
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: ThemeUtils.getPrimaryColor(context),
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                  child: const Icon(
+                                    Icons.local_hospital,
+                                    size: 50,
+                                    color: AppColors.textOnPrimary,
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'dart:io';
 
 /// Comprehensive permission service for the app
 class AppPermissionsService {
@@ -13,7 +15,46 @@ class AppPermissionsService {
       Permission.location.status,
     ]);
 
-    return permissions.every((status) => status.isGranted);
+    // Also check storage permissions based on Android version
+    final hasStoragePermission = await checkStoragePermission();
+
+    return permissions.every((status) => status.isGranted) && hasStoragePermission;
+  }
+
+  /// Check storage permissions based on Android version (without requesting)
+  static Future<bool> checkStoragePermission() async {
+    if (Platform.isAndroid) {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+      
+      if (androidInfo.version.sdkInt >= 33) {
+        // Android 13+ - Check specific media permissions
+        final permissions = [
+          Permission.photos,
+          Permission.videos,
+          Permission.audio,
+        ];
+        
+        final statuses = await Future.wait(
+          permissions.map((p) => p.status),
+        );
+        return statuses.every((status) => status.isGranted);
+      } else if (androidInfo.version.sdkInt >= 30) {
+        // Android 11-12 - Check manage external storage
+        final status = await Permission.manageExternalStorage.status;
+        return status.isGranted;
+      } else {
+        // Android 10 and below - Check traditional storage permissions
+        final status = await Permission.storage.status;
+        return status.isGranted;
+      }
+    } else if (Platform.isIOS) {
+      // iOS - Check photos permission
+      final status = await Permission.photos.status;
+      return status.isGranted;
+    }
+    
+    return true; // For other platforms
   }
 
   /// Request all essential permissions at once
@@ -97,6 +138,35 @@ class AppPermissionsService {
   static Future<bool> isPermissionPermanentlyDenied(Permission permission) async {
     final status = await permission.status;
     return status.isPermanentlyDenied;
+  }
+
+  /// Show settings dialog when permission is permanently denied
+  static Future<void> showSettingsDialog({
+    required BuildContext context,
+    required String permissionName,
+  }) async {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('$permissionName Permission Required'),
+        content: Text(
+          'This permission is required for the app to function properly. Please enable it in the app settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              openAppSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Open app settings

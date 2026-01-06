@@ -26,8 +26,6 @@ class _AppointmentsManagementScreenState extends State<AppointmentsManagementScr
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    
     return Column(
       children: [
         Container(
@@ -43,77 +41,80 @@ class _AppointmentsManagementScreenState extends State<AppointmentsManagementScr
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Appointments Management',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+              // Search bar
+              SizedBox(
+                width: double.infinity,
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search patient or doctor...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() => _searchQuery = value.toLowerCase());
+                  },
+                ),
               ),
               const SizedBox(height: 16),
               
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  SizedBox(
-                    width: isMobile ? double.infinity : 300,
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search patient or doctor...',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() => _searchQuery = '');
-                                },
-                              )
-                            : null,
-                        border: OutlineInputBorder(
+              // Horizontally scrollable filters
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('All', 'all'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Pending', 'pending'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Confirmed', 'confirmed'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Completed', 'completed'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Cancelled', 'cancelled'),
+                    const SizedBox(width: 8),
+                    
+                    OutlinedButton.icon(
+                      onPressed: () => _selectDate(context),
+                      icon: const Icon(Icons.calendar_today, size: 18),
+                      label: Text(
+                        _selectedDate == null
+                            ? 'Filter by Date'
+                            : DateFormat('MMM dd, yyyy').format(_selectedDate!),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() => _searchQuery = value.toLowerCase());
-                      },
-                    ),
-                  ),
-                  
-                  _buildFilterChip('All', 'all'),
-                  _buildFilterChip('Pending', 'pending'),
-                  _buildFilterChip('Confirmed', 'confirmed'),
-                  _buildFilterChip('Completed', 'completed'),
-                  _buildFilterChip('Cancelled', 'cancelled'),
-                  
-                  OutlinedButton.icon(
-                    onPressed: () => _selectDate(context),
-                    icon: const Icon(Icons.calendar_today, size: 18),
-                    label: Text(
-                      _selectedDate == null
-                          ? 'Filter by Date'
-                          : DateFormat('MMM dd, yyyy').format(_selectedDate!),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                  ),
-                  
-                  if (_selectedDate != null)
-                    IconButton(
-                      onPressed: () => setState(() => _selectedDate = null),
-                      icon: const Icon(Icons.clear),
-                      tooltip: 'Clear date filter',
-                    ),
-                ],
+                    
+                    if (_selectedDate != null) ...[
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () => setState(() => _selectedDate = null),
+                        icon: const Icon(Icons.clear, size: 18),
+                        tooltip: 'Clear date filter',
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -134,12 +135,19 @@ class _AppointmentsManagementScreenState extends State<AppointmentsManagementScr
       onSelected: (selected) {
         setState(() => _selectedStatus = value);
       },
-      selectedColor: AppColors.primary.withOpacity(0.2),
+      selectedColor: ThemeUtils.getPrimaryColor(context).withOpacity(0.2),
+      backgroundColor: ThemeUtils.getSurfaceVariantColor(context),
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.primary : ThemeUtils.getTextPrimaryColor(context),
+        color: isSelected 
+            ? ThemeUtils.getPrimaryColor(context) 
+            : ThemeUtils.getTextPrimaryColor(context),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
-      backgroundColor: ThemeUtils.getSurfaceColor(context),
+      side: BorderSide(
+        color: isSelected 
+            ? ThemeUtils.getPrimaryColor(context) 
+            : ThemeUtils.getBorderLightColor(context),
+      ),
     );
   }
 

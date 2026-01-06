@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/admin/admin_theme_settings_widget.dart';
 import 'doctor_verification_screen.dart';
 import 'users_management_screen.dart';
 import 'appointments_management_screen.dart';
@@ -23,23 +23,33 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   Map<String, int> _stats = {};
   String _adminName = 'Admin';
   String _greeting = 'Good Day';
+  late PageController _pageController;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: 0);
     _setGreeting();
     _loadAdminData();
     _loadStats();
   }
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   void _setGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) {
+    if (hour >= 5 && hour < 12) {
       _greeting = 'Good Morning';
-    } else if (hour < 17) {
+    } else if (hour >= 12 && hour < 17) {
       _greeting = 'Good Afternoon';
-    } else {
+    } else if (hour >= 17 && hour < 21) {
       _greeting = 'Good Evening';
+    } else {
+      _greeting = 'Good Night';
     }
   }
 
@@ -136,27 +146,38 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_selectedIndex != 0) {
-      return _buildOtherScreens();
-    }
-
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadStats,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(),
-                _buildQuickActions(),
-                _buildOverviewSection(),
-              ],
+      backgroundColor: ThemeUtils.getBackgroundColor(context),
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() => _selectedIndex = index);
+        },
+        children: [
+          // Dashboard (index 0)
+          SafeArea(
+            child: RefreshIndicator(
+              onRefresh: _loadStats,
+              color: ThemeUtils.getPrimaryColor(context),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(),
+                    _buildQuickActions(),
+                    _buildOverviewSection(),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+          // Other screens with app bar
+          _buildScreenWithAppBar(const DoctorVerificationScreen(), 'Doctor Verifications'),
+          _buildScreenWithAppBar(const UsersManagementScreen(), 'Users Management'),
+          _buildScreenWithAppBar(const AppointmentsManagementScreen(), 'Appointments Management'),
+          _buildScreenWithAppBar(const AnalyticsScreen(), 'Analytics'),
+        ],
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
@@ -164,13 +185,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   Widget _buildHeader() {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        gradient: ThemeUtils.isDarkMode(context)
+            ? AppColors.darkPrimaryGradient
+            : AppColors.primaryGradient,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
@@ -187,16 +206,16 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 children: [
                   Text(
                     _greeting,
-                    style: const TextStyle(
-                      color: Colors.white70,
+                    style: TextStyle(
+                      color: ThemeUtils.getTextOnPrimaryColor(context).withOpacity(0.8),
                       fontSize: 14,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _adminName,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: ThemeUtils.getTextOnPrimaryColor(context),
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -207,11 +226,64 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 children: [
                   IconButton(
                     onPressed: _loadStats,
-                    icon: const Icon(Icons.refresh, color: Colors.white),
+                    icon: Icon(
+                      Icons.refresh, 
+                      color: ThemeUtils.getTextOnPrimaryColor(context),
+                    ),
                   ),
-                  IconButton(
-                    onPressed: _showLogoutDialog,
-                    icon: const Icon(Icons.logout, color: Colors.white),
+                  PopupMenuButton<String>(
+                    icon: Icon(
+                      Icons.more_vert,
+                      color: ThemeUtils.getTextOnPrimaryColor(context),
+                    ),
+                    color: ThemeUtils.getSurfaceColor(context),
+                    onSelected: (value) {
+                      if (value == 'theme') {
+                        _showThemeSettings();
+                      } else if (value == 'logout') {
+                        _showLogoutDialog();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'theme',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.palette_outlined,
+                              color: ThemeUtils.getTextPrimaryColor(context),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Theme Settings',
+                              style: TextStyle(
+                                color: ThemeUtils.getTextPrimaryColor(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'logout',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.logout,
+                              color: ThemeUtils.getTextPrimaryColor(context),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Logout',
+                              style: TextStyle(
+                                color: ThemeUtils.getTextPrimaryColor(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -221,21 +293,25 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: ThemeUtils.getTextOnPrimaryColor(context).withOpacity(0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               children: [
-                const Icon(Icons.admin_panel_settings, color: Colors.white, size: 32),
+                Icon(
+                  Icons.admin_panel_settings, 
+                  color: ThemeUtils.getTextOnPrimaryColor(context), 
+                  size: 32,
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Admin Dashboard',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: ThemeUtils.getTextOnPrimaryColor(context),
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -244,7 +320,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       Text(
                         'Manage your healthcare platform',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: ThemeUtils.getTextOnPrimaryColor(context).withOpacity(0.9),
                           fontSize: 12,
                         ),
                       ),
@@ -260,119 +336,230 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   }
 
   Widget _buildQuickActions() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Quick Actions',
             style: TextStyle(
-              color: Colors.white,
+              color: ThemeUtils.getTextPrimaryColor(context),
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 4,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            children: [
-              _buildQuickActionCard(
-                icon: Icons.verified_user,
-                label: 'Verifications',
-                color: const Color(0xFFFF9800),
-                onTap: () => setState(() => _selectedIndex = 1),
-                badge: _stats['pendingVerifications'],
+          // Single row of compact action cards
+          if (isMobile)
+            // Scrollable row for mobile
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 160,
+                    child: _buildCompactActionCard(
+                      icon: Icons.verified_user_outlined,
+                      label: 'Verify',
+                      color: AppColors.warning,
+                      onTap: () => _pageController.animateToPage(
+                        1,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      ),
+                      badge: _stats['pendingVerifications'],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 160,
+                    child: _buildCompactActionCard(
+                      icon: Icons.people_outline,
+                      label: 'Users',
+                      color: AppColors.info,
+                      onTap: () => _pageController.animateToPage(
+                        2,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 160,
+                    child: _buildCompactActionCard(
+                      icon: Icons.calendar_today_outlined,
+                      label: 'Bookings',
+                      color: AppColors.secondary,
+                      onTap: () => _pageController.animateToPage(
+                        3,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 160,
+                    child: _buildCompactActionCard(
+                      icon: Icons.analytics_outlined,
+                      label: 'Stats',
+                      color: AppColors.success,
+                      onTap: () => _pageController.animateToPage(
+                        4,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              _buildQuickActionCard(
-                icon: Icons.people,
-                label: 'Users',
-                color: const Color(0xFF2196F3),
-                onTap: () => setState(() => _selectedIndex = 2),
-              ),
-              _buildQuickActionCard(
-                icon: Icons.calendar_today,
-                label: 'Appointments',
-                color: const Color(0xFF9C27B0),
-                onTap: () => setState(() => _selectedIndex = 3),
-              ),
-              _buildQuickActionCard(
-                icon: Icons.bar_chart,
-                label: 'Analytics',
-                color: const Color(0xFF4CAF50),
-                onTap: () => setState(() => _selectedIndex = 4),
-              ),
-            ],
-          ),
+            )
+          else
+            // Fixed row for larger screens
+            Row(
+              children: [
+                Expanded(
+                  child: _buildCompactActionCard(
+                    icon: Icons.verified_user_outlined,
+                    label: 'Verify',
+                    color: AppColors.warning,
+                    onTap: () => _pageController.animateToPage(
+                      1,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    ),
+                    badge: _stats['pendingVerifications'],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildCompactActionCard(
+                    icon: Icons.people_outline,
+                    label: 'Users',
+                    color: AppColors.info,
+                    onTap: () => _pageController.animateToPage(
+                      2,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildCompactActionCard(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'Bookings',
+                    color: AppColors.secondary,
+                    onTap: () => _pageController.animateToPage(
+                      3,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildCompactActionCard(
+                    icon: Icons.analytics_outlined,
+                    label: 'Stats',
+                    color: AppColors.success,
+                    onTap: () => _pageController.animateToPage(
+                      4,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    ),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickActionCard({
+  Widget _buildCompactActionCard({
     required IconData icon,
     required String label,
     required Color color,
     required VoidCallback onTap,
     int? badge,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF2A2A2A),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Stack(
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: color, size: 28),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        hoverColor: color.withOpacity(0.05),
+        child: Container(
+          height: 70, // Fixed compact height
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: ThemeUtils.getSurfaceColor(context),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: ThemeUtils.getBorderLightColor(context),
             ),
-            if (badge != null && badge > 0)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: ThemeUtils.getShadowLightColor(context),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, color: color, size: 20),
                   ),
-                  child: Text(
-                    badge.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: ThemeUtils.getTextPrimaryColor(context),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              if (badge != null && badge > 0)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.error,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      badge.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -384,20 +571,22 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Overview',
             style: TextStyle(
-              color: Colors.white,
+              color: ThemeUtils.getTextPrimaryColor(context),
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
           if (_isLoading)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(),
+                padding: const EdgeInsets.all(32),
+                child: CircularProgressIndicator(
+                  color: ThemeUtils.getPrimaryColor(context),
+                ),
               ),
             )
           else ...[
@@ -405,29 +594,33 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               title: 'Pending Verifications',
               value: _stats['pendingVerifications']?.toString() ?? '0',
               icon: Icons.pending_actions,
-              color: const Color(0xFFFF9800),
-              onTap: () => setState(() => _selectedIndex = 1),
+              color: AppColors.warning,
+              onTap: () => _pageController.animateToPage(
+                1,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              ),
             ),
             const SizedBox(height: 12),
             _buildStatCard(
               title: 'Total Doctors',
               value: _stats['totalDoctors']?.toString() ?? '0',
               icon: Icons.medical_services,
-              color: const Color(0xFF4CAF50),
+              color: AppColors.success,
             ),
             const SizedBox(height: 12),
             _buildStatCard(
               title: 'Total Patients',
               value: _stats['totalPatients']?.toString() ?? '0',
               icon: Icons.people,
-              color: const Color(0xFF2196F3),
+              color: AppColors.info,
             ),
             const SizedBox(height: 12),
             _buildStatCard(
               title: "Today's Appointments",
               value: _stats['todayAppointments']?.toString() ?? '0',
               icon: Icons.calendar_today,
-              color: const Color(0xFF9C27B0),
+              color: AppColors.secondary,
             ),
           ],
         ],
@@ -448,15 +641,25 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF2A2A2A),
+          color: ThemeUtils.getSurfaceColor(context),
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: ThemeUtils.getBorderLightColor(context),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: ThemeUtils.getShadowLightColor(context),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 32),
@@ -473,14 +676,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.white70,
+                    style: TextStyle(
+                      color: ThemeUtils.getTextSecondaryColor(context),
                       fontSize: 14,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -488,7 +694,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             if (onTap != null)
               Icon(
                 Icons.arrow_forward_ios,
-                color: Colors.white.withOpacity(0.5),
+                color: ThemeUtils.getTextSecondaryColor(context),
                 size: 16,
               ),
           ],
@@ -497,93 +703,182 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildBottomNav() {
-    return NavigationBar(
-      selectedIndex: _selectedIndex,
-      onDestinationSelected: (index) {
-        setState(() => _selectedIndex = index);
-      },
-      backgroundColor: const Color(0xFF2A2A2A),
-      indicatorColor: const Color(0xFF4CAF50),
-      destinations: [
-        NavigationDestination(
-          icon: Icon(Icons.dashboard, color: _selectedIndex == 0 ? Colors.white : Colors.white54),
-          label: 'Dashboard',
-        ),
-        NavigationDestination(
-          icon: Badge(
-            isLabelVisible: (_stats['pendingVerifications'] ?? 0) > 0,
-            label: Text((_stats['pendingVerifications'] ?? 0).toString()),
-            child: Icon(Icons.verified_user, color: _selectedIndex == 1 ? Colors.white : Colors.white54),
-          ),
-          label: 'Verifications',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.people, color: _selectedIndex == 2 ? Colors.white : Colors.white54),
-          label: 'Users',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.calendar_today, color: _selectedIndex == 3 ? Colors.white : Colors.white54),
-          label: 'Appointments',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOtherScreens() {
-    Widget screen;
-    switch (_selectedIndex) {
-      case 1:
-        screen = const DoctorVerificationScreen();
-        break;
-      case 2:
-        screen = const UsersManagementScreen();
-        break;
-      case 3:
-        screen = const AppointmentsManagementScreen();
-        break;
-      case 4:
-        screen = const AnalyticsScreen();
-        break;
-      default:
-        screen = const SizedBox();
-    }
-
+  Widget _buildScreenWithAppBar(Widget screen, String title) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: ThemeUtils.getBackgroundColor(context),
       appBar: AppBar(
-        title: Text(_getScreenTitle()),
-        backgroundColor: const Color(0xFF4CAF50),
-        foregroundColor: Colors.white,
+        title: Text(
+          title,
+          style: TextStyle(
+            color: ThemeUtils.getTextOnPrimaryColor(context),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: ThemeUtils.getPrimaryColor(context),
+        foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => setState(() => _selectedIndex = 0),
+          icon: Icon(
+            Icons.arrow_back,
+            color: ThemeUtils.getTextOnPrimaryColor(context),
+          ),
+          onPressed: () {
+            _pageController.animateToPage(
+              0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          },
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(
+              Icons.refresh,
+              color: ThemeUtils.getTextOnPrimaryColor(context),
+            ),
             onPressed: _loadStats,
           ),
         ],
       ),
       body: screen,
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
-  String _getScreenTitle() {
-    switch (_selectedIndex) {
-      case 1:
-        return 'Doctor Verifications';
-      case 2:
-        return 'Users Management';
-      case 3:
-        return 'Appointments';
-      case 4:
-        return 'Analytics';
-      default:
-        return 'Admin Dashboard';
-    }
+  Widget _buildBottomNav() {
+    return NavigationBar(
+      selectedIndex: _selectedIndex,
+      onDestinationSelected: (index) {
+        _pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      },
+      backgroundColor: ThemeUtils.getSurfaceColor(context),
+      indicatorColor: ThemeUtils.getPrimaryColor(context).withOpacity(0.2),
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      destinations: [
+        NavigationDestination(
+          icon: Icon(
+            Icons.dashboard_outlined, 
+            color: _selectedIndex == 0 
+                ? ThemeUtils.getPrimaryColor(context)
+                : ThemeUtils.getTextSecondaryColor(context),
+          ),
+          selectedIcon: Icon(
+            Icons.dashboard,
+            color: ThemeUtils.getPrimaryColor(context),
+          ),
+          label: 'Home',
+        ),
+        NavigationDestination(
+          icon: Badge(
+            isLabelVisible: (_stats['pendingVerifications'] ?? 0) > 0,
+            label: Text((_stats['pendingVerifications'] ?? 0).toString()),
+            child: Icon(
+              Icons.verified_user_outlined, 
+              color: _selectedIndex == 1 
+                  ? ThemeUtils.getPrimaryColor(context)
+                  : ThemeUtils.getTextSecondaryColor(context),
+            ),
+          ),
+          selectedIcon: Badge(
+            isLabelVisible: (_stats['pendingVerifications'] ?? 0) > 0,
+            label: Text((_stats['pendingVerifications'] ?? 0).toString()),
+            child: Icon(
+              Icons.verified_user,
+              color: ThemeUtils.getPrimaryColor(context),
+            ),
+          ),
+          label: 'Verify',
+        ),
+        NavigationDestination(
+          icon: Icon(
+            Icons.people_outline, 
+            color: _selectedIndex == 2 
+                ? ThemeUtils.getPrimaryColor(context)
+                : ThemeUtils.getTextSecondaryColor(context),
+          ),
+          selectedIcon: Icon(
+            Icons.people,
+            color: ThemeUtils.getPrimaryColor(context),
+          ),
+          label: 'Users',
+        ),
+        NavigationDestination(
+          icon: Icon(
+            Icons.calendar_today_outlined, 
+            color: _selectedIndex == 3 
+                ? ThemeUtils.getPrimaryColor(context)
+                : ThemeUtils.getTextSecondaryColor(context),
+          ),
+          selectedIcon: Icon(
+            Icons.calendar_today,
+            color: ThemeUtils.getPrimaryColor(context),
+          ),
+          label: 'Bookings',
+        ),
+        NavigationDestination(
+          icon: Icon(
+            Icons.analytics_outlined, 
+            color: _selectedIndex == 4 
+                ? ThemeUtils.getPrimaryColor(context)
+                : ThemeUtils.getTextSecondaryColor(context),
+          ),
+          selectedIcon: Icon(
+            Icons.analytics,
+            color: ThemeUtils.getPrimaryColor(context),
+          ),
+          label: 'Stats',
+        ),
+      ],
+    );
+  }
+
+  void _showThemeSettings() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: ThemeUtils.getSurfaceColor(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.palette_outlined,
+                    color: ThemeUtils.getPrimaryColor(context),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Theme Settings',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: ThemeUtils.getTextPrimaryColor(context),
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(
+                      Icons.close,
+                      color: ThemeUtils.getTextSecondaryColor(context),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const AdminThemeSettingsWidget(),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _showLogoutDialog() async {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/theme_utils.dart';
@@ -231,8 +233,35 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       // Open Email App Button
                       CustomButton(
                         text: 'Open Email App',
-                        onPressed: () {
-                          // TODO: Open email app
+                        onPressed: () async {
+                          final Uri emailUri = Uri(
+                            scheme: 'mailto',
+                            path: '',
+                          );
+                          
+                          try {
+                            if (await canLaunchUrl(emailUri)) {
+                              await launchUrl(emailUri);
+                            } else {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('No email app found. Please check your email manually.'),
+                                    backgroundColor: AppColors.warning,
+                                  ),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Unable to open email app. Please check your email manually.'),
+                                  backgroundColor: AppColors.warning,
+                                ),
+                              );
+                            }
+                          }
                         },
                       ),
                     ],
@@ -285,7 +314,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'If you don\'t receive the email within a few minutes, please check your spam folder or contact our support team.',
+                        'If you don\'t receive the email within a few minutes, please check your spam folder or contact our support team at wemayush@gmail.com',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: ThemeUtils.getTextSecondaryColor(context),
                         ),
@@ -293,8 +322,40 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       ),
                       const SizedBox(height: 12),
                       TextButton(
-                        onPressed: () {
-                          // TODO: Open support
+                        onPressed: () async {
+                          final Uri emailUri = Uri(
+                            scheme: 'mailto',
+                            path: 'wemayush@gmail.com',
+                            query: 'subject=Curevia Support - Password Reset Help&body=Hi Curevia Support Team,%0A%0AI need help with password reset for my account.%0A%0AEmail: ${_emailController.text}%0A%0APlease assist me.%0A%0AThank you!',
+                          );
+                          
+                          try {
+                            if (await canLaunchUrl(emailUri)) {
+                              await launchUrl(emailUri);
+                            } else {
+                              // Fallback: copy email to clipboard
+                              await Clipboard.setData(const ClipboardData(text: 'wemayush@gmail.com'));
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Support email copied to clipboard: wemayush@gmail.com'),
+                                    backgroundColor: AppColors.success,
+                                  ),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            // Fallback: copy email to clipboard
+                            await Clipboard.setData(const ClipboardData(text: 'wemayush@gmail.com'));
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Support email copied to clipboard: wemayush@gmail.com'),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            }
+                          }
                         },
                         child: Text(
                           'Contact Support',

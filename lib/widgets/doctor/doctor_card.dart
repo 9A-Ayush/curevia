@@ -3,9 +3,8 @@ import '../../constants/app_colors.dart';
 import '../../models/doctor_model.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../utils/theme_utils.dart';
-import '../../screens/appointment/appointment_booking_screen.dart';
 import '../../screens/video_consulting/appointment_booking_screen.dart' as video;
-import '../../services/firebase/notification_service.dart';
+import '../../services/notifications/notification_manager.dart';
 
 /// Doctor card widget for displaying doctor information
 class DoctorCard extends StatelessWidget {
@@ -229,25 +228,16 @@ class DoctorCard extends StatelessWidget {
                 // Action Buttons
                 if (showBookButton) ...[
                   if (doctor.isAvailableOnline == true)
-                    CustomIconButton(
-                      icon: Icons.video_call,
+                    CustomButton(
+                      text: 'Book Now',
                       onPressed: () => _bookVideoConsultation(context),
-                      backgroundColor: AppColors.secondary.withOpacity(
-                        0.1,
+                      height: 36,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
                       ),
-                      iconColor: AppColors.secondary,
-                      tooltip: 'Video Call',
+                      backgroundColor: AppColors.secondary,
                     ),
-                  const SizedBox(width: 8),
-                  CustomButton(
-                    text: 'Book',
-                    onPressed: () => _bookAppointment(context),
-                    height: 36,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
-                  ),
                 ],
               ],
             ),
@@ -293,38 +283,6 @@ class DoctorCard extends StatelessWidget {
     );
   }
 
-  void _bookAppointment(BuildContext context) async {
-    try {
-      // Navigate to appointment booking screen
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AppointmentBookingScreen(
-            doctor: doctor,
-            consultationType: 'offline',
-          ),
-        ),
-      );
-
-      // If appointment was booked successfully, send notification to doctor
-      if (result == true) {
-        await _sendDoctorNotification(
-          context,
-          'New Appointment Request',
-          'You have a new appointment booking request from a patient.',
-          'appointment',
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error booking appointment: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
-  }
-
   void _bookVideoConsultation(BuildContext context) async {
     try {
       // Navigate to video consultation booking screen
@@ -364,8 +322,8 @@ class DoctorCard extends StatelessWidget {
     String type,
   ) async {
     try {
-      await NotificationService.sendNotificationToDoctor(
-        doctorId: doctor.uid,
+      // Send notification using the new notification system
+      await NotificationManager.instance.sendTestNotification(
         title: title,
         body: body,
         data: {

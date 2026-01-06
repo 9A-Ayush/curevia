@@ -4,6 +4,8 @@ import '../../constants/app_colors.dart';
 import '../../constants/app_constants.dart';
 import '../../providers/home_provider.dart';
 import '../../screens/weather/weather_detail_screen.dart';
+import '../../screens/notifications/notifications_screen.dart';
+import '../common/notification_badge.dart';
 
 /// Home screen header with greeting and notifications
 class HomeHeader extends ConsumerWidget {
@@ -40,7 +42,7 @@ class HomeHeader extends ConsumerWidget {
                     Text(
                       _getGreeting(),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textOnPrimary.withOpacity(0.9),
+                        color: AppColors.textOnPrimary.withValues(alpha: 0.9),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -60,7 +62,7 @@ class HomeHeader extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.textOnPrimary.withOpacity(0.2),
+                          color: AppColors.textOnPrimary.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -78,22 +80,29 @@ class HomeHeader extends ConsumerWidget {
               ),
               Row(
                 children: [
-                  _buildHeaderButton(
-                    icon: Icons.notifications_outlined,
-                    onTap: () {
-                      Navigator.pushNamed(context, '/notifications');
-                    },
-                    hasNotification: true,
+                  NotificationBadge(
+                    child: _buildHeaderButton(
+                      icon: Icons.notifications_outlined,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationsScreen(),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                   const SizedBox(width: 8),
                   _buildHeaderButton(
                     icon: Icons.refresh,
                     onTap: () {
-                      // Refresh weather data
+                      // Refresh weather data and home data
                       ref.invalidate(weatherProvider);
+                      ref.read(homeProvider.notifier).loadHomeData();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Weather data refreshed!'),
+                          content: Text('Data refreshed!'),
                           duration: Duration(seconds: 2),
                         ),
                       );
@@ -118,10 +127,10 @@ class HomeHeader extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.textOnPrimary.withOpacity(0.1),
+                color: AppColors.textOnPrimary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppColors.textOnPrimary.withOpacity(0.2),
+                  color: AppColors.textOnPrimary.withValues(alpha: 0.2),
                 ),
               ),
               child: Row(
@@ -216,7 +225,6 @@ class HomeHeader extends ConsumerWidget {
   Widget _buildHeaderButton({
     required IconData icon,
     required VoidCallback onTap,
-    bool hasNotification = false,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -224,26 +232,11 @@ class HomeHeader extends ConsumerWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: AppColors.textOnPrimary.withOpacity(0.2),
+          color: AppColors.textOnPrimary.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Stack(
-          children: [
-            Center(child: Icon(icon, color: AppColors.textOnPrimary, size: 20)),
-            if (hasNotification)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.accent,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-          ],
+        child: Center(
+          child: Icon(icon, color: AppColors.textOnPrimary, size: 20),
         ),
       ),
     );

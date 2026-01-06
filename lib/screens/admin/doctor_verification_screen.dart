@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
+import '../../widgets/admin/expandable_verification_card.dart';
+import 'doctor_verification_details_screen.dart';
 
 class DoctorVerificationScreen extends StatefulWidget {
   const DoctorVerificationScreen({super.key});
@@ -20,6 +22,14 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
         // Filter tabs
         Container(
           padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: ThemeUtils.getSurfaceColor(context),
+            border: Border(
+              bottom: BorderSide(
+                color: ThemeUtils.getBorderLightColor(context),
+              ),
+            ),
+          ),
           child: Row(
             children: [
               _buildFilterChip('Pending', 'pending'),
@@ -41,18 +51,56 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: AppColors.error,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error: ${snapshot.error}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: ThemeUtils.getTextPrimaryColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
               }
 
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return Center(
+                  child: CircularProgressIndicator(
+                    color: ThemeUtils.getPrimaryColor(context),
+                  ),
+                );
               }
 
               final docs = snapshot.data!.docs;
 
               if (docs.isEmpty) {
                 return Center(
-                  child: Text('No $_filter verifications'),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.inbox_outlined,
+                        size: 64,
+                        color: ThemeUtils.getTextSecondaryColor(context),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No $_filter verifications',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: ThemeUtils.getTextSecondaryColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               }
 
@@ -61,7 +109,13 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
                 itemCount: docs.length,
                 itemBuilder: (context, index) {
                   final data = docs[index].data() as Map<String, dynamic>;
-                  return _buildVerificationCard(docs[index].id, data);
+                  return ExpandableVerificationCard(
+                    verificationId: docs[index].id,
+                    verificationData: data,
+                    onApprove: () => _approveVerification(docs[index].id, data['doctorId']),
+                    onReject: () => _rejectVerification(docs[index].id, data['doctorId']),
+                    onViewDetails: () => _viewDoctorDetails(docs[index].id, data['doctorId']),
+                  );
                 },
               );
             },
@@ -79,36 +133,18 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
       onSelected: (selected) {
         setState(() => _filter = value);
       },
-      selectedColor: AppColors.primary.withOpacity(0.2),
+      selectedColor: ThemeUtils.getPrimaryColor(context).withOpacity(0.2),
+      backgroundColor: ThemeUtils.getSurfaceVariantColor(context),
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.primary : null,
-        fontWeight: isSelected ? FontWeight.bold : null,
+        color: isSelected 
+            ? ThemeUtils.getPrimaryColor(context) 
+            : ThemeUtils.getTextPrimaryColor(context),
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
-    );
-  }
-
-  Widget _buildVerificationCard(String id, Map<String, dynamic> data) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        title: Text('Doctor ID: ${data['doctorId']}'),
-        subtitle: Text('Submitted: ${(data['submittedAt'] as Timestamp).toDate()}'),
-        trailing: _filter == 'pending'
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.check, color: Colors.green),
-                    onPressed: () => _approveVerification(id, data['doctorId']),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.red),
-                    onPressed: () => _rejectVerification(id, data['doctorId']),
-                  ),
-                ],
-              )
-            : null,
-        onTap: () => _viewDoctorDetails(data['doctorId']),
+      side: BorderSide(
+        color: isSelected 
+            ? ThemeUtils.getPrimaryColor(context) 
+            : ThemeUtils.getBorderLightColor(context),
       ),
     );
   }
@@ -137,13 +173,19 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Doctor verified successfully')),
+          SnackBar(
+            content: const Text('Doctor verified successfully'),
+            backgroundColor: AppColors.success,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
@@ -155,7 +197,11 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
       builder: (context) {
         final controller = TextEditingController();
         return AlertDialog(
-          title: const Text('Reject Verification'),
+          backgroundColor: ThemeUtils.getSurfaceColor(context),
+          title: Text(
+            'Reject Verification',
+            style: TextStyle(color: ThemeUtils.getTextPrimaryColor(context)),
+          ),
           content: TextField(
             controller: controller,
             decoration: const InputDecoration(
@@ -171,6 +217,7 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, controller.text),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
               child: const Text('Reject'),
             ),
           ],
@@ -205,22 +252,33 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification rejected')),
+          SnackBar(
+            content: const Text('Verification rejected'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
   }
 
-  void _viewDoctorDetails(String doctorId) {
-    // TODO: Navigate to doctor details screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('View doctor: $doctorId')),
+  void _viewDoctorDetails(String verificationId, String doctorId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DoctorVerificationDetailsScreen(
+          verificationId: verificationId,
+          doctorId: doctorId,
+        ),
+      ),
     );
   }
 }

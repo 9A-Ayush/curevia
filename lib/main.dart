@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,12 +8,14 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'constants/app_theme_simple.dart';
 import 'constants/app_constants.dart';
 import 'utils/env_config.dart';
-import 'screens/auth/splash_screen.dart';
+import 'screens/splash/splash_screen.dart';
 import 'services/weather/weather_service.dart';
 import 'services/auth/app_lifecycle_biometric_service.dart';
 import 'services/navigation_service.dart';
 import 'services/firebase/medicine_service.dart';
 import 'services/firebase/home_remedies_service.dart';
+import 'services/cloudinary_service.dart';
+import 'services/notifications/notification_integration_service.dart';
 
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
@@ -23,18 +26,50 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize environment configuration
+  // Initialize only essential services for fast startup
   await EnvConfig.init();
+  
+  // Initialize Firebase (essential for auth)
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
+  // Set preferred orientations
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // Set system UI overlay style
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+
+  runApp(const ProviderScope(child: CureviaApp()));
+  
+  // Initialize non-essential services after app starts
+  _initializeBackgroundServices();
+}
+
+/// Initialize background services that don't block app startup
+Future<void> _initializeBackgroundServices() async {
   // Validate environment configuration
   if (!EnvConfig.validateConfig()) {
     print('Warning: Some required environment variables are missing');
   }
 
-  // Initialize Firebase with proper options
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // Initialize Cloudinary service
+  try {
+    CloudinaryService.initialize();
+    print('Cloudinary service initialized successfully');
+  } catch (e) {
+    print('Warning: Failed to initialize Cloudinary service: $e');
+  }
 
   // Initialize app data (medicines and home remedies)
   await _initializeAppData();
@@ -45,27 +80,13 @@ void main() async {
   // Initialize weather service with saved API key
   await _initializeWeatherService();
 
-  // Set preferred orientations
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  // Initialize FCM service
-  // Note: FCM will be initialized after user login to get userId
-  // See auth_provider.dart for FCM initialization on login
-
-  // Set system UI overlay style
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ),
-  );
-
-  runApp(const ProviderScope(child: CureviaApp()));
+  // Initialize FCM and notification services
+  try {
+    await NotificationIntegrationService.instance.initialize();
+    print('✅ Notification system initialized successfully');
+  } catch (e) {
+    print('❌ Warning: Failed to initialize notification system: $e');
+  }
 }
 
 /// Root widget of the Curevia application
@@ -95,6 +116,9 @@ class _CureviaAppState extends ConsumerState<CureviaApp>
     super.didChangeAppLifecycleState(state);
     // Handle app lifecycle changes for biometric authentication
     AppLifecycleBiometricService.handleAppLifecycleChange(state, context);
+    
+    // Handle app lifecycle changes for notifications
+    NotificationIntegrationService.instance.handleAppLifecycleChange(state);
   }
 
   @override
@@ -129,7 +153,7 @@ class _CureviaAppState extends ConsumerState<CureviaApp>
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      navigatorKey: NavigationService.navigatorKey,
+      navigatorKey: NavigationService.navigatorKey, // Use navigation service's navigator key
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: materialThemeMode,

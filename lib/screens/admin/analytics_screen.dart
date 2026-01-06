@@ -168,31 +168,23 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Analytics & Reports',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildPeriodChip('Today', 'today'),
+                          const SizedBox(width: 8),
+                          _buildPeriodChip('This Week', 'week'),
+                          const SizedBox(width: 8),
+                          _buildPeriodChip('This Month', 'month'),
+                          const SizedBox(width: 8),
+                          _buildPeriodChip('This Year', 'year'),
+                        ],
+                      ),
+                    ),
                   ),
-                  IconButton(
-                    onPressed: _loadAnalytics,
-                    icon: const Icon(Icons.refresh),
-                    tooltip: 'Refresh',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _buildPeriodChip('Today', 'today'),
-                  _buildPeriodChip('This Week', 'week'),
-                  _buildPeriodChip('This Month', 'month'),
-                  _buildPeriodChip('This Year', 'year'),
                 ],
               ),
             ],
@@ -223,12 +215,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         setState(() => _selectedPeriod = value);
         _loadAnalytics();
       },
-      selectedColor: AppColors.primary.withOpacity(0.2),
+      selectedColor: ThemeUtils.getPrimaryColor(context).withOpacity(0.2),
+      backgroundColor: ThemeUtils.getSurfaceVariantColor(context),
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.primary : ThemeUtils.getTextPrimaryColor(context),
+        color: isSelected 
+            ? ThemeUtils.getPrimaryColor(context) 
+            : ThemeUtils.getTextPrimaryColor(context),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
-      backgroundColor: ThemeUtils.getSurfaceColor(context),
+      side: BorderSide(
+        color: isSelected 
+            ? ThemeUtils.getPrimaryColor(context) 
+            : ThemeUtils.getBorderLightColor(context),
+      ),
     );
   }
 
@@ -565,17 +564,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Widget _buildQuickInsights() {
-    final completionRate = _analytics['totalAppointments'] > 0
-        ? ((_analytics['completedAppointments'] ?? 0) / _analytics['totalAppointments'] * 100)
-            .toStringAsFixed(1)
+    final totalAppointments = _analytics['totalAppointments'] ?? 0;
+    final completedAppointments = _analytics['completedAppointments'] ?? 0;
+    final cancelledAppointments = _analytics['cancelledAppointments'] ?? 0;
+    final totalDoctors = _analytics['totalDoctors'] ?? 0;
+    final verifiedDoctors = _analytics['verifiedDoctors'] ?? 0;
+    final totalRevenue = _analytics['totalRevenue'] ?? 0;
+    
+    final completionRate = totalAppointments > 0
+        ? (completedAppointments / totalAppointments * 100).toStringAsFixed(1)
         : '0.0';
-    final cancellationRate = _analytics['totalAppointments'] > 0
-        ? ((_analytics['cancelledAppointments'] ?? 0) / _analytics['totalAppointments'] * 100)
-            .toStringAsFixed(1)
+    final cancellationRate = totalAppointments > 0
+        ? (cancelledAppointments / totalAppointments * 100).toStringAsFixed(1)
         : '0.0';
-    final verificationRate = _analytics['totalDoctors'] > 0
-        ? ((_analytics['verifiedDoctors'] ?? 0) / _analytics['totalDoctors'] * 100)
-            .toStringAsFixed(1)
+    final verificationRate = totalDoctors > 0
+        ? (verifiedDoctors / totalDoctors * 100).toStringAsFixed(1)
         : '0.0';
 
     return Container(
@@ -622,7 +625,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           _buildInsightRow(
             Icons.trending_up,
             'Average Revenue per Appointment',
-            '₹${_analytics['totalAppointments'] > 0 ? ((_analytics['totalRevenue'] ?? 0) / _analytics['totalAppointments']).toStringAsFixed(0) : '0'}',
+            '₹${totalAppointments > 0 ? (totalRevenue / totalAppointments).toStringAsFixed(0) : '0'}',
             AppColors.success,
           ),
         ],

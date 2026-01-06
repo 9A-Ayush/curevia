@@ -18,7 +18,7 @@ import 'medical_records_screen.dart';
 import 'family_members_screen.dart';
 import 'help_support_screen.dart';
 import 'theme_selection_screen.dart';
-import 'notifications_screen.dart';
+import '../notifications/notifications_screen.dart';
 import 'privacy_security_screen.dart';
 
 /// Profile screen

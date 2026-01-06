@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/app_constants.dart';
 import '../../utils/theme_utils.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
+import '../../services/whatsapp_service.dart';
 
 class HelpSupportScreen extends ConsumerStatefulWidget {
   const HelpSupportScreen({super.key});
@@ -20,7 +22,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -55,6 +57,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen>
             Tab(text: 'FAQs'),
             Tab(text: 'Contact'),
             Tab(text: 'Feedback'),
+            Tab(text: 'Raise Complaint'),
           ],
         ),
       ),
@@ -65,7 +68,12 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen>
         ),
         child: TabBarView(
           controller: _tabController,
-          children: [_buildFAQsTab(), _buildContactTab(), _buildFeedbackTab()],
+          children: [
+            _buildFAQsTab(), 
+            _buildContactTab(), 
+            _buildFeedbackTab(),
+            _buildRaiseComplaintTab(),
+          ],
         ),
       ),
     );
@@ -154,7 +162,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen>
             subtitle: '+1 (555) 123-4567',
             description:
                 'Available 24/7 for emergencies\nMon-Fri 9AM-6PM for general support',
-            onTap: () => _makePhoneCall('+15551234567'),
+            onTap: () => _makePhoneCall(AppConstants.supportPhone),
           ),
           const SizedBox(height: 16),
           _buildContactCard(
@@ -203,13 +211,13 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen>
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'For medical emergencies, please call 911 or go to your nearest emergency room. This app is not intended for emergency medical situations.',
+                    'For medical emergencies, please call 102 (Ambulance) or 108 (Emergency Services) or go to your nearest emergency room. This app is not intended for emergency medical situations.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
                   CustomButton(
                     text: 'Call Emergency Services',
-                    onPressed: () => _makePhoneCall('911'),
+                    onPressed: () => _makePhoneCall(AppConstants.emergencyNumber),
                     backgroundColor: Colors.red,
                     icon: Icons.emergency,
                   ),
@@ -386,6 +394,109 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen>
     );
   }
 
+  Widget _buildRaiseComplaintTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Raise a Complaint',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: ThemeUtils.getTextPrimaryColor(context),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'We\'re here to help resolve any issues you may have. Choose your preferred method to contact us.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: ThemeUtils.getTextSecondaryColor(context),
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildContactCard(
+            icon: Icons.email,
+            title: 'Email Complaint',
+            subtitle: AppConstants.complaintEmail,
+            description: 'Send us a detailed complaint via email\nWe typically respond within 24 hours',
+            onTap: () => _sendComplaintEmail(),
+          ),
+          const SizedBox(height: 16),
+          _buildContactCard(
+            icon: Icons.chat,
+            title: 'WhatsApp Complaint',
+            subtitle: '+91 ${AppConstants.complaintWhatsApp}',
+            description: 'Chat with us directly on WhatsApp\nQuick response during business hours',
+            onTap: () => _sendComplaintWhatsApp(),
+          ),
+          const SizedBox(height: 32),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, color: AppColors.info, size: 24),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Complaint Guidelines',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.info,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildGuidelineItem('Provide detailed information about your issue'),
+                  _buildGuidelineItem('Include relevant appointment or booking details'),
+                  _buildGuidelineItem('Attach screenshots if applicable'),
+                  _buildGuidelineItem('Be respectful and constructive in your feedback'),
+                  const SizedBox(height: 16),
+                  Text(
+                    'We take all complaints seriously and will investigate thoroughly to provide you with the best possible resolution.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: ThemeUtils.getTextSecondaryColor(context),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuidelineItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.check_circle_outline,
+            size: 16,
+            color: AppColors.success,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: ThemeUtils.getTextSecondaryColor(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _makePhoneCall(String phoneNumber) async {
     final uri = Uri(scheme: 'tel', path: phoneNumber);
     if (await canLaunchUrl(uri)) {
@@ -413,6 +524,46 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen>
           const SnackBar(content: Text('Could not launch email app')),
         );
       }
+    }
+  }
+
+  Future<void> _sendComplaintEmail() async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: AppConstants.complaintEmail,
+      query: 'subject=Complaint - Curevia App&body=Dear Support Team,%0A%0APlease describe your complaint in detail:%0A%0A[Your complaint here]%0A%0AThank you.',
+    );
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch email app')),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendComplaintWhatsApp() async {
+    const message = '''Hello Curevia Support Team,
+
+I would like to raise a complaint regarding:
+
+[Please describe your complaint here]
+
+Thank you for your assistance.''';
+
+    final success = await WhatsAppService.openChat(
+      phoneNumber: AppConstants.complaintWhatsApp,
+      message: message,
+    );
+
+    if (!success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open WhatsApp. Please make sure WhatsApp is installed.'),
+        ),
+      );
     }
   }
 

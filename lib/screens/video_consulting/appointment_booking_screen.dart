@@ -11,7 +11,7 @@ import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../widgets/common/loading_overlay.dart';
 import '../../services/firebase/appointment_service.dart';
-import '../../services/firebase/notification_service.dart';
+import '../../services/notifications/notification_manager.dart';
 import '../payment/payment_screen.dart';
 
 /// Video consultation appointment booking screen
@@ -616,15 +616,14 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
               );
               
               // Send notification to doctor
-              await NotificationService.sendNotification(
-                userId: widget.doctor.uid,
+              await NotificationManager.instance.sendTestNotification(
                 title: 'New Video Consultation Booked',
                 body: 'You have a new video consultation with ${userModel.fullName}',
-                type: 'appointment',
                 data: {
                   'appointmentId': appointmentId,
                   'patientId': userModel.uid,
                   'patientName': userModel.fullName,
+                  'type': 'appointment',
                 },
               );
               

@@ -115,10 +115,48 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Header
+                  // Header with Logo
                   Center(
                     child: Column(
                       children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: ThemeUtils.getPrimaryColor(context).withOpacity(0.3),
+                                blurRadius: 15,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.asset(
+                              'assets/icons/curevia_icon.png',
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                // Fallback to the old icon if image fails to load
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: ThemeUtils.getPrimaryColor(context),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Icon(
+                                    Icons.local_hospital,
+                                    size: 40,
+                                    color: AppColors.textOnPrimary,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         Text(
                           'Join ${AppConstants.appName}',
                           style: Theme.of(context).textTheme.headlineMedium

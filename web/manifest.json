@@ -1,11 +1,11 @@
 {
-    "name": "curevia",
-    "short_name": "curevia",
+    "name": "Curevia - Smart Healthcare",
+    "short_name": "Curevia",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Curevia - Your Smart Path to Better Health. A comprehensive healthcare app with doctor booking, telemedicine, AI symptom checker, and wellness features.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

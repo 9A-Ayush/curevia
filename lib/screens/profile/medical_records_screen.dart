@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../constants/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../models/medical_record_model.dart';
@@ -11,6 +12,11 @@ import '../../providers/medical_report_provider.dart';
 import '../../services/image_upload_service.dart';
 import '../../utils/theme_utils.dart';
 import '../../widgets/common/custom_button.dart';
+import '../../widgets/medical_records/share_reports_dialog.dart';
+import '../patient/medical_document_viewer_screen.dart';
+import '../../widgets/medical_records/share_reports_dialog.dart';
+import '../../services/medical_report_sharing_service.dart';
+import 'medical_sharing_history_screen.dart';
 
 class MedicalRecordsScreen extends ConsumerStatefulWidget {
   const MedicalRecordsScreen({super.key});
@@ -54,6 +60,20 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
         elevation: 0,
         foregroundColor: Colors.white,
         title: const Text('Medical Records'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MedicalSharingHistoryScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.history),
+            tooltip: 'Sharing History',
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -159,12 +179,28 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showUploadOptions,
-        backgroundColor: ThemeUtils.getPrimaryColor(context),
-        foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Report'),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Share Reports Button
+          FloatingActionButton(
+            heroTag: "share_reports",
+            onPressed: _showShareReportsDialog,
+            backgroundColor: ThemeUtils.getSuccessColor(context),
+            foregroundColor: Colors.white,
+            child: const Icon(Icons.share),
+          ),
+          const SizedBox(height: 12),
+          // Add Report Button
+          FloatingActionButton.extended(
+            heroTag: "add_report",
+            onPressed: _showUploadOptions,
+            backgroundColor: ThemeUtils.getPrimaryColor(context),
+            foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
+            icon: const Icon(Icons.add),
+            label: const Text('Add Report'),
+          ),
+        ],
       ),
     );
   }
@@ -870,8 +906,12 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: ThemeUtils.getSurfaceVariantColor(context),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: ThemeUtils.getTextSecondaryColor(context).withOpacity(0.2),
+          width: 1,
+        ),
       ),
       child: Row(
         children: [
@@ -899,20 +939,44 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
                     color: ThemeUtils.getTextPrimaryColor(context),
                   ),
                 ),
-                Text(
-                  '$dosage • $frequency',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: ThemeUtils.getTextSecondaryColor(context),
+                if (dosage.isNotEmpty || frequency.isNotEmpty)
+                  Text(
+                    [dosage, frequency].where((s) => s.isNotEmpty).join(' • '),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: ThemeUtils.getTextSecondaryColor(context),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              // Show medication options
-            },
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert,
+              color: ThemeUtils.getTextSecondaryColor(context),
+            ),
+            onSelected: (value) => _handleMedicationAction(value, name),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit, size: 20),
+                    SizedBox(width: 8),
+                    Text('Edit'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, size: 20, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Delete', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -977,7 +1041,19 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
           ),
         ),
         onTap: () {
-          // Navigate to detailed history item
+          if (report != null && report.attachments.isNotEmpty) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MedicalDocumentViewerScreen(
+                  medicalRecord: report,
+                  initialIndex: 0,
+                ),
+              ),
+            );
+          } else if (report != null) {
+            _viewReportDetails(report);
+          }
         },
       ),
     );
@@ -1037,13 +1113,26 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
           onSelected: (value) => _handleReportAction(value, report),
           itemBuilder: (context) => [
             const PopupMenuItem(value: 'view', child: Text('View Details')),
+            const PopupMenuItem(value: 'share', child: Text('Share with Doctor')),
             const PopupMenuItem(value: 'edit', child: Text('Edit')),
             const PopupMenuItem(value: 'delete', child: Text('Delete')),
           ],
         ),
         onTap: () {
           if (report != null) {
-            _viewReportDetails(report);
+            if (report.attachments.isNotEmpty) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MedicalDocumentViewerScreen(
+                    medicalRecord: report,
+                    initialIndex: 0,
+                  ),
+                ),
+              );
+            } else {
+              _viewReportDetails(report);
+            }
           }
         },
       ),
@@ -1092,13 +1181,23 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
           ],
         ),
         trailing: IconButton(
-          icon: const Icon(Icons.download),
+          icon: const Icon(Icons.share),
           onPressed: () {
-            // Download document
+            // Share document
           },
         ),
         onTap: () {
-          // View document
+          if (report != null && report.attachments.isNotEmpty) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MedicalDocumentViewerScreen(
+                  medicalRecord: report,
+                  initialIndex: 0,
+                ),
+              ),
+            );
+          }
         },
       ),
     );
@@ -1147,15 +1246,32 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (allergyController.text.isNotEmpty) {
                 Navigator.pop(context);
-                // TODO: Save to Firestore
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Added allergy: ${allergyController.text}'),
-                  ),
-                );
+                
+                try {
+                  final user = ref.read(authProvider).userModel;
+                  if (user != null) {
+                    final patientModel = ref.read(currentPatientModelProvider);
+                    if (patientModel != null) {
+                      final updatedAllergies = List<String>.from(patientModel.allergies ?? []);
+                      final allergyText = severityController.text.isNotEmpty 
+                          ? '${allergyController.text} (${severityController.text})'
+                          : allergyController.text;
+                      updatedAllergies.add(allergyText);
+                      
+                      // Update patient model with new allergy
+                      await ref.read(patientProvider.notifier).updatePatientData(
+                        allergies: updatedAllergies,
+                      );
+                      
+                      _showSuccessSnackBar('Added allergy: ${allergyController.text}');
+                    }
+                  }
+                } catch (e) {
+                  _showErrorSnackBar('Failed to add allergy: $e');
+                }
               }
             },
             child: const Text('Add'),
@@ -1165,11 +1281,26 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
     );
   }
 
-  void _removeAllergy(String allergy) {
-    // Remove allergy logic
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Removed allergy: $allergy')));
+  void _removeAllergy(String allergy) async {
+    try {
+      final user = ref.read(authProvider).userModel;
+      if (user != null) {
+        final patientModel = ref.read(currentPatientModelProvider);
+        if (patientModel != null) {
+          final updatedAllergies = List<String>.from(patientModel.allergies ?? []);
+          updatedAllergies.remove(allergy);
+          
+          // Update patient model without the removed allergy
+          await ref.read(patientProvider.notifier).updatePatientData(
+            allergies: updatedAllergies,
+          );
+          
+          _showSuccessSnackBar('Removed allergy: $allergy');
+        }
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to remove allergy: $e');
+    }
   }
 
   void _addMedication() {
@@ -1220,18 +1351,187 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (medicationController.text.isNotEmpty) {
                 Navigator.pop(context);
-                // TODO: Save to Firestore
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Added medication: ${medicationController.text}'),
-                  ),
-                );
+                
+                try {
+                  final user = ref.read(authProvider).userModel;
+                  if (user != null) {
+                    // Save the medication record
+                    final recordId = await ref
+                        .read(medicalReportProvider.notifier)
+                        .addManualMedicalReport(
+                          userId: user.uid,
+                          title: 'Current Medication: ${medicationController.text}',
+                          type: 'prescription',
+                          recordDate: DateTime.now(),
+                          prescription: '${medicationController.text} - ${dosageController.text} - ${frequencyController.text}',
+                          notes: 'Added via Medical Records',
+                        );
+                    
+                    if (recordId != null) {
+                      _showSuccessSnackBar('Added medication: ${medicationController.text}');
+                    } else {
+                      _showErrorSnackBar('Failed to add medication');
+                    }
+                  }
+                } catch (e) {
+                  _showErrorSnackBar('Failed to add medication: $e');
+                }
               }
             },
             child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleMedicationAction(String action, String medicationName) {
+    switch (action) {
+      case 'edit':
+        _editMedication(medicationName);
+        break;
+      case 'delete':
+        _deleteMedication(medicationName);
+        break;
+    }
+  }
+
+  void _editMedication(String medicationName) {
+    // Find the medication record
+    final medicalReportState = ref.read(medicalReportProvider);
+    final medicationRecord = medicalReportState.reports.firstWhere(
+      (report) => report.prescription?.contains(medicationName) == true,
+      orElse: () => throw Exception('Medication not found'),
+    );
+
+    final parts = medicationRecord.prescription?.split(' - ') ?? [];
+    final TextEditingController medicationController = TextEditingController(
+      text: parts.isNotEmpty ? parts[0] : medicationName,
+    );
+    final TextEditingController dosageController = TextEditingController(
+      text: parts.length > 1 ? parts[1] : '',
+    );
+    final TextEditingController frequencyController = TextEditingController(
+      text: parts.length > 2 ? parts[2] : '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Medication'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: medicationController,
+                decoration: const InputDecoration(
+                  labelText: 'Medication Name',
+                  prefixIcon: Icon(Icons.medication),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: dosageController,
+                decoration: const InputDecoration(
+                  labelText: 'Dosage',
+                  prefixIcon: Icon(Icons.science),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: frequencyController,
+                decoration: const InputDecoration(
+                  labelText: 'Frequency',
+                  prefixIcon: Icon(Icons.schedule),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (medicationController.text.isNotEmpty) {
+                Navigator.pop(context);
+                
+                final user = ref.read(authProvider).userModel;
+                if (user != null) {
+                  try {
+                    final success = await ref
+                        .read(medicalReportProvider.notifier)
+                        .updateMedicalReport(
+                          userId: user.uid,
+                          recordId: medicationRecord.id,
+                          title: 'Current Medication: ${medicationController.text}',
+                          prescription: '${medicationController.text} - ${dosageController.text} - ${frequencyController.text}',
+                        );
+                    
+                    if (success) {
+                      _showSuccessSnackBar('Updated medication: ${medicationController.text}');
+                    } else {
+                      _showErrorSnackBar('Failed to update medication');
+                    }
+                  } catch (e) {
+                    _showErrorSnackBar('Failed to update medication: $e');
+                  }
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteMedication(String medicationName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Medication'),
+        content: Text('Are you sure you want to delete "$medicationName"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              
+              try {
+                // Find and delete the medication record
+                final medicalReportState = ref.read(medicalReportProvider);
+                final medicationRecord = medicalReportState.reports.firstWhere(
+                  (report) => report.prescription?.contains(medicationName) == true,
+                  orElse: () => throw Exception('Medication not found'),
+                );
+                
+                final user = ref.read(authProvider).userModel;
+                if (user != null) {
+                  final success = await ref
+                      .read(medicalReportProvider.notifier)
+                      .deleteMedicalReport(user.uid, medicationRecord.id);
+                  
+                  if (success) {
+                    _showSuccessSnackBar('Deleted medication: $medicationName');
+                  } else {
+                    _showErrorSnackBar('Failed to delete medication');
+                  }
+                }
+              } catch (e) {
+                _showErrorSnackBar('Failed to delete medication: $e');
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -1260,6 +1560,88 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
         ],
       ),
     );
+  }
+
+  /// Show share reports dialog
+  void _showShareReportsDialog() {
+    final medicalReportState = ref.read(medicalReportProvider);
+    final reports = medicalReportState.reports;
+
+    if (reports.isEmpty) {
+      _showErrorSnackBar('No medical reports available to share');
+      return;
+    }
+
+    final user = ref.read(authProvider).userModel;
+    if (user == null) {
+      _showErrorSnackBar('User not authenticated');
+      return;
+    }
+
+    final patientModel = ref.read(currentPatientModelProvider);
+    final allergies = patientModel?.allergies ?? [];
+    
+    // Prepare patient vitals from the patient model
+    final patientVitals = <String, dynamic>{};
+    if (patientModel != null) {
+      if (patientModel.height != null) patientVitals['height'] = patientModel.height;
+      if (patientModel.weight != null) patientVitals['weight'] = patientModel.weight;
+      if (patientModel.bloodGroup != null) patientVitals['bloodGroup'] = patientModel.bloodGroup;
+      if (patientModel.age != null) patientVitals['age'] = patientModel.age;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => ShareReportsDialog(
+        availableReports: reports,
+        patientId: user.uid,
+        patientName: user.fullName,
+        patientAllergies: allergies,
+        patientVitals: patientVitals,
+      ),
+    ).then((result) {
+      if (result == true) {
+        // Reports were shared successfully
+        // The success message is already shown in the dialog
+      }
+    });
+  }
+
+  /// Share individual report with doctor
+  void _shareIndividualReport(MedicalRecordModel report) {
+    final user = ref.read(authProvider).userModel;
+    if (user == null) {
+      _showErrorSnackBar('User not authenticated');
+      return;
+    }
+
+    final patientModel = ref.read(currentPatientModelProvider);
+    final allergies = patientModel?.allergies ?? [];
+    
+    // Prepare patient vitals from the patient model
+    final patientVitals = <String, dynamic>{};
+    if (patientModel != null) {
+      if (patientModel.height != null) patientVitals['height'] = patientModel.height;
+      if (patientModel.weight != null) patientVitals['weight'] = patientModel.weight;
+      if (patientModel.bloodGroup != null) patientVitals['bloodGroup'] = patientModel.bloodGroup;
+      if (patientModel.age != null) patientVitals['age'] = patientModel.age;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => ShareReportsDialog(
+        availableReports: [report], // Only share this specific report
+        patientId: user.uid,
+        patientName: user.fullName,
+        patientAllergies: allergies,
+        patientVitals: patientVitals,
+      ),
+    ).then((result) {
+      if (result == true) {
+        // Report was shared successfully
+        _showSuccessSnackBar('Report shared successfully with doctor');
+      }
+    });
   }
 
   /// Show upload options dialog
@@ -1363,6 +1745,39 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
                     onTap: () {
                       Navigator.pop(context);
                       _uploadFromGallery();
+                    },
+                  ),
+                  ListTile(
+                    leading: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: ThemeUtils.getPrimaryColor(
+                          context,
+                        ).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.picture_as_pdf,
+                        color: ThemeUtils.getPrimaryColor(context),
+                      ),
+                    ),
+                    title: Text(
+                      'Upload PDF',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: ThemeUtils.getTextPrimaryColor(context),
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Select a PDF document from your device',
+                      style: TextStyle(
+                        color: ThemeUtils.getTextSecondaryColor(context),
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _uploadPdfDocument();
                     },
                   ),
                   ListTile(
@@ -1728,6 +2143,345 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
     }
   }
 
+  /// Upload PDF document
+  Future<void> _uploadPdfDocument() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = File(result.files.single.path!);
+        await _processPdfDocument(file, result.files.single.name);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to select PDF: $e');
+    }
+  }
+
+  /// Process uploaded PDF document
+  Future<void> _processPdfDocument(File pdfFile, String fileName) async {
+    final user = ref.read(authProvider).userModel;
+    if (user == null) return;
+
+    // Show dialog to enter PDF details
+    _showPdfReportDialog(pdfFile, fileName);
+  }
+
+  /// Show PDF report entry dialog
+  void _showPdfReportDialog(File pdfFile, String fileName) {
+    final titleController = TextEditingController();
+    final doctorController = TextEditingController();
+    final hospitalController = TextEditingController();
+    final diagnosisController = TextEditingController();
+    final treatmentController = TextEditingController();
+    final prescriptionController = TextEditingController();
+    final notesController = TextEditingController();
+
+    DateTime selectedDate = DateTime.now();
+    String selectedType = 'consultation';
+
+    // Pre-fill title with filename (without extension)
+    titleController.text = fileName.replaceAll('.pdf', '');
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(
+            'Add PDF Report',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: ThemeUtils.getTextPrimaryColor(context),
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // PDF file info
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.picture_as_pdf, color: Colors.red[700], size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              fileName,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.red[700],
+                              ),
+                            ),
+                            Text(
+                              'PDF Document',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.red[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Report Title *',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: selectedType,
+                  decoration: const InputDecoration(
+                    labelText: 'Report Type',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'consultation',
+                      child: Text('Consultation'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'lab_test',
+                      child: Text('Lab Test'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'prescription',
+                      child: Text('Prescription'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'vaccination',
+                      child: Text('Vaccination'),
+                    ),
+                    DropdownMenuItem(value: 'surgery', child: Text('Surgery')),
+                    DropdownMenuItem(value: 'checkup', child: Text('Checkup')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedType = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: doctorController,
+                  decoration: const InputDecoration(
+                    labelText: 'Doctor Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: hospitalController,
+                  decoration: const InputDecoration(
+                    labelText: 'Hospital/Clinic Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: diagnosisController,
+                  decoration: const InputDecoration(
+                    labelText: 'Diagnosis',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: treatmentController,
+                  decoration: const InputDecoration(
+                    labelText: 'Treatment',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: prescriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Prescription/Medications',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Additional Notes',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  title: Text('Report Date: ${_formatDate(selectedDate)}'),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now(),
+                    );
+                    if (date != null) {
+                      setState(() {
+                        selectedDate = date;
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (titleController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a report title'),
+                    ),
+                  );
+                  return;
+                }
+
+                Navigator.pop(context);
+                await _savePdfReport(
+                  pdfFile: pdfFile,
+                  fileName: fileName,
+                  title: titleController.text.trim(),
+                  type: selectedType,
+                  recordDate: selectedDate,
+                  doctorName: doctorController.text.trim().isEmpty
+                      ? null
+                      : doctorController.text.trim(),
+                  hospitalName: hospitalController.text.trim().isEmpty
+                      ? null
+                      : hospitalController.text.trim(),
+                  diagnosis: diagnosisController.text.trim().isEmpty
+                      ? null
+                      : diagnosisController.text.trim(),
+                  treatment: treatmentController.text.trim().isEmpty
+                      ? null
+                      : treatmentController.text.trim(),
+                  prescription: prescriptionController.text.trim().isEmpty
+                      ? null
+                      : prescriptionController.text.trim(),
+                  notes: notesController.text.trim().isEmpty
+                      ? null
+                      : notesController.text.trim(),
+                );
+              },
+              child: const Text('Save Report'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Save PDF report
+  Future<void> _savePdfReport({
+    required File pdfFile,
+    required String fileName,
+    required String title,
+    required String type,
+    required DateTime recordDate,
+    String? doctorName,
+    String? hospitalName,
+    String? diagnosis,
+    String? treatment,
+    String? prescription,
+    String? notes,
+  }) async {
+    final user = ref.read(authProvider).userModel;
+    if (user == null) return;
+
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      List<String> attachments = [];
+
+      // Upload PDF file
+      try {
+        final xFile = XFile(pdfFile.path);
+        final pdfUrl = await ImageUploadService.uploadMedicalDocument(
+          imageFile: xFile,
+          userId: user.uid,
+        );
+        attachments.add(pdfUrl);
+      } catch (e) {
+        print('Failed to upload PDF: $e');
+        if (mounted) {
+          Navigator.pop(context); // Close loading dialog
+          _showErrorSnackBar('Failed to upload PDF file: $e');
+          return;
+        }
+      }
+
+      // Save to Firestore
+      final recordId = await ref
+          .read(medicalReportProvider.notifier)
+          .addManualMedicalReport(
+            userId: user.uid,
+            title: title,
+            type: type,
+            recordDate: recordDate,
+            doctorName: doctorName,
+            hospitalName: hospitalName,
+            diagnosis: diagnosis,
+            treatment: treatment,
+            prescription: prescription,
+            notes: notes,
+            attachments: attachments,
+          );
+
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        if (recordId != null) {
+          _showSuccessSnackBar('PDF report saved successfully!');
+        } else {
+          _showErrorSnackBar('Failed to save PDF report');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        _showErrorSnackBar('Error saving PDF report: $e');
+      }
+    }
+  }
+
   /// Add manual report
   void _addManualReport() {
     _showManualReportDialog(null);
@@ -1741,6 +2495,9 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
       case 'view':
         _viewReportDetails(report);
         break;
+      case 'share':
+        _shareIndividualReport(report);
+        break;
       case 'edit':
         _editReport(report);
         break;
@@ -1751,7 +2508,9 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
   }
 
   /// View report details
-  void _viewReportDetails(MedicalRecordModel report) {
+  void _viewReportDetails(MedicalRecordModel? report) {
+    if (report == null) return;
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1792,7 +2551,9 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
   }
 
   /// Edit report
-  void _editReport(MedicalRecordModel report) {
+  void _editReport(MedicalRecordModel? report) {
+    if (report == null) return;
+    
     final TextEditingController titleController =
         TextEditingController(text: report.title);
     final TextEditingController notesController =
@@ -1854,7 +2615,9 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
   }
 
   /// Delete report
-  void _deleteReport(MedicalRecordModel report) {
+  void _deleteReport(MedicalRecordModel? report) {
+    if (report == null) return;
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

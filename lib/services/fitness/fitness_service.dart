@@ -116,17 +116,35 @@ class FitnessService {
   /// Request all necessary permissions
   Future<bool> requestPermissions() async {
     try {
-      // Request activity recognition permission
-      final activityPermission = await Permission.activityRecognition.request();
+      // Request activity recognition permission if not granted
+      final activityPermission = await Permission.activityRecognition.status;
+      PermissionStatus finalActivityStatus = activityPermission;
+      
+      if (!activityPermission.isGranted) {
+        finalActivityStatus = await Permission.activityRecognition.request();
+        if (!finalActivityStatus.isGranted) {
+          debugPrint('Activity recognition permission denied');
+          return false;
+        }
+      }
 
-      // Request sensors permission
-      final sensorsPermission = await Permission.sensors.request();
+      // Request sensors permission if not granted
+      final sensorsPermission = await Permission.sensors.status;
+      PermissionStatus finalSensorsStatus = sensorsPermission;
+      
+      if (!sensorsPermission.isGranted) {
+        finalSensorsStatus = await Permission.sensors.request();
+        if (!finalSensorsStatus.isGranted) {
+          debugPrint('Sensors permission denied');
+          return false;
+        }
+      }
 
-      // Request health data permissions
+      // Check health data permissions
       final healthPermissions = await _requestHealthPermissions();
 
-      return activityPermission.isGranted &&
-          sensorsPermission.isGranted &&
+      return finalActivityStatus.isGranted &&
+          finalSensorsStatus.isGranted &&
           healthPermissions;
     } catch (e) {
       debugPrint('Error requesting permissions: $e');

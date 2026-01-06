@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Curevia brand colors -->
+    <color name="curevia_primary">#0175C2</color>
+    <color name="curevia_primary_dark">#014A8A</color>
+    <color name="curevia_accent">#00BCD4</color>
+    
+    <!-- Notification color for FCM -->
+    <color name="notification_color">#0175C2</color>
+</resources>

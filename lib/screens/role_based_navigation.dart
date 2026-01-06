@@ -9,6 +9,7 @@ import 'doctor/doctor_main_navigation.dart';
 import 'doctor/onboarding/doctor_onboarding_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'auth/login_screen.dart';
+import 'auth/role_selection_screen.dart';
 import 'permissions/permission_wrapper.dart';
 
 /// Role-based navigation wrapper that routes users to appropriate interface
@@ -193,6 +194,11 @@ class _RoleBasedNavigationState extends ConsumerState<RoleBasedNavigation> {
 
     // Route based on user role
     final userRole = authState.userModel!.role;
+
+    // Check if user needs to select a role
+    if (userRole.isEmpty || userRole == '') {
+      return const RoleSelectionScreen();
+    }
 
     // For doctors, check onboarding status first
     if (userRole == AppConstants.doctorRole) {

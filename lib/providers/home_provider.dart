@@ -206,38 +206,9 @@ class HomeNotifier extends StateNotifier<HomeState> {
   /// Load upcoming appointments
   Future<List<AppointmentModel>> _loadUpcomingAppointments() async {
     try {
-      // Get current user ID from auth provider
-      // For now, return mock data
-      return [
-        AppointmentModel(
-          id: '1',
-          patientId: 'patient1',
-          doctorId: 'doctor1',
-          patientName: 'John Doe',
-          doctorName: 'Dr. Sarah Johnson',
-          doctorSpecialty: 'Cardiologist',
-          appointmentDate: DateTime.now().add(const Duration(hours: 2)),
-          timeSlot: '2:30 PM',
-          consultationType: 'video',
-          status: 'confirmed',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-        AppointmentModel(
-          id: '2',
-          patientId: 'patient1',
-          doctorId: 'doctor2',
-          patientName: 'John Doe',
-          doctorName: 'Dr. Michael Chen',
-          doctorSpecialty: 'Dermatologist',
-          appointmentDate: DateTime.now().add(const Duration(days: 1)),
-          timeSlot: '10:00 AM',
-          consultationType: 'offline',
-          status: 'confirmed',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      ];
+      // This method is no longer used since UpcomingAppointments widget
+      // uses its own provider. Return empty list to avoid conflicts.
+      return [];
     } catch (e) {
       return [];
     }

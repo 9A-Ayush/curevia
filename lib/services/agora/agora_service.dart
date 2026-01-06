@@ -13,15 +13,12 @@ class AgoraService {
     if (_isInitialized) return true;
 
     try {
-      // Request permissions
-      final permissions = await [
-        Permission.camera,
-        Permission.microphone,
-      ].request();
+      // Check if permissions are already granted
+      final cameraStatus = await Permission.camera.status;
+      final microphoneStatus = await Permission.microphone.status;
 
-      if (permissions[Permission.camera] != PermissionStatus.granted ||
-          permissions[Permission.microphone] != PermissionStatus.granted) {
-        debugPrint('Camera or microphone permission denied');
+      if (!cameraStatus.isGranted || !microphoneStatus.isGranted) {
+        debugPrint('Camera or microphone permission not granted. Please grant permissions in app settings.');
         return false;
       }
 

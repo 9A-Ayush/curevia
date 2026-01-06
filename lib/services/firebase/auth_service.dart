@@ -122,7 +122,7 @@ class AuthService {
             uid: userCredential.user!.uid,
             email: userCredential.user!.email!,
             fullName: userCredential.user!.displayName ?? 'Google User',
-            role: AppConstants.patientRole, // Default role for Google sign-in
+            role: '', // No default role for Google sign-in - user will choose
           );
         } catch (firestoreError) {
           // If Firestore fails, log but don't fail the entire signup

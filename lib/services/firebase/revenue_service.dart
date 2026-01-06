@@ -10,12 +10,13 @@ class RevenueService {
     required String doctorId,
     required String appointmentId,
     required double amount,
-    required String type,
+    required String type, // 'online', 'offline', 'video'
     String? description,
   }) async {
     try {
       final now = DateTime.now();
       
+      // Create revenue record
       await _firestore.collection('doctor_revenue').add({
         'doctorId': doctorId,
         'appointmentId': appointmentId,
@@ -47,10 +48,11 @@ class RevenueService {
     try {
       final now = DateTime.now();
       
+      // Create negative revenue record
       await _firestore.collection('doctor_revenue').add({
         'doctorId': doctorId,
         'appointmentId': appointmentId,
-        'amount': -amount,
+        'amount': -amount, // Negative amount for reduction
         'type': type,
         'description': reason ?? 'Appointment cancelled',
         'status': 'cancelled',
@@ -75,8 +77,8 @@ class RevenueService {
   }) async {
     try {
       final now = DateTime.now();
-      startDate ??= DateTime(now.year, now.month, 1);
-      endDate ??= DateTime(now.year, now.month + 1, 0);
+      startDate ??= DateTime(now.year, now.month, 1); // Default to current month
+      endDate ??= DateTime(now.year, now.month + 1, 0); // End of current month
 
       Query query = _firestore
           .collection('doctor_revenue')
@@ -125,7 +127,7 @@ class RevenueService {
         'offlineRevenue': offlineRevenue,
         'confirmedAppointments': confirmedCount,
         'cancelledAppointments': cancelledCount,
-        'netRevenue': totalRevenue,
+        'netRevenue': totalRevenue, // Already includes cancellations as negative
       };
     } catch (e) {
       debugPrint('Error getting doctor revenue: $e');
@@ -137,6 +139,44 @@ class RevenueService {
         'cancelledAppointments': 0,
         'netRevenue': 0.0,
       };
+    }
+  }
+
+  /// Get daily revenue breakdown for analytics
+  static Future<List<Map<String, dynamic>>> getDailyRevenue({
+    required String doctorId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    try {
+      final query = await _firestore
+          .collection('doctor_revenue')
+          .where('doctorId', isEqualTo: doctorId)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+          .orderBy('date')
+          .get();
+
+      final dailyRevenue = <String, double>{};
+
+      for (final doc in query.docs) {
+        final data = doc.data();
+        final amount = (data['amount'] as num?)?.toDouble() ?? 0;
+        final date = (data['date'] as Timestamp).toDate();
+        final dateKey = '${date.day}/${date.month}';
+
+        dailyRevenue[dateKey] = (dailyRevenue[dateKey] ?? 0) + amount;
+      }
+
+      return dailyRevenue.entries
+          .map((entry) => {
+                'date': entry.key,
+                'revenue': entry.value,
+              })
+          .toList();
+    } catch (e) {
+      debugPrint('Error getting daily revenue: $e');
+      return [];
     }
   }
 
@@ -156,7 +196,7 @@ class RevenueService {
           .where('doctorId', isEqualTo: doctorId)
           .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
           .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
-          .where('amount', isGreaterThan: 0)
+          .where('amount', isGreaterThan: 0) // Only positive amounts
           .get();
 
       final revenueByType = <String, double>{
@@ -221,4 +261,42 @@ class RevenueService {
       debugPrint('Error updating revenue status: $e');
     }
   }
-}
+
+  /// Get revenue summary for display
+  static Future<Map<String, dynamic>> getRevenueSummary({
+    required String doctorId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      final revenueData = await getDoctorRevenue(
+        doctorId: doctorId,
+        startDate: startDate,
+        endDate: endDate,
+      );
+
+      final totalRevenue = revenueData['totalRevenue'] as double;
+      final confirmedCount = revenueData['confirmedAppointments'] as int;
+      final cancelledCount = revenueData['cancelledAppointments'] as int;
+
+      return {
+        'totalRevenue': totalRevenue,
+        'netRevenue': totalRevenue,
+        'confirmedAppointments': confirmedCount,
+        'cancelledAppointments': cancelledCount,
+        'revenueFromConfirmed': confirmedCount > 0 ? totalRevenue / confirmedCount * confirmedCount : 0,
+        'revenueLostFromCancellations': cancelledCount * (confirmedCount > 0 ? totalRevenue / confirmedCount : 0),
+      };
+    } catch (e) {
+      debugPrint('Error getting revenue summary: $e');
+      return {
+        'totalRevenue': 0.0,
+        'netRevenue': 0.0,
+        'confirmedAppointments': 0,
+        'cancelledAppointments': 0,
+        'revenueFromConfirmed': 0.0,
+        'revenueLostFromCancellations': 0.0,
+      };
+    }
+  }
+} 

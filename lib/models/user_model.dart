@@ -232,4 +232,59 @@ class PatientModel extends UserModel {
     if (bmiValue < 30) return 'Overweight';
     return 'Obese';
   }
+
+  /// Create a copy of PatientModel with updated fields
+  PatientModel copyWith({
+    String? uid,
+    String? email,
+    String? fullName,
+    String? role,
+    String? phoneNumber,
+    String? profileImageUrl,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? isActive,
+    bool? isVerified,
+    Map<String, dynamic>? additionalInfo,
+    DateTime? dateOfBirth,
+    String? gender,
+    String? bloodGroup,
+    double? height,
+    double? weight,
+    List<String>? allergies,
+    List<String>? medicalHistory,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+    String? address,
+    String? city,
+    String? state,
+    String? pincode,
+  }) {
+    return PatientModel(
+      uid: uid ?? this.uid,
+      email: email ?? this.email,
+      fullName: fullName ?? this.fullName,
+      role: role ?? this.role,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isActive: isActive ?? this.isActive,
+      isVerified: isVerified ?? this.isVerified,
+      additionalInfo: additionalInfo ?? this.additionalInfo,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      gender: gender ?? this.gender,
+      bloodGroup: bloodGroup ?? this.bloodGroup,
+      height: height ?? this.height,
+      weight: weight ?? this.weight,
+      allergies: allergies ?? this.allergies,
+      medicalHistory: medicalHistory ?? this.medicalHistory,
+      emergencyContactName: emergencyContactName ?? this.emergencyContactName,
+      emergencyContactPhone: emergencyContactPhone ?? this.emergencyContactPhone,
+      address: address ?? this.address,
+      city: city ?? this.city,
+      state: state ?? this.state,
+      pincode: pincode ?? this.pincode,
+    );
+  }
 }

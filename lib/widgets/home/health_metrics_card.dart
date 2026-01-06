@@ -4,7 +4,9 @@ import '../../constants/app_colors.dart';
 import '../../providers/home_provider.dart';
 import '../../utils/theme_utils.dart';
 import '../../screens/fitness/fitness_tracker_screen.dart';
+import '../../screens/health/bmi_calculator_screen.dart';
 import '../../services/health/health_metrics_service.dart';
+import '../../services/health/bmi_service.dart';
 
 /// Health metrics card for home screen
 class HealthMetricsCard extends ConsumerWidget {
@@ -200,6 +202,79 @@ class HealthMetricsCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 12),
               ],
+              // BMI Card
+              Expanded(
+                child: FutureBuilder<double?>(
+                  future: BmiService.getCurrentBMI(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData && snapshot.data != null) {
+                      final bmi = snapshot.data!;
+                      final category = BmiService.getBMICategory(bmi);
+                      Color bmiColor;
+                      
+                      switch (category.color) {
+                        case 'info':
+                          bmiColor = AppColors.info;
+                          break;
+                        case 'success':
+                          bmiColor = AppColors.success;
+                          break;
+                        case 'warning':
+                          bmiColor = AppColors.warning;
+                          break;
+                        case 'error':
+                          bmiColor = AppColors.error;
+                          break;
+                        default:
+                          bmiColor = AppColors.primary;
+                      }
+                      
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const BmiCalculatorScreen(),
+                            ),
+                          );
+                        },
+                        child: _buildMetricCard(
+                          context: context,
+                          icon: Icons.calculate,
+                          label: 'BMI',
+                          value: bmi.toStringAsFixed(1),
+                          subtitle: category.category,
+                          color: bmiColor,
+                        ),
+                      );
+                    } else {
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const BmiCalculatorScreen(),
+                            ),
+                          );
+                        },
+                        child: _buildMetricCard(
+                          context: context,
+                          icon: Icons.calculate,
+                          label: 'BMI',
+                          value: '--',
+                          subtitle: 'Calculate',
+                          color: AppColors.secondary,
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
               if (healthMetrics != null) ...[
                 Expanded(
                   child: GestureDetector(
@@ -214,12 +289,8 @@ class HealthMetricsCard extends ConsumerWidget {
                     ),
                   ),
                 ),
+                const SizedBox(width: 12),
               ],
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
               if (activityStats != null) ...[
                 Expanded(
                   child: _buildMetricCard(

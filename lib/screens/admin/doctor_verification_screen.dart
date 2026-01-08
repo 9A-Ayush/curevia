@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../widgets/admin/expandable_verification_card.dart';
+import '../../services/email_service.dart';
 import 'doctor_verification_details_screen.dart';
 
 class DoctorVerificationScreen extends StatefulWidget {
@@ -171,6 +172,19 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
       
       await batch.commit();
       
+      // Send approval email
+      try {
+        await EmailService.sendDoctorVerificationEmail(
+          doctorId: doctorId,
+          status: 'approved',
+          adminId: 'admin', // Replace with actual admin ID
+        );
+        debugPrint('✅ Doctor approval email sent successfully');
+      } catch (emailError) {
+        debugPrint('⚠️ Failed to send approval email: $emailError');
+        // Don't fail the verification process if email fails
+      }
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -249,6 +263,19 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
       );
       
       await batch.commit();
+      
+      // Send rejection email
+      try {
+        await EmailService.sendDoctorVerificationEmail(
+          doctorId: doctorId,
+          status: 'rejected',
+          adminId: 'admin', // Replace with actual admin ID
+        );
+        debugPrint('✅ Doctor rejection email sent successfully');
+      } catch (emailError) {
+        debugPrint('⚠️ Failed to send rejection email: $emailError');
+        // Don't fail the verification process if email fails
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

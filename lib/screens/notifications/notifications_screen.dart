@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../models/notification_model.dart';
 import '../../services/notifications/notification_manager.dart';
+import '../../services/notifications/notification_handler.dart';
 import '../../utils/theme_utils.dart';
 import '../../widgets/common/custom_button.dart';
 
@@ -61,18 +62,18 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
   Future<void> _markAsRead(NotificationModel notification) async {
     if (!notification.isRead) {
-      await NotificationManager.instance.markAsRead(notification.id);
+      await NotificationHandler.markAsRead(notification.id);
       await _loadNotifications();
     }
   }
 
   Future<void> _markAllAsRead() async {
-    await NotificationManager.instance.markAllAsRead();
+    await NotificationHandler.markAllAsRead();
     await _loadNotifications();
   }
 
   Future<void> _deleteNotification(NotificationModel notification) async {
-    await NotificationManager.instance.deleteNotification(notification.id);
+    await NotificationHandler.deleteNotification(notification.id);
     await _loadNotifications();
   }
 
@@ -83,7 +84,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     );
     
     if (confirmed) {
-      await NotificationManager.instance.clearAllNotifications();
+      await NotificationHandler.clearAllNotifications();
       await _loadNotifications();
     }
   }

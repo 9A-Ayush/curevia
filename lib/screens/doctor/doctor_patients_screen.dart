@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
+import '../../utils/validation_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/doctor/doctor_service.dart';
 
@@ -662,7 +663,7 @@ class _DoctorPatientsScreenState extends ConsumerState<DoctorPatientsScreen> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 12),
-              TextField(
+              TextFormField(
                 controller: phoneController,
                 decoration: const InputDecoration(
                   labelText: 'Phone Number',
@@ -670,6 +671,7 @@ class _DoctorPatientsScreenState extends ConsumerState<DoctorPatientsScreen> {
                   prefixIcon: Icon(Icons.phone),
                 ),
                 keyboardType: TextInputType.phone,
+                validator: (value) => ValidationUtils.validatePhoneNumber(value, isRequired: false),
               ),
             ],
           ),

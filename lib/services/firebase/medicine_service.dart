@@ -101,13 +101,9 @@ class MedicineService {
   /// Get all medicine categories
   static Future<List<String>> getMedicineCategories() async {
     try {
-      // First check if we have data, if not seed it
-      final hasData = await hasMedicineData();
-      if (!hasData) {
-        print('No medicine data found, seeding...');
-        await seedMedicineData();
-      }
-
+      // First ensure data is seeded if user is authenticated
+      await seedIfEmpty();
+      
       final querySnapshot = await _firestore
           .collection(_medicineCategoriesCollection)
           .orderBy('name')
@@ -118,6 +114,13 @@ class MedicineService {
           .toList();
       
       print('Retrieved ${categories.length} medicine categories from Firestore');
+      
+      // If no categories found, return default ones
+      if (categories.isEmpty) {
+        print('No medicine categories found in Firestore, returning defaults');
+        return ['Pain Relief', 'Antibiotics', 'Common Cold & Flu', 'Digestive Health', 'Vitamins & Supplements'];
+      }
+      
       return categories;
     } catch (e) {
       print('Error getting medicine categories: $e');
@@ -192,14 +195,10 @@ class MedicineService {
   }
 
   /// Get all medicines
-  static Future<List<MedicineModel>> getAllMedicines({int limit = 50}) async {
+  static Future<List<MedicineModel>> getAllMedicines({int limit = 100}) async {
     try {
-      // First check if we have data, if not seed it
-      final hasData = await hasMedicineData();
-      if (!hasData) {
-        print('No medicine data found, seeding...');
-        await seedMedicineData();
-      }
+      // First ensure data is seeded
+      await seedIfEmpty();
 
       final querySnapshot = await _firestore
           .collection(_medicinesCollection)
@@ -212,10 +211,36 @@ class MedicineService {
           .toList();
       
       print('Retrieved ${medicines.length} medicines from Firestore');
+      
+      // If we got fewer medicines than expected, try to seed again
+      if (medicines.length < 10) {
+        print('Low medicine count (${medicines.length}), attempting to reseed...');
+        await seedMedicineData();
+        
+        // Try again after seeding
+        final retrySnapshot = await _firestore
+            .collection(_medicinesCollection)
+            .orderBy('name')
+            .limit(limit)
+            .get();
+        
+        final retriedMedicines = retrySnapshot.docs
+            .map((doc) => MedicineModel.fromMap(doc.data()))
+            .toList();
+        
+        print('After reseeding: ${retriedMedicines.length} medicines');
+        return retriedMedicines;
+      }
+      
       return medicines;
     } catch (e) {
       print('Error getting all medicines: $e');
-      // Return empty list instead of throwing exception
+      // Try to seed and return empty list
+      try {
+        await seedMedicineData();
+      } catch (seedError) {
+        print('Failed to seed medicines: $seedError');
+      }
       return [];
     }
   }

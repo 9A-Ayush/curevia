@@ -5,6 +5,7 @@ import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../models/doctor_model.dart';
 import '../../models/appointment_model.dart';
+import '../../models/notification_model.dart';
 import '../../providers/appointment_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/common/custom_button.dart';
@@ -12,6 +13,7 @@ import '../../widgets/common/custom_text_field.dart';
 import '../../widgets/common/loading_overlay.dart';
 import '../../services/firebase/appointment_service.dart';
 import '../../services/notifications/notification_manager.dart';
+import '../../services/notifications/notification_integration_service.dart';
 import '../payment/payment_screen.dart';
 
 /// Video consultation appointment booking screen
@@ -615,10 +617,49 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
                 status: 'confirmed',
               );
               
+              // Send comprehensive appointment booking confirmation to patient
+              // This includes both appointment details and payment confirmation
+              final currentFCMToken = NotificationIntegrationService.instance.currentFCMToken;
+              if (currentFCMToken != null) {
+                await NotificationIntegrationService.instance.notifyPatientAppointmentBookedWithPayment(
+                  patientId: userModel.uid,
+                  patientName: userModel.fullName,
+                  patientFCMToken: currentFCMToken,
+                  doctorName: widget.doctor.fullName,
+                  appointmentId: appointmentId,
+                  appointmentTime: DateTime(
+                    _selectedDate.year,
+                    _selectedDate.month,
+                    _selectedDate.day,
+                    int.parse(_selectedTimeSlot!.split(':')[0]),
+                    int.parse(_selectedTimeSlot!.split(':')[1]),
+                  ),
+                  appointmentType: 'Video Consultation',
+                  paymentId: paymentId,
+                  amount: widget.doctor.consultationFee?.toDouble() ?? 0.0,
+                  currency: 'INR',
+                  paymentMethod: 'Online Payment',
+                );
+              } else {
+                debugPrint('⚠️ FCM token not available, cannot send patient notification');
+              }
+              
+              // Send payment received notification to doctor
+              await NotificationIntegrationService.instance.notifyDoctorPaymentReceived(
+                doctorId: widget.doctor.uid,
+                doctorFCMToken: 'doctor_token', // TODO: Get actual doctor FCM token
+                patientName: userModel.fullName,
+                paymentId: paymentId,
+                amount: widget.doctor.consultationFee?.toDouble() ?? 0.0,
+                currency: 'INR',
+                appointmentId: appointmentId,
+              );
+              
               // Send notification to doctor
               await NotificationManager.instance.sendTestNotification(
                 title: 'New Video Consultation Booked',
                 body: 'You have a new video consultation with ${userModel.fullName}',
+                type: NotificationType.appointmentBooking,
                 data: {
                   'appointmentId': appointmentId,
                   'patientId': userModel.uid,

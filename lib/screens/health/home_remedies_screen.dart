@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../constants/app_colors.dart';
 import '../../models/home_remedy_model.dart';
 import '../../providers/home_remedies_provider.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../utils/theme_utils.dart';
+import '../../services/data_initialization_service.dart';
+import '../../services/firebase/home_remedies_service.dart';
 import 'remedy_detail_screen.dart';
 
 /// Home Remedies Screen for natural treatments and herbs
@@ -28,23 +31,6 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this); // Reduced to 2 tabs
-    // Seed data on first load and wait for completion
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      setState(() {
-        _isSeeding = true;
-      });
-      try {
-        await ref.read(seedRemediesDataProvider.future);
-      } catch (e) {
-        print('Error seeding remedies data: $e');
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isSeeding = false;
-          });
-        }
-      }
-    });
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -111,6 +97,164 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
     }
   }
 
+  /// Share remedy information
+  void _shareRemedy(HomeRemedyModel remedy) {
+    final StringBuffer shareText = StringBuffer();
+    
+    shareText.writeln('🌿 ${remedy.title}');
+    shareText.writeln('Category: ${remedy.categoryName}');
+    shareText.writeln();
+    shareText.writeln('📝 ${remedy.description}');
+    shareText.writeln();
+    shareText.writeln('⏱️ Preparation Time: ${remedy.preparationTime}');
+    shareText.writeln('📊 Difficulty: ${remedy.difficulty}');
+    
+    if (remedy.tags.isNotEmpty) {
+      shareText.writeln('🏷️ Tags: ${remedy.tags.join(', ')}');
+    }
+    
+    shareText.writeln();
+    shareText.writeln('---');
+    shareText.writeln('Shared from Curevia - Your Smart Path to Better Health');
+    shareText.writeln('⚠️ Always consult with a healthcare provider before using home remedies.');
+    
+    Share.share(
+      shareText.toString(),
+      subject: '🌿 Home Remedy: ${remedy.title}',
+    );
+  }
+
+  /// Test data initialization manually
+  Future<void> _testDataInitialization() async {
+    try {
+      setState(() {
+        _isSeeding = true;
+      });
+      
+      print('=== MANUAL DATA INITIALIZATION TEST ===');
+      await DataInitializationService.forceReinitialize();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data initialization test completed - check console'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error in manual data initialization: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Data initialization failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSeeding = false;
+        });
+      }
+    }
+  }
+
+  /// Force complete reseed of all data
+  Future<void> _forceCompleteReseed() async {
+    try {
+      setState(() {
+        _isSeeding = true;
+      });
+      
+      print('=== FORCE COMPLETE RESEED ===');
+      
+      // Clear and reseed remedies
+      await HomeRemediesService.seedHomeRemediesData();
+      
+      // Invalidate all providers
+      ref.invalidate(remedyCategoriesProvider);
+      ref.invalidate(allRemediesProvider);
+      ref.invalidate(seedRemediesDataProvider);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Complete reseed completed successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error in complete reseed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Complete reseed failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSeeding = false;
+        });
+      }
+    }
+  }
+
+  /// Clear all data (for testing)
+  Future<void> _clearAllData() async {
+    try {
+      setState(() {
+        _isSeeding = true;
+      });
+      
+      // Show confirmation dialog
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Clear All Data'),
+          content: const Text('This will delete all remedies data. Are you sure?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Clear', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+      
+      if (confirmed == true) {
+        // This would require adding a clear method to the service
+        print('Data clearing requested - implement clear method in service');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Data clearing not implemented yet'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error clearing data: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSeeding = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,6 +269,36 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
             onPressed: _forceSeedData,
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh Data',
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'test_init':
+                  _testDataInitialization();
+                  break;
+                case 'force_reseed':
+                  _forceCompleteReseed();
+                  break;
+                case 'clear_data':
+                  _clearAllData();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'test_init',
+                child: Text('Test Data Init'),
+              ),
+              const PopupMenuItem(
+                value: 'force_reseed',
+                child: Text('Force Complete Reseed'),
+              ),
+              const PopupMenuItem(
+                value: 'clear_data',
+                child: Text('Clear All Data'),
+              ),
+            ],
+            icon: const Icon(Icons.more_vert),
           ),
         ],
         bottom: TabBar(
@@ -474,6 +648,12 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ),
+                            IconButton(
+                              icon: const Icon(Icons.share, size: 20),
+                              onPressed: () => _shareRemedy(remedy),
+                              color: AppColors.primary,
+                              tooltip: 'Share remedy',
+                            ),
                           ],
                         ),
                         const SizedBox(height: 4),
@@ -506,14 +686,15 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
               const SizedBox(height: 12),
 
               // Remedy Details
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
                 children: [
                   _buildInfoChip(
                     remedy.preparationTime,
                     Icons.schedule,
                     AppColors.info,
                   ),
-                  const SizedBox(width: 8),
                   _buildInfoChip(
                     remedy.difficulty,
                     Icons.trending_up,
@@ -618,7 +799,7 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
             crossAxisCount: 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 1.2,
+            childAspectRatio: 1.0, // Changed from 1.2 to 1.0 for more vertical space
           ),
           itemCount: categories.length,
           itemBuilder: (context, index) {
@@ -648,6 +829,7 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 width: 48,
@@ -662,13 +844,17 @@ class _HomeRemediesScreenState extends ConsumerState<HomeRemediesScreen>
                   size: 24,
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                category.name,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
+              const SizedBox(height: 8),
+              Flexible(
+                child: Text(
+                  category.name,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               const SizedBox(height: 4),
               Text(

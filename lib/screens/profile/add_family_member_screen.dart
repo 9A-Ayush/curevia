@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
+import '../../utils/validation_utils.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../providers/auth_provider.dart';
@@ -207,6 +208,7 @@ class _AddFamilyMemberScreenState extends ConsumerState<AddFamilyMemberScreen> {
               label: 'Phone Number',
               prefixIcon: Icons.phone,
               keyboardType: TextInputType.phone,
+              validator: (value) => ValidationUtils.validatePhoneNumber(value, isRequired: false),
             ),
             const SizedBox(height: 16),
 

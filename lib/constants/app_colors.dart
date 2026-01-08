@@ -138,8 +138,8 @@ class AppColors {
 
   // Dark Theme Text Colors
   static const Color darkTextPrimary = Color(0xFFFFFFFF);
-  static const Color darkTextSecondary = Color(0xFFB0B0B0);
-  static const Color darkTextHint = Color(0xFF757575);
+  static const Color darkTextSecondary = Color(0xFFE0E0E0);
+  static const Color darkTextHint = Color(0xFFB0B0B0);
   static const Color darkTextOnPrimary = Color(0xFF000000);
 
   // Dark Theme Status Colors

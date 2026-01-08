@@ -1,11 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/notification_model.dart';
+import '../../providers/notification_provider.dart';
 import '../storage/notification_storage_service.dart';
+
+/// Global provider container for accessing providers outside of widget tree
+final _providerContainer = ProviderContainer();
+
+/// Cleanup method for the provider container (call this when app is disposed)
+void disposeNotificationHandler() {
+  _providerContainer.dispose();
+}
 
 /// Handles notification actions and navigation
 class NotificationHandler {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+  /// Initialize the notification badge count
+  static Future<void> initializeBadgeCount() async {
+    try {
+      final unreadCount = await NotificationStorageService.getUnreadNotificationCount();
+      _providerContainer.read(notificationCountProvider.notifier).setCount(unreadCount);
+      debugPrint('Badge count initialized: $unreadCount');
+    } catch (e) {
+      debugPrint('Error initializing badge count: $e');
+    }
+  }
 
   /// Handle notification received (when app is in foreground)
   static Future<void> handleNotificationReceived(NotificationModel notification) async {
@@ -13,8 +34,8 @@ class NotificationHandler {
       // Save notification to local storage
       await NotificationStorageService.saveNotification(notification);
       
-      // Update notification badge count
-      await _updateBadgeCount();
+      // Increment badge count for new unread notification
+      _providerContainer.read(notificationCountProvider.notifier).incrementCount();
       
       // Show in-app notification if needed
       _showInAppNotification(notification);
@@ -28,9 +49,14 @@ class NotificationHandler {
   /// Handle notification tap (when user taps on notification)
   static Future<void> handleNotificationTap(NotificationModel notification) async {
     try {
-      // Mark notification as read
-      final updatedNotification = notification.copyWith(isRead: true);
-      await NotificationStorageService.updateNotification(updatedNotification);
+      // Mark notification as read if it wasn't already
+      if (!notification.isRead) {
+        final updatedNotification = notification.copyWith(isRead: true);
+        await NotificationStorageService.updateNotification(updatedNotification);
+        
+        // Update badge count
+        _providerContainer.read(notificationCountProvider.notifier).decrementCount();
+      }
       
       // Navigate based on notification type
       await _navigateBasedOnNotificationType(notification);
@@ -260,9 +286,13 @@ class NotificationHandler {
   static Future<void> _updateBadgeCount() async {
     try {
       final unreadCount = await NotificationStorageService.getUnreadNotificationCount();
+      
+      // Update the provider state
+      _providerContainer.read(notificationCountProvider.notifier).setCount(unreadCount);
+      
       // TODO: Update app badge count
       // This might require a plugin like flutter_app_badger
-      debugPrint('Unread notification count: $unreadCount');
+      debugPrint('Unread notification count updated: $unreadCount');
     } catch (e) {
       debugPrint('Error updating badge count: $e');
     }
@@ -359,7 +389,11 @@ class NotificationHandler {
   static Future<void> markAsRead(String notificationId) async {
     try {
       await NotificationStorageService.markAsRead(notificationId);
-      await _updateBadgeCount();
+      
+      // Update badge count
+      _providerContainer.read(notificationCountProvider.notifier).decrementCount();
+      
+      debugPrint('Notification marked as read: $notificationId');
     } catch (e) {
       debugPrint('Error marking notification as read: $e');
     }
@@ -369,7 +403,11 @@ class NotificationHandler {
   static Future<void> markAllAsRead() async {
     try {
       await NotificationStorageService.markAllAsRead();
-      await _updateBadgeCount();
+      
+      // Reset badge count to zero
+      _providerContainer.read(notificationCountProvider.notifier).resetCount();
+      
+      debugPrint('All notifications marked as read');
     } catch (e) {
       debugPrint('Error marking all notifications as read: $e');
     }
@@ -378,8 +416,29 @@ class NotificationHandler {
   /// Delete notification
   static Future<void> deleteNotification(String notificationId) async {
     try {
+      // Check if notification was unread before deleting
+      final notifications = await NotificationStorageService.getAllNotifications();
+      final notification = notifications.firstWhere(
+        (n) => n.id == notificationId,
+        orElse: () => NotificationModel(
+          id: '',
+          title: '',
+          body: '',
+          type: NotificationType.general,
+          data: {},
+          timestamp: DateTime.now(),
+          isRead: true,
+        ),
+      );
+      
       await NotificationStorageService.deleteNotification(notificationId);
-      await _updateBadgeCount();
+      
+      // If the deleted notification was unread, decrement the count
+      if (!notification.isRead && notification.id.isNotEmpty) {
+        _providerContainer.read(notificationCountProvider.notifier).decrementCount();
+      }
+      
+      debugPrint('Notification deleted: $notificationId');
     } catch (e) {
       debugPrint('Error deleting notification: $e');
     }
@@ -389,7 +448,11 @@ class NotificationHandler {
   static Future<void> clearAllNotifications() async {
     try {
       await NotificationStorageService.clearAllNotifications();
-      await _updateBadgeCount();
+      
+      // Reset badge count to zero
+      _providerContainer.read(notificationCountProvider.notifier).resetCount();
+      
+      debugPrint('All notifications cleared');
     } catch (e) {
       debugPrint('Error clearing all notifications: $e');
     }

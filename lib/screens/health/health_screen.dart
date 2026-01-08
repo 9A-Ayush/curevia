@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
-import 'symptom_checker_screen.dart';
+import 'symptom_checker/symptom_checker_welcome_screen.dart';
 import 'medicine_directory_screen.dart';
 import 'home_remedies_screen.dart';
 import 'health_tips_screen.dart';
@@ -83,8 +83,8 @@ class HealthScreen extends StatelessWidget {
                   children: [
                     _buildInfoChip(
                       context,
-                      Icons.medical_services,
-                      'Symptom Checker',
+                      Icons.psychology_outlined,
+                      'AI Symptom Checker',
                     ),
                     const SizedBox(width: 12),
                     _buildInfoChip(
@@ -120,16 +120,16 @@ class HealthScreen extends StatelessWidget {
                       children: [
                         _buildHealthCard(
                           context,
-                          icon: Icons.medical_services,
-                          title: 'Symptom Checker',
-                          subtitle: 'Check your symptoms',
+                          icon: Icons.psychology_outlined,
+                          title: 'AI Symptom Checker',
+                          subtitle: 'AI-powered analysis',
                           color: AppColors.accent,
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    const SymptomCheckerScreen(),
+                                    const SymptomCheckerWelcomeScreen(),
                               ),
                             );
                           },

@@ -7,6 +7,7 @@ import '../utils/theme_utils.dart';
 import 'main_navigation.dart';
 import 'doctor/doctor_main_navigation.dart';
 import 'doctor/onboarding/doctor_onboarding_screen.dart';
+import 'doctor/onboarding/verification_pending_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'auth/login_screen.dart';
 import 'auth/role_selection_screen.dart';
@@ -39,7 +40,7 @@ class _RoleBasedNavigationState extends ConsumerState<RoleBasedNavigation> {
     });
   }
 
-  Future<bool> _checkDoctorOnboardingStatus(String doctorId) async {
+  Future<Map<String, dynamic>> _checkDoctorStatus(String doctorId) async {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('doctors')
@@ -49,38 +50,47 @@ class _RoleBasedNavigationState extends ConsumerState<RoleBasedNavigation> {
       if (!doc.exists) {
         // Doctor document doesn't exist, needs onboarding
         print('DEBUG: Doctor document does not exist - showing onboarding');
-        return false;
+        return {
+          'needsOnboarding': true,
+          'isVerified': false,
+          'verificationStatus': 'not_submitted'
+        };
       }
       
       final data = doc.data();
       
       // Check if doctor has completed onboarding by verifying essential fields
-      // These fields are only set after completing all onboarding steps
       final hasRegistrationNumber = data?['registrationNumber'] != null && 
                                      (data!['registrationNumber'] as String).isNotEmpty;
       final hasSpecialty = data?['specialty'] != null && 
                           (data!['specialty'] as String).isNotEmpty;
-      final hasVerificationStatus = data?['verificationStatus'] != null;
       final hasOnboardingCompleted = data?['onboardingCompleted'] == true;
+      
+      // Check verification status
+      final verificationStatus = data?['verificationStatus'] ?? 'not_submitted';
+      final isVerified = verificationStatus == 'approved' || verificationStatus == 'verified';
       
       print('DEBUG: hasRegistrationNumber: $hasRegistrationNumber');
       print('DEBUG: hasSpecialty: $hasSpecialty');
-      print('DEBUG: hasVerificationStatus: $hasVerificationStatus');
       print('DEBUG: hasOnboardingCompleted: $hasOnboardingCompleted');
+      print('DEBUG: verificationStatus: $verificationStatus');
+      print('DEBUG: isVerified: $isVerified');
       
-      // Doctor has completed onboarding if they have:
-      // 1. Registration number (from professional details)
-      // 2. Specialty (from professional details)
-      // 3. Verification status set (from submission)
-      // OR explicitly marked as onboarding completed
-      final result = (hasRegistrationNumber && hasSpecialty && hasVerificationStatus) || 
-             hasOnboardingCompleted;
+      // Doctor needs onboarding if they haven't completed essential steps
+      final needsOnboarding = !((hasRegistrationNumber && hasSpecialty) || hasOnboardingCompleted);
       
-      print('DEBUG: Onboarding completed: $result');
-      return result;
+      return {
+        'needsOnboarding': needsOnboarding,
+        'isVerified': isVerified,
+        'verificationStatus': verificationStatus
+      };
     } catch (e) {
-      print('Error checking doctor onboarding status: $e');
-      return false; // Default to showing onboarding if there's an error
+      print('Error checking doctor status: $e');
+      return {
+        'needsOnboarding': true,
+        'isVerified': false,
+        'verificationStatus': 'error'
+      };
     }
   }
 
@@ -200,10 +210,10 @@ class _RoleBasedNavigationState extends ConsumerState<RoleBasedNavigation> {
       return const RoleSelectionScreen();
     }
 
-    // For doctors, check onboarding status first
+    // For doctors, check onboarding and verification status
     if (userRole == AppConstants.doctorRole) {
-      return FutureBuilder<bool>(
-        future: _checkDoctorOnboardingStatus(authState.userModel!.uid),
+      return FutureBuilder<Map<String, dynamic>>(
+        future: _checkDoctorStatus(authState.userModel!.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Scaffold(
@@ -214,14 +224,28 @@ class _RoleBasedNavigationState extends ConsumerState<RoleBasedNavigation> {
             );
           }
 
-          final hasCompletedOnboarding = snapshot.data ?? false;
+          final status = snapshot.data ?? {
+            'needsOnboarding': true,
+            'isVerified': false,
+            'verificationStatus': 'error'
+          };
 
-          if (!hasCompletedOnboarding) {
+          final needsOnboarding = status['needsOnboarding'] as bool;
+          final isVerified = status['isVerified'] as bool;
+          final verificationStatus = status['verificationStatus'] as String;
+
+          if (needsOnboarding) {
             // Show onboarding screen
             return const DoctorOnboardingScreen();
           }
 
-          // Onboarding completed, show main navigation
+          if (!isVerified) {
+            // Doctor has completed onboarding but is not verified yet
+            // Import the verification pending screen
+            return const VerificationPendingScreen();
+          }
+
+          // Doctor is verified, show main navigation
           return PermissionWrapper(
             userRole: userRole,
             child: const DoctorMainNavigation(),

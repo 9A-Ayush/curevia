@@ -16,6 +16,7 @@ import 'services/firebase/medicine_service.dart';
 import 'services/firebase/home_remedies_service.dart';
 import 'services/cloudinary_service.dart';
 import 'services/notifications/notification_integration_service.dart';
+import 'services/data_initialization_service.dart';
 
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
@@ -72,7 +73,11 @@ Future<void> _initializeBackgroundServices() async {
   }
 
   // Initialize app data (medicines and home remedies)
-  await _initializeAppData();
+  // Note: This is now handled after authentication in auth_provider.dart
+  // await _initializeAppData();
+
+  // Initialize data after authentication (handled in auth provider now)
+  // await DataInitializationService.initializeAfterAuth();
 
   // Initialize Hive for local storage
   await Hive.initFlutter();

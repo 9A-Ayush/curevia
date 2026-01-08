@@ -136,6 +136,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         },
         backgroundColor: ThemeUtils.getPrimaryColor(context),
         foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
+        heroTag: "booking",
         icon: const Icon(Icons.add),
         label: const Text('Book Now'),
       ),

@@ -36,7 +36,99 @@
 -   🌦 **Weather & AQI Alerts** --- OpenWeatherMap/Open-Meteo with health
     tips.\
 -   🔔 **Smart Notifications** --- Role-based push notifications with sound support for patients, doctors, and admins.\
--   🛡️ **Admin Panel** --- Complete administrative control with doctor verification, user management, and analytics.
+-   🛡️ **Admin Panel** --- Complete administrative control with doctor verification, user management, and analytics.\
+-   🤖 **AI Symptom Checker** --- Google Gemini-powered symptom analysis with text and image support.\
+-   📧 **Email Automation** --- Automated email workflows for verification, campaigns, and health tips.
+
+------------------------------------------------------------------------
+
+## 🤖 AI-Powered Symptom Checker
+
+Curevia features an advanced **AI-powered symptom checker** using Google Gemini AI for preliminary health assessments.
+
+### 🧠 **Smart Analysis Features**
+- **Text-Based Assessment** --- Describe symptoms in natural language for AI analysis
+- **Image Analysis** --- Upload photos of visual symptoms for AI evaluation
+- **Multi-Step Process** --- Comprehensive 4-step symptom collection workflow
+- **Severity Classification** --- AI determines urgency levels and recommendations
+- **Condition Matching** --- Identifies possible conditions with confidence scores
+- **Doctor Integration** --- Direct booking with relevant specialists from results
+
+### 🛡️ **Medical Safety & Compliance**
+- **Comprehensive Disclaimers** --- Clear limitations and medical advice requirements
+- **Emergency Guidance** --- Immediate emergency contact information for urgent symptoms
+- **Professional Recommendations** --- Always encourages professional medical consultation
+- **Privacy Protection** --- No permanent storage of health data, secure AI processing
+- **User Consent** --- Required acknowledgment before symptom analysis
+
+### 🎯 **User Experience Flow**
+1. **Welcome Screen** --- Feature overview and privacy information
+2. **Medical Disclaimer** --- Legal disclaimers and user acknowledgment
+3. **Symptom Input** --- 4-step comprehensive symptom collection:
+   - Basic information (age, gender, description)
+   - Symptom category selection
+   - Additional details (duration, severity, body part)
+   - Optional image upload for visual symptoms
+4. **AI Processing** --- Secure analysis with progress indicators
+5. **Results Display** --- Comprehensive analysis with actionable recommendations
+
+### 🔧 **Technical Implementation**
+- **Google Gemini Integration** --- Advanced AI model for medical analysis
+- **Secure API Management** --- Protected API keys and secure data transmission
+- **Theme-Aware UI** --- Consistent design across light/dark modes
+- **Error Handling** --- Graceful fallbacks and user-friendly error messages
+- **Performance Optimized** --- Fast loading and efficient image processing
+
+------------------------------------------------------------------------
+
+## 🏦 Smart Banking Integration
+
+Enhanced doctor onboarding with intelligent **IFSC.in API integration** for seamless bank details collection.
+
+### 💳 **Automated Bank Details**
+- **Smart Dropdowns** --- Replace manual input with dropdown-based selection
+- **Progressive Selection** --- Bank → State → District → Branch workflow
+- **Auto-Fetch Details** --- Automatic IFSC, MICR, and address population
+- **Real-Time Validation** --- Instant verification of bank information
+- **Error Prevention** --- Eliminates manual entry errors and typos
+
+### 🔄 **Enhanced User Flow**
+- **Bank Selection** → Loads available states for selected bank
+- **State Selection** → Loads districts available in that state
+- **District Selection** → Loads branches in that district
+- **Branch Selection** → Auto-fills IFSC, MICR, address, and bank code
+- **Account Details** → Manual entry with validation for account numbers and UPI
+
+### 🛡️ **Security & Validation**
+- **Secure API Integration** --- Protected API keys and encrypted data transmission
+- **Comprehensive Validation** --- Account number format and confirmation matching
+- **Data Protection** --- Secure storage of sensitive banking information
+- **Error Handling** --- Graceful API failure handling with user feedback
+
+------------------------------------------------------------------------
+
+## 📧 Email Automation System
+
+Comprehensive **email service integration** with real-time Firebase triggers for automated communication workflows.
+
+### 🔄 **Automated Email Workflows**
+- **Doctor Verification** --- Automatic approval/rejection notifications
+- **Welcome Emails** --- New user onboarding with app features
+- **Promotional Campaigns** --- Marketing emails to opted-in users
+- **Health Tips Newsletter** --- Wellness content distribution
+- **Appointment Reminders** --- Automated scheduling notifications
+
+### 🎯 **Real-Time Firebase Integration**
+- **Live Triggers** --- Automatic email sending based on Firestore changes
+- **User Preferences** --- Subscription management and opt-out controls
+- **Admin Tools** --- Campaign management and health tips distribution
+- **Analytics Dashboard** --- Real-time email delivery statistics
+
+### 🛡️ **Privacy & Compliance**
+- **User Control** --- Complete email preference management
+- **GDPR Compliant** --- Easy unsubscribe and data protection
+- **Secure Processing** --- Protected email service with environment variables
+- **Professional Templates** --- Branded email designs with proper formatting
 
 ------------------------------------------------------------------------
 
@@ -145,6 +237,12 @@ await NotificationTestingService.instance.testAllPatientNotifications();
   🔔 **Notifications**                           ![FCM](https://img.shields.io/badge/Firebase%20Cloud%20Messaging-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 
   🎵 **Audio**                                   ![Flutter Local Notifications](https://img.shields.io/badge/Local%20Notifications-02569B?style=for-the-badge&logo=flutter&logoColor=white)
+
+  🤖 **AI Services**                             ![Google Gemini](https://img.shields.io/badge/Google%20Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white)
+
+  🏦 **Banking API**                             ![IFSC.in](https://img.shields.io/badge/IFSC.in-FF6B35?style=for-the-badge)
+
+  📧 **Email Service**                           ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
   -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
@@ -194,16 +292,22 @@ The notification system automatically initializes when the app starts. Key integ
 
 ## 🆕 Recent Updates
 
-### **v1.0.0 - FCM Push Notification System** (Latest)
-- 🔔 **Complete Notification Overhaul** - Implemented comprehensive role-based push notification system
-- 📱 **15+ Notification Types** - Covering all user interactions for patients, doctors, and admins
-- 🔊 **Smart Sound System** - Priority-based notification sounds with multi-state support
-- 🧪 **Developer Tools** - Built-in testing center for notification development and debugging
-- 🎯 **Role-Based Targeting** - Intelligent notification delivery using FCM topics and device tokens
-- ⚡ **Production Ready** - Handles foreground, background, and terminated app states
-- 🛡️ **Admin Panel Integration** - Seamless integration with existing admin verification workflows
+### **v1.2.0 - AI-Powered Health Features & Enhanced UX** (Latest - January 9, 2026)
+- 🤖 **AI Symptom Checker** - Google Gemini-powered symptom analysis with image support
+- 🏦 **Smart Bank Details** - IFSC.in API integration with dropdown-based bank selection
+- 🎨 **Theme Responsiveness** - Complete dark/light mode support across all doctor onboarding screens
+- 📧 **Email Service Integration** - Automated email workflows for verification, campaigns, and health tips
+- 🔧 **Enhanced Doctor Onboarding** - Improved file upload, validation, and user experience
+- 📱 **UI/UX Improvements** - Better form validation, loading states, and error handling
+- 🛡️ **Security Enhancements** - Improved data validation and secure API integrations
 
-### **Previous Updates**
+### **v1.1.0 - Advanced Features**
+- 📧 **Email Automation System** - Complete email service with real-time Firebase integration
+- 🏥 **Enhanced Admin Panel** - Email campaign management and health tips distribution
+- 🔔 **Notification System** - Comprehensive role-based push notifications with FCM
+- 🎯 **User Preferences** - Email subscription management and personalized settings
+
+### **v1.0.0 - Core Platform**
 - 🏥 **Admin Panel** - Complete administrative control with doctor verification and analytics
 - 📹 **Video Consultations** - Agora-powered real-time video and voice calls
 - 💳 **Payment Integration** - Razorpay support with multiple payment methods

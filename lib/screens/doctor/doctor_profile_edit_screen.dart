@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
+import '../../utils/validation_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/doctor/doctor_service.dart';
 import '../../services/image_upload_service.dart';
@@ -158,16 +159,7 @@ class _DoctorProfileEditScreenState
                 label: 'Phone Number',
                 prefixIcon: Icons.phone,
                 keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    // Basic phone number validation
-                    final phoneRegex = RegExp(r'^[+]?[0-9]{10,15}$');
-                    if (!phoneRegex.hasMatch(value.replaceAll(RegExp(r'[\s\-\(\)]'), ''))) {
-                      return 'Please enter a valid phone number';
-                    }
-                  }
-                  return null;
-                },
+                validator: (value) => ValidationUtils.validatePhoneNumber(value, isRequired: false),
               ),
               const SizedBox(height: 24),
 

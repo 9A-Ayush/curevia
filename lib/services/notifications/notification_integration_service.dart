@@ -1,11 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import '../../models/notification_model.dart';
 import 'notification_initialization_service.dart';
 import 'role_based_notification_service.dart';
-import 'notification_testing_service.dart';
+
 import 'notification_manager.dart';
 import 'notification_scheduler.dart';
 
@@ -17,24 +16,17 @@ class NotificationIntegrationService {
 
   static NotificationIntegrationService get instance => _instance;
 
-  // Private service instances
-  late final NotificationInitializationService _initService;
-  late final RoleBasedNotificationService _roleService;
-  late final NotificationTestingService _testService;
-  late final NotificationManager _manager;
-  late final NotificationScheduler _scheduler;
+  // Private service instances - initialize immediately to avoid LateInitializationError
+  final NotificationInitializationService _initService = NotificationInitializationService.instance;
+  final RoleBasedNotificationService _roleService = RoleBasedNotificationService.instance;
+  final NotificationManager _manager = NotificationManager.instance;
+  final NotificationScheduler _scheduler = NotificationScheduler.instance;
 
   bool _isInitialized = false;
 
   /// Initialize the complete notification system
   Future<bool> initialize() async {
     if (_isInitialized) return true;
-    
-    _initService = NotificationInitializationService.instance;
-    _roleService = RoleBasedNotificationService.instance;
-    _testService = NotificationTestingService.instance;
-    _manager = NotificationManager.instance;
-    _scheduler = NotificationScheduler.instance;
     
     final result = await _initService.initializeNotificationSystem();
     _isInitialized = result;
@@ -72,9 +64,6 @@ class NotificationIntegrationService {
 
   /// Get role-based notification service
   RoleBasedNotificationService get roleBasedService => _roleService;
-
-  /// Get testing service
-  NotificationTestingService get testingService => _testService;
 
   /// Get notification manager
   NotificationManager get manager => _manager;
@@ -148,6 +137,38 @@ class NotificationIntegrationService {
       currency: currency,
       paymentMethod: paymentMethod,
       doctorName: doctorName,
+    );
+  }
+
+  /// Send comprehensive appointment booking confirmation to patient
+  /// Includes both appointment details and payment confirmation
+  Future<void> notifyPatientAppointmentBookedWithPayment({
+    required String patientId,
+    required String patientName,
+    required String patientFCMToken,
+    required String doctorName,
+    required String appointmentId,
+    required DateTime appointmentTime,
+    required String appointmentType,
+    required String paymentId,
+    required double amount,
+    required String currency,
+    required String paymentMethod,
+  }) async {
+    if (!_isInitialized) await initialize();
+    
+    await _roleService.sendAppointmentBookingWithPaymentConfirmation(
+      patientId: patientId,
+      patientName: patientName,
+      patientFCMToken: patientFCMToken,
+      doctorName: doctorName,
+      appointmentId: appointmentId,
+      appointmentTime: appointmentTime,
+      appointmentType: appointmentType,
+      paymentId: paymentId,
+      amount: amount,
+      currency: currency,
+      paymentMethod: paymentMethod,
     );
   }
 
@@ -472,42 +493,6 @@ class NotificationIntegrationService {
       reminderTime: reminderTime,
       message: message,
     );
-  }
-
-  // TESTING METHODS (Development only)
-
-  /// Test notifications for specific role
-  Future<void> testNotificationsForRole(String role) async {
-    if (!kDebugMode) return; // Only in debug mode
-    if (!_isInitialized) await initialize();
-    
-    switch (role.toLowerCase()) {
-      case 'patient':
-        await _testService.testAllPatientNotifications();
-        break;
-      case 'doctor':
-        await _testService.testAllDoctorNotifications();
-        break;
-      case 'admin':
-        await _testService.testAllAdminNotifications();
-        break;
-    }
-  }
-
-  /// Run full notification test suite
-  Future<void> runFullTestSuite() async {
-    if (!kDebugMode) return; // Only in debug mode
-    if (!_isInitialized) await initialize();
-    
-    await _testService.runFullTestSuite();
-  }
-
-  /// Test specific notification type
-  Future<void> testSpecificNotification(NotificationType type) async {
-    if (!kDebugMode) return; // Only in debug mode
-    if (!_isInitialized) await initialize();
-    
-    await _testService.testSpecificNotification(type);
   }
 
   // UTILITY METHODS

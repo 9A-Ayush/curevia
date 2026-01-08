@@ -36,7 +36,7 @@ class ThemeUtils {
   /// Get primary text color based on current theme
   static Color getTextPrimaryColor(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+    return isDark ? Colors.white : AppColors.textPrimary;
   }
 
   /// Get secondary text color based on current theme
@@ -191,5 +191,17 @@ class ThemeUtils {
   static Color getAppBarForegroundColor(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return isDark ? AppColors.darkTextPrimary : Colors.white;
+  }
+
+  /// Get text on primary color based on current theme
+  static Color getOnPrimaryColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? AppColors.darkTextOnPrimary : AppColors.textOnPrimary;
+  }
+
+  /// Get shadow color based on current theme
+  static Color getShadowColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? AppColors.darkShadowLight : AppColors.shadowLight;
   }
 }

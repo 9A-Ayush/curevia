@@ -5,6 +5,7 @@ import '../services/firebase/auth_service.dart';
 import '../services/auth/app_lifecycle_biometric_service.dart';
 import '../services/notifications/notification_integration_service.dart';
 import '../services/notifications/fcm_service.dart';
+import '../services/data_initialization_service.dart';
 
 /// Authentication state
 class AuthState {
@@ -44,17 +45,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _init();
   }
 
-  /// Initialize notification system for the logged-in user
+  /// Initialize notification system and app data for the logged-in user
   Future<void> _initializeNotifications(UserModel userModel) async {
     try {
+      // Initialize notifications
       await NotificationIntegrationService.instance.setupUserNotifications(
         user: userModel,
         specializations: userModel.role == 'doctor' ? ['General Medicine'] : null,
         location: null, // Can be added later from user preferences
       );
       print('✅ Notifications initialized for user: ${userModel.fullName} (${userModel.role})');
+      
+      // Initialize app data (medicines and home remedies) after authentication
+      await DataInitializationService.initializeAfterAuth();
+      print('✅ App data initialized for authenticated user');
     } catch (e) {
-      print('❌ Error initializing notifications: $e');
+      print('❌ Error initializing notifications and data: $e');
     }
   }
 

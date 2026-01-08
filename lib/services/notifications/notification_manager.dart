@@ -16,10 +16,20 @@ class NotificationManager {
   static NotificationManager get instance => _instance;
 
   bool _isInitialized = false;
+  bool _isInitializing = false;
 
   /// Initialize the notification system
   Future<void> initialize() async {
     if (_isInitialized) return;
+    if (_isInitializing) {
+      // Wait for ongoing initialization to complete
+      while (_isInitializing) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      return;
+    }
+
+    _isInitializing = true;
 
     try {
       // Set background message handler
@@ -31,9 +41,14 @@ class NotificationManager {
       // Clean up old notifications
       await NotificationStorageService.cleanupOldNotifications();
 
+      // Initialize badge count
+      await NotificationHandler.initializeBadgeCount();
+
       _isInitialized = true;
+      _isInitializing = false;
       debugPrint('Notification Manager initialized successfully');
     } catch (e) {
+      _isInitializing = false;
       debugPrint('Error initializing Notification Manager: $e');
       rethrow;
     }
@@ -303,18 +318,18 @@ class NotificationManager {
     await NotificationHandler.clearAllNotifications();
   }
 
-  // UTILITY METHODS
+  // TEST METHODS
 
-  /// Test notification (for development/testing)
+  /// Send test notification (for testing purposes)
   Future<void> sendTestNotification({
     required String title,
     required String body,
-    NotificationType type = NotificationType.general,
+    required NotificationType type,
     Map<String, dynamic>? data,
   }) async {
     try {
       final notification = NotificationModel(
-        id: 'test_${DateTime.now().millisecondsSinceEpoch}',
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
         title: title,
         body: body,
         type: type,
@@ -322,17 +337,19 @@ class NotificationManager {
         timestamp: DateTime.now(),
       );
 
-      // Show as local notification
-      await FCMService.instance.showLocalNotification(notification);
-      
-      // Save to storage
+      // Save the notification locally for testing
       await NotificationStorageService.saveNotification(notification);
+      
+      // Show in-app notification
+      await NotificationHandler.handleNotificationReceived(notification);
 
-      debugPrint('Sent test notification: $title');
+      debugPrint('Test notification sent: $title');
     } catch (e) {
       debugPrint('Error sending test notification: $e');
     }
   }
+
+  // UTILITY METHODS
 
   /// Get notification statistics
   Future<Map<String, int>> getNotificationStats() async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../models/doctor_model.dart';
+import '../../models/notification_model.dart';
 import '../../widgets/common/custom_button.dart';
 import '../../utils/theme_utils.dart';
 import '../../screens/video_consulting/appointment_booking_screen.dart' as video;
@@ -326,6 +327,7 @@ class DoctorCard extends StatelessWidget {
       await NotificationManager.instance.sendTestNotification(
         title: title,
         body: body,
+        type: NotificationType.general, // Use general type for test notifications
         data: {
           'type': type,
           'doctorId': doctor.uid,

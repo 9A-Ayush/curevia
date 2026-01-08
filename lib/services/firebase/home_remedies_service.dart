@@ -102,13 +102,9 @@ class HomeRemediesService {
   /// Get all remedy categories
   static Future<List<HomeRemedyCategoryModel>> getRemedyCategories() async {
     try {
-      // First check if we have data, if not seed it
-      final hasData = await hasRemediesData();
-      if (!hasData) {
-        print('No remedies data found, seeding...');
-        await seedHomeRemediesData();
-      }
-
+      // First ensure data is seeded if user is authenticated
+      await seedIfEmpty();
+      
       final querySnapshot = await _firestore
           .collection(_remedyCategoriesCollection)
           .orderBy('id')
@@ -132,6 +128,12 @@ class HomeRemediesService {
       }
       
       print('Retrieved ${categories.length} remedy categories from Firestore');
+      
+      // If no categories found, return empty list (data will be seeded after auth)
+      if (categories.isEmpty) {
+        print('No remedy categories found in Firestore yet');
+      }
+      
       return categories;
     } catch (e) {
       print('Error getting remedy categories: $e');
@@ -206,14 +208,10 @@ class HomeRemediesService {
   }
 
   /// Get all remedies
-  static Future<List<HomeRemedyModel>> getAllRemedies({int limit = 50}) async {
+  static Future<List<HomeRemedyModel>> getAllRemedies({int limit = 100}) async {
     try {
-      // First check if we have data, if not seed it
-      final hasData = await hasRemediesData();
-      if (!hasData) {
-        print('No remedies data found, seeding...');
-        await seedHomeRemediesData();
-      }
+      // First ensure data is seeded
+      await seedIfEmpty();
 
       final querySnapshot = await _firestore
           .collection(_remediesCollection)
@@ -226,10 +224,36 @@ class HomeRemediesService {
           .toList();
       
       print('Retrieved ${remedies.length} remedies from Firestore');
+      
+      // If we got fewer remedies than expected, try to seed again
+      if (remedies.length < 10) {
+        print('Low remedy count (${remedies.length}), attempting to reseed...');
+        await seedHomeRemediesData();
+        
+        // Try again after seeding
+        final retrySnapshot = await _firestore
+            .collection(_remediesCollection)
+            .orderBy('title')
+            .limit(limit)
+            .get();
+        
+        final retriedRemedies = retrySnapshot.docs
+            .map((doc) => HomeRemedyModel.fromMap(doc.data()))
+            .toList();
+        
+        print('After reseeding: ${retriedRemedies.length} remedies');
+        return retriedRemedies;
+      }
+      
       return remedies;
     } catch (e) {
       print('Error getting all remedies: $e');
-      // Return empty list instead of throwing exception
+      // Try to seed and return empty list
+      try {
+        await seedHomeRemediesData();
+      } catch (seedError) {
+        print('Failed to seed remedies: $seedError');
+      }
       return [];
     }
   }

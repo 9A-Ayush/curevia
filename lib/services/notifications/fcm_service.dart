@@ -22,6 +22,7 @@ class FCMService {
   
   String? _fcmToken;
   bool _isInitialized = false;
+  bool _isInitializing = false;
 
   /// Get the singleton instance
   static FCMService get instance => _instance;
@@ -35,6 +36,15 @@ class FCMService {
   /// Initialize FCM service
   Future<void> initialize() async {
     if (_isInitialized) return;
+    if (_isInitializing) {
+      // Wait for ongoing initialization to complete
+      while (_isInitializing) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      return;
+    }
+
+    _isInitializing = true;
 
     try {
       // Initialize timezone
@@ -56,8 +66,10 @@ class FCMService {
       await _createNotificationChannels();
 
       _isInitialized = true;
+      _isInitializing = false;
       debugPrint('FCM Service initialized successfully');
     } catch (e) {
+      _isInitializing = false;
       debugPrint('Error initializing FCM Service: $e');
       rethrow;
     }

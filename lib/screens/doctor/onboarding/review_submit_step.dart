@@ -11,11 +11,13 @@ import 'verification_pending_screen.dart';
 class ReviewSubmitStep extends ConsumerStatefulWidget {
   final Map<String, dynamic> onboardingData;
   final VoidCallback onBack;
+  final VoidCallback? onContinue;
 
   const ReviewSubmitStep({
     super.key,
     required this.onboardingData,
     required this.onBack,
+    this.onContinue,
   });
 
   @override
@@ -48,13 +50,17 @@ class _ReviewSubmitStepState extends ConsumerState<ReviewSubmitStep> {
       setState(() => _isLoading = false);
 
       if (mounted) {
-        // Navigate to verification pending screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const VerificationPendingScreen(),
-          ),
-        );
+        // Use onContinue callback if available, otherwise navigate directly
+        if (widget.onContinue != null) {
+          widget.onContinue!();
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const VerificationPendingScreen(),
+            ),
+          );
+        }
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -261,7 +267,7 @@ class _ReviewSubmitStepState extends ConsumerState<ReviewSubmitStep> {
             Expanded(
               flex: 2,
               child: CustomButton(
-                text: 'Submit for Verification',
+                text: 'Submit',
                 onPressed: _isLoading ? null : _submitProfile,
                 backgroundColor: AppColors.success,
                 textColor: Colors.white,

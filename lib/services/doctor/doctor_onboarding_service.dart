@@ -338,7 +338,44 @@ class DoctorOnboardingService {
     String doctorId,
     Map<String, dynamic> data,
   ) async {
-    return await saveDoctorOnboardingStep(doctorId, 2, data);
+    try {
+      // Create a copy of data to modify
+      final processedData = Map<String, dynamic>.from(data);
+      
+      // Handle certificate file upload
+      if (data['certificateFile'] != null && data['certificateFile'] is File) {
+        final certificateFile = data['certificateFile'] as File;
+        final xFile = XFile(certificateFile.path);
+        
+        final certificateUrl = await ImageUploadService.uploadToCloudinary(
+          imageFile: xFile,
+          folder: 'curevia/doctors/$doctorId/certificates',
+          publicId: 'certificate_${DateTime.now().millisecondsSinceEpoch}',
+        );
+        
+        processedData['certificateUrl'] = certificateUrl;
+        processedData.remove('certificateFile'); // Remove the File object
+      }
+      
+      // Handle PDF file upload
+      if (data['pdfFile'] != null && data['pdfFile'] is File) {
+        final pdfFile = data['pdfFile'] as File;
+        final xFile = XFile(pdfFile.path);
+        
+        final pdfUrl = await ImageUploadService.uploadToCloudinary(
+          imageFile: xFile,
+          folder: 'curevia/doctors/$doctorId/documents',
+          publicId: 'document_${DateTime.now().millisecondsSinceEpoch}',
+        );
+        
+        processedData['pdfUrl'] = pdfUrl;
+        processedData.remove('pdfFile'); // Remove the File object
+      }
+      
+      return await saveDoctorOnboardingStep(doctorId, 2, processedData);
+    } catch (e) {
+      throw Exception('Error saving professional details: $e');
+    }
   }
 
   /// Save practice information (Step 3)

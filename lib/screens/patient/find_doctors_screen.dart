@@ -28,13 +28,26 @@ class _FindDoctorsScreenState extends ConsumerState<FindDoctorsScreen> {
 
   final List<String> _specialties = [
     'All',
+    'General Physician',
     'Cardiologist',
     'Dermatologist',
     'Pediatrician',
-    'Neurologist',
+    'Gynecologist',
     'Orthopedic',
+    'Neurologist',
     'Psychiatrist',
-    'General Physician',
+    'ENT Specialist',
+    'Ophthalmologist',
+    'Dentist',
+    'Urologist',
+    'Gastroenterologist',
+    'Pulmonologist',
+    'Endocrinologist',
+    'Nephrologist',
+    'Oncologist',
+    'Radiologist',
+    'Anesthesiologist',
+    'Pathologist',
   ];
 
   @override
@@ -49,13 +62,107 @@ class _FindDoctorsScreenState extends ConsumerState<FindDoctorsScreen> {
       appBar: AppBar(
         title: const Text('Find Doctors'),
         backgroundColor: ThemeUtils.getPrimaryColor(context),
-        foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Column(
         children: [
+          // Header with info - NEW SECTION
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: ThemeUtils.getPrimaryColor(context),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.person_search,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Find your perfect doctor',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Search by name, specialty, or location',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    _buildInfoChip(Icons.verified, 'Verified Doctors'),
+                    const SizedBox(width: 12),
+                    _buildInfoChip(Icons.star, 'Top Rated'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          // Search Section
           _buildSearchSection(),
+          
+          // Specialty Filter
           _buildSpecialtyFilter(),
+          
+          // Doctors List
           Expanded(child: _buildDoctorsList()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoChip(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: Colors.white),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -317,7 +424,6 @@ class _FindDoctorsScreenState extends ConsumerState<FindDoctorsScreen> {
                   ),
                 ),
               ),
-
             ],
           ),
         ),

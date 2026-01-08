@@ -2,8 +2,60 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/notification_model.dart';
 import '../services/notifications/notification_manager.dart';
 
-/// Provider for notification count
-final notificationCountProvider = FutureProvider<int>((ref) async {
+/// Notifier for managing notification count state
+class NotificationCountNotifier extends StateNotifier<AsyncValue<int>> {
+  NotificationCountNotifier() : super(const AsyncValue.loading()) {
+    _loadCount();
+  }
+
+  Future<void> _loadCount() async {
+    try {
+      final count = await NotificationManager.instance.getUnreadNotificationCount();
+      state = AsyncValue.data(count);
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  /// Refresh the notification count
+  Future<void> refresh() async {
+    await _loadCount();
+  }
+
+  /// Decrement count when a notification is marked as read
+  void decrementCount() {
+    state.whenData((count) {
+      if (count > 0) {
+        state = AsyncValue.data(count - 1);
+      }
+    });
+  }
+
+  /// Increment count when a new notification is received
+  void incrementCount() {
+    state.whenData((count) {
+      state = AsyncValue.data(count + 1);
+    });
+  }
+
+  /// Reset count to zero when all notifications are marked as read
+  void resetCount() {
+    state = const AsyncValue.data(0);
+  }
+
+  /// Set count to a specific value
+  void setCount(int count) {
+    state = AsyncValue.data(count);
+  }
+}
+
+/// Provider for notification count with real-time updates
+final notificationCountProvider = StateNotifierProvider<NotificationCountNotifier, AsyncValue<int>>((ref) {
+  return NotificationCountNotifier();
+});
+
+/// Legacy provider for backward compatibility
+final notificationCountLegacyProvider = FutureProvider<int>((ref) async {
   return await NotificationManager.instance.getUnreadNotificationCount();
 });
 

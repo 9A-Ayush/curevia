@@ -16,11 +16,21 @@ class NotificationInitializationService {
   static NotificationInitializationService get instance => _instance;
 
   bool _isInitialized = false;
+  bool _isInitializing = false;
 
   /// Initialize the complete notification system
   Future<bool> initializeNotificationSystem() async {
     if (_isInitialized) return true;
+    if (_isInitializing) {
+      // Wait for ongoing initialization to complete
+      while (_isInitializing) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      return _isInitialized;
+    }
 
+    _isInitializing = true;
+    
     try {
       debugPrint('🔔 Initializing Curevia Notification System...');
 
@@ -38,14 +48,17 @@ class NotificationInitializationService {
       final fcmToken = FCMService.instance.fcmToken;
       if (fcmToken == null) {
         debugPrint('⚠️ FCM token not available yet - will retry');
+        _isInitializing = false;
         return false;
       }
       debugPrint('✅ FCM token obtained: ${fcmToken.substring(0, 20)}...');
 
       _isInitialized = true;
+      _isInitializing = false;
       debugPrint('🎉 Notification system initialized successfully!');
       return true;
     } catch (e) {
+      _isInitializing = false;
       debugPrint('❌ Error initializing notification system: $e');
       return false;
     }
@@ -114,7 +127,9 @@ class NotificationInitializationService {
           body = 'Hi ${user.fullName}! Thanks for joining our healthcare platform.';
       }
 
-      await NotificationManager.instance.sendTestNotification(
+      // Create and send welcome notification
+      final notification = NotificationModel(
+        id: 'welcome_${user.uid}_${DateTime.now().millisecondsSinceEpoch}',
         title: title,
         body: body,
         type: NotificationType.general,
@@ -123,7 +138,10 @@ class NotificationInitializationService {
           'userRole': user.role,
           'userId': user.uid,
         },
+        timestamp: DateTime.now(),
       );
+
+      await FCMService.instance.showLocalNotification(notification);
     } catch (e) {
       debugPrint('Error sending welcome notification: $e');
     }
@@ -177,112 +195,6 @@ class NotificationInitializationService {
       debugPrint('❌ Error checking notification permissions: $e');
       return false;
     }
-  }
-
-  /// Test notification system with sample notifications
-  Future<void> testNotificationSystem({required String userRole}) async {
-    try {
-      debugPrint('🧪 Testing notification system for role: $userRole');
-
-      switch (userRole.toLowerCase()) {
-        case 'patient':
-          await _testPatientNotifications();
-          break;
-        case 'doctor':
-          await _testDoctorNotifications();
-          break;
-        case 'admin':
-          await _testAdminNotifications();
-          break;
-      }
-
-      debugPrint('✅ Notification system test completed');
-    } catch (e) {
-      debugPrint('❌ Error testing notification system: $e');
-    }
-  }
-
-  /// Test patient notifications
-  Future<void> _testPatientNotifications() async {
-    final service = RoleBasedNotificationService.instance;
-    final testToken = FCMService.instance.fcmToken ?? 'test_token';
-
-    // Test appointment booking confirmation
-    await service.sendAppointmentBookingConfirmation(
-      patientId: 'test_patient',
-      patientFCMToken: testToken,
-      doctorName: 'Dr. Smith',
-      appointmentId: 'test_appointment_123',
-      appointmentTime: DateTime.now().add(const Duration(days: 1)),
-      appointmentType: 'Consultation',
-    );
-
-    // Test health tip
-    await service.sendHealthTipsReminder(
-      patientId: 'test_patient',
-      patientFCMToken: testToken,
-      healthTip: 'Remember to drink at least 8 glasses of water daily for optimal health!',
-      category: 'Hydration',
-    );
-
-    // Test fitness achievement
-    await service.sendFitnessGoalAchieved(
-      patientId: 'test_patient',
-      patientFCMToken: testToken,
-      goalName: 'Daily Steps',
-      achievement: 'You walked 10,000 steps today!',
-      streakDays: 7,
-    );
-  }
-
-  /// Test doctor notifications
-  Future<void> _testDoctorNotifications() async {
-    final service = RoleBasedNotificationService.instance;
-    final testToken = FCMService.instance.fcmToken ?? 'test_token';
-
-    // Test appointment booking
-    await service.sendAppointmentBookingToDoctor(
-      doctorId: 'test_doctor',
-      doctorFCMToken: testToken,
-      patientName: 'John Doe',
-      appointmentId: 'test_appointment_456',
-      appointmentTime: DateTime.now().add(const Duration(hours: 2)),
-      appointmentType: 'Follow-up',
-    );
-
-    // Test payment received
-    await service.sendPaymentReceivedToDoctor(
-      doctorId: 'test_doctor',
-      doctorFCMToken: testToken,
-      patientName: 'John Doe',
-      paymentId: 'test_payment_789',
-      amount: 500.0,
-      currency: 'INR',
-      appointmentId: 'test_appointment_456',
-    );
-
-    // Test verification status
-    await service.sendVerificationStatusUpdate(
-      doctorId: 'test_doctor',
-      doctorFCMToken: testToken,
-      status: 'approved',
-    );
-  }
-
-  /// Test admin notifications
-  Future<void> _testAdminNotifications() async {
-    final service = RoleBasedNotificationService.instance;
-    final testToken = FCMService.instance.fcmToken ?? 'test_token';
-
-    // Test doctor verification request
-    await service.sendDoctorVerificationRequestToAdmin(
-      adminFCMTokens: [testToken],
-      doctorId: 'test_doctor_new',
-      doctorName: 'Dr. Johnson',
-      email: 'dr.johnson@example.com',
-      specialization: 'Cardiology',
-      phoneNumber: '+1234567890',
-    );
   }
 
   /// Get notification system status

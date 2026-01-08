@@ -24,13 +24,26 @@ class _VideoConsultationScreenState
 
   final List<String> specialties = [
     'All',
-    'General Medicine',
-    'Cardiology',
-    'Dermatology',
-    'Pediatrics',
-    'Orthopedics',
-    'Gynecology',
-    'Psychiatry',
+    'General Physician',
+    'Cardiologist',
+    'Dermatologist',
+    'Pediatrician',
+    'Gynecologist',
+    'Orthopedic',
+    'Neurologist',
+    'Psychiatrist',
+    'ENT Specialist',
+    'Ophthalmologist',
+    'Dentist',
+    'Urologist',
+    'Gastroenterologist',
+    'Pulmonologist',
+    'Endocrinologist',
+    'Nephrologist',
+    'Oncologist',
+    'Radiologist',
+    'Anesthesiologist',
+    'Pathologist',
   ];
 
   @override

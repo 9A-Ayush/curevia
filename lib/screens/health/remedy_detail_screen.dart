@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../constants/app_colors.dart';
 import '../../models/home_remedy_model.dart';
 
@@ -32,6 +33,72 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
     super.dispose();
   }
 
+  /// Share remedy information
+  void _shareRemedy() {
+    final remedy = widget.remedy;
+    
+    // Create a formatted text to share
+    final StringBuffer shareText = StringBuffer();
+    
+    shareText.writeln('🌿 ${remedy.title}');
+    shareText.writeln('Category: ${remedy.categoryName}');
+    shareText.writeln();
+    shareText.writeln('📝 Description:');
+    shareText.writeln(remedy.description);
+    shareText.writeln();
+    
+    if (remedy.ingredients.isNotEmpty) {
+      shareText.writeln('🥄 Ingredients:');
+      for (int i = 0; i < remedy.ingredients.length; i++) {
+        shareText.writeln('${i + 1}. ${remedy.ingredients[i]}');
+      }
+      shareText.writeln();
+    }
+    
+    if (remedy.preparation.isNotEmpty) {
+      shareText.writeln('👩‍🍳 Preparation:');
+      for (int i = 0; i < remedy.preparation.length; i++) {
+        shareText.writeln('${i + 1}. ${remedy.preparation[i]}');
+      }
+      shareText.writeln();
+    }
+    
+    shareText.writeln('⏱️ Preparation Time: ${remedy.preparationTime}');
+    shareText.writeln('📊 Difficulty: ${remedy.difficulty}');
+    shareText.writeln('👥 Age Suitability: ${remedy.ageSuitability}');
+    shareText.writeln();
+    
+    if (remedy.usage.isNotEmpty) {
+      shareText.writeln('💡 Usage: ${remedy.usage}');
+      shareText.writeln();
+    }
+    
+    if (remedy.dosage.isNotEmpty) {
+      shareText.writeln('💊 Dosage: ${remedy.dosage}');
+      shareText.writeln();
+    }
+    
+    if (remedy.precautions.isNotEmpty) {
+      shareText.writeln('⚠️ Precautions: ${remedy.precautions}');
+      shareText.writeln();
+    }
+    
+    if (remedy.tags.isNotEmpty) {
+      shareText.writeln('🏷️ Tags: ${remedy.tags.join(', ')}');
+      shareText.writeln();
+    }
+    
+    shareText.writeln('---');
+    shareText.writeln('Shared from Curevia - Your Smart Path to Better Health');
+    shareText.writeln('⚠️ Disclaimer: This information is for educational purposes only. Always consult with a healthcare provider before using home remedies.');
+    
+    // Share the formatted text
+    Share.share(
+      shareText.toString(),
+      subject: '🌿 Home Remedy: ${remedy.title}',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,9 +111,7 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
-            onPressed: () {
-              // TODO: Implement share functionality
-            },
+            onPressed: _shareRemedy,
           ),
         ],
       ),
@@ -117,42 +182,49 @@ class _RemedyDetailScreenState extends ConsumerState<RemedyDetailScreen>
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.remedy.description,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textOnPrimary.withOpacity(0.9),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.textOnPrimary.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.remedy.categoryName.toUpperCase(),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textOnPrimary.withOpacity(0.8),
-                        fontWeight: FontWeight.w600,
+                      child: Text(
+                        widget.remedy.categoryName.toUpperCase(),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textOnPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-
             ],
           ),
           const SizedBox(height: 16),
-          Row(
+          Text(
+            widget.remedy.description,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textOnPrimary.withOpacity(0.9),
+            ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               _buildHeaderChip(
                 widget.remedy.preparationTime,
                 Icons.schedule,
               ),
-              const SizedBox(width: 8),
               _buildHeaderChip(
                 widget.remedy.difficulty,
                 Icons.trending_up,
               ),
-              const SizedBox(width: 8),
               _buildHeaderChip(
                 widget.remedy.ageSuitability,
                 Icons.person,

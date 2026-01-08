@@ -118,6 +118,50 @@ class RoleBasedNotificationService {
     }
   }
 
+  /// Send comprehensive appointment booking confirmation to patient
+  /// Includes both appointment booking and payment confirmation
+  Future<void> sendAppointmentBookingWithPaymentConfirmation({
+    required String patientId,
+    required String patientName,
+    required String patientFCMToken,
+    required String doctorName,
+    required String appointmentId,
+    required DateTime appointmentTime,
+    required String appointmentType,
+    required String paymentId,
+    required double amount,
+    required String currency,
+    required String paymentMethod,
+  }) async {
+    try {
+      final notification = NotificationModel(
+        id: 'appointment_booking_payment_${DateTime.now().millisecondsSinceEpoch}',
+        title: 'Appointment Booked Successfully! 🎉',
+        body: 'Hi $patientName! Your appointment is booked successfully with Dr. $doctorName and payment is done for the appointment with doctor.',
+        type: NotificationType.appointmentBookingConfirmation,
+        data: {
+          'appointmentId': appointmentId,
+          'patientId': patientId,
+          'patientName': patientName,
+          'doctorName': doctorName,
+          'appointmentTime': appointmentTime.toIso8601String(),
+          'appointmentType': appointmentType,
+          'paymentId': paymentId,
+          'amount': amount,
+          'currency': currency,
+          'paymentMethod': paymentMethod,
+          'paymentStatus': 'completed',
+        },
+        timestamp: DateTime.now(),
+      );
+
+      await _sendNotificationToUser(patientFCMToken, notification);
+      debugPrint('Sent appointment booking with payment confirmation to patient: $patientId');
+    } catch (e) {
+      debugPrint('Error sending appointment booking with payment confirmation: $e');
+    }
+  }
+
   /// Send health tips reminder to patient
   Future<void> sendHealthTipsReminder({
     required String patientId,

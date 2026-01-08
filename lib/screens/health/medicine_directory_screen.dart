@@ -5,6 +5,8 @@ import '../../utils/theme_utils.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../models/medicine_model.dart';
 import '../../providers/medicine_provider.dart';
+import '../../services/data_initialization_service.dart';
+import '../../services/firebase/medicine_service.dart';
 
 /// Medicine directory screen
 class MedicineDirectoryScreen extends ConsumerStatefulWidget {
@@ -24,23 +26,6 @@ class _MedicineDirectoryScreenState
   @override
   void initState() {
     super.initState();
-    // Seed data on first load and wait for completion
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      setState(() {
-        _isSeeding = true;
-      });
-      try {
-        await ref.read(seedMedicineDataProvider.future);
-      } catch (e) {
-        print('Error seeding medicine data: $e');
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isSeeding = false;
-          });
-        }
-      }
-    });
   }
 
   /// Force seed medicine data
@@ -84,6 +69,87 @@ class _MedicineDirectoryScreenState
     }
   }
 
+  /// Test data initialization manually
+  Future<void> _testDataInitialization() async {
+    try {
+      setState(() {
+        _isSeeding = true;
+      });
+      
+      print('=== MANUAL DATA INITIALIZATION TEST ===');
+      await DataInitializationService.forceReinitialize();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data initialization test completed - check console'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error in manual data initialization: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Data initialization failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSeeding = false;
+        });
+      }
+    }
+  }
+
+  /// Force complete reseed of all medicine data
+  Future<void> _forceCompleteReseed() async {
+    try {
+      setState(() {
+        _isSeeding = true;
+      });
+      
+      print('=== FORCE COMPLETE MEDICINE RESEED ===');
+      
+      // Clear and reseed medicines
+      await MedicineService.seedMedicineData();
+      
+      // Invalidate all providers
+      ref.invalidate(medicineCategoriesProvider);
+      ref.invalidate(allMedicinesProvider);
+      ref.invalidate(seedMedicineDataProvider);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Complete medicine reseed completed successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error in complete medicine reseed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Complete medicine reseed failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSeeding = false;
+        });
+      }
+    }
+  }
+
 
 
   @override
@@ -106,6 +172,29 @@ class _MedicineDirectoryScreenState
             onPressed: _forceSeedData,
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh Data',
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'test_init':
+                  _testDataInitialization();
+                  break;
+                case 'force_reseed':
+                  _forceCompleteReseed();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'test_init',
+                child: Text('Test Data Init'),
+              ),
+              const PopupMenuItem(
+                value: 'force_reseed',
+                child: Text('Force Complete Reseed'),
+              ),
+            ],
+            icon: const Icon(Icons.more_vert),
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../utils/theme_utils.dart';
+import '../../utils/validation_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/patient_provider.dart';
 import '../../services/firebase/patient_service.dart';
@@ -173,6 +174,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           label: 'Phone Number',
           prefixIcon: Icons.phone_outlined,
           keyboardType: TextInputType.phone,
+          validator: (value) => ValidationUtils.validatePhoneNumber(value, isRequired: false),
         ),
         const SizedBox(height: 16),
         CustomTextField(

@@ -12,6 +12,7 @@ import '../../widgets/common/custom_text_field.dart';
 import '../../widgets/common/loading_overlay.dart';
 import '../../services/firebase/appointment_service.dart';
 import '../../services/notifications/notification_manager.dart';
+import '../../services/notifications/notification_integration_service.dart';
 import '../payment/payment_screen.dart';
 
 /// Appointment booking screen
@@ -788,14 +789,43 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
                 status: 'confirmed',
               );
               
-              // Send payment success notification to patient
-              await NotificationManager.instance.sendPaymentSuccessNotification(
+              // Send comprehensive appointment booking confirmation to patient
+              // This includes both appointment details and payment confirmation
+              final currentFCMToken = NotificationIntegrationService.instance.currentFCMToken;
+              if (currentFCMToken != null) {
+                await NotificationIntegrationService.instance.notifyPatientAppointmentBookedWithPayment(
+                  patientId: userModel.uid,
+                  patientName: userModel.fullName,
+                  patientFCMToken: currentFCMToken,
+                  doctorName: widget.doctor.fullName,
+                  appointmentId: appointmentId,
+                  appointmentTime: DateTime(
+                    _selectedDate.year,
+                    _selectedDate.month,
+                    _selectedDate.day,
+                    int.parse(_selectedTimeSlot!.split(':')[0]),
+                    int.parse(_selectedTimeSlot!.split(':')[1]),
+                  ),
+                  appointmentType: widget.consultationType,
+                  paymentId: paymentId,
+                  amount: widget.doctor.consultationFee?.toDouble() ?? 0.0,
+                  currency: 'INR',
+                  paymentMethod: 'Online Payment',
+                );
+              } else {
+                debugPrint('⚠️ FCM token not available, cannot send patient notification');
+              }
+              
+              // Send payment received notification to doctor
+              // Note: Doctor FCM token would need to be retrieved from doctor's profile/database
+              await NotificationIntegrationService.instance.notifyDoctorPaymentReceived(
+                doctorId: widget.doctor.uid,
+                doctorFCMToken: 'doctor_token', // TODO: Get actual doctor FCM token from database
+                patientName: userModel.fullName,
                 paymentId: paymentId,
-                orderId: appointmentId,
                 amount: widget.doctor.consultationFee?.toDouble() ?? 0.0,
                 currency: 'INR',
-                paymentMethod: 'Online Payment',
-                userFCMToken: 'patient_token', // TODO: Get actual FCM token
+                appointmentId: appointmentId,
               );
               
               // Send appointment notification to doctor (only once)

@@ -123,6 +123,8 @@ Comprehensive **email service integration** with real-time Firebase triggers for
 - **User Preferences** --- Subscription management and opt-out controls
 - **Admin Tools** --- Campaign management and health tips distribution
 - **Analytics Dashboard** --- Real-time email delivery statistics
+- **Live Service** --- [Email Service Dashboard](https://curvia-mail-service.onrender.com)
+- **Source Code** --- [Email Service Repository](https://github.com/9A-Ayush/curvia-mail-service/tree/main)
 
 ### 🛡️ **Privacy & Compliance**
 - **User Control** --- Complete email preference management

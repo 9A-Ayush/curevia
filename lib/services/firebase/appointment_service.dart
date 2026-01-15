@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/appointment_model.dart';
+import '../../models/notification_model.dart';
 import '../../constants/app_constants.dart';
 import 'revenue_service.dart';
+import '../notifications/fcm_service.dart';
 
 /// Service for appointment-related operations
 class AppointmentService {
@@ -62,10 +64,130 @@ class AppointmentService {
         false,
       );
 
+      // Send immediate notification to patient (don't wait for Firestore)
+      _sendImmediateNotification(
+        appointmentId: appointmentId,
+        patientName: patientName,
+        doctorName: doctorName,
+        appointmentDate: appointmentDate,
+        timeSlot: timeSlot,
+      );
+
+      // Send notifications to Firestore asynchronously (don't block)
+      _sendAppointmentNotifications(
+        appointmentId: appointmentId,
+        patientId: patientId,
+        doctorId: doctorId,
+        patientName: patientName,
+        doctorName: doctorName,
+        appointmentDate: appointmentDate,
+        timeSlot: timeSlot,
+        consultationType: consultationType,
+      ).catchError((e) {
+        print('⚠️ Error sending Firestore notifications: $e');
+      });
+
       return appointmentId;
     } catch (e) {
       throw Exception('Failed to book appointment: $e');
     }
+  }
+
+  /// Send immediate local notification (non-blocking)
+  static void _sendImmediateNotification({
+    required String appointmentId,
+    required String patientName,
+    required String doctorName,
+    required DateTime appointmentDate,
+    required String timeSlot,
+  }) {
+    // Send notification immediately without waiting
+    Future.microtask(() async {
+      try {
+        final notification = NotificationModel(
+          id: 'appointment_${appointmentId}_immediate',
+          title: '✅ Appointment Booked Successfully!',
+          body: 'Your appointment with Dr. $doctorName is confirmed for ${_formatDate(appointmentDate)} at $timeSlot',
+          type: NotificationType.appointmentBookingConfirmation,
+          data: {
+            'appointmentId': appointmentId,
+            'doctorName': doctorName,
+            'appointmentDate': appointmentDate.toIso8601String(),
+            'timeSlot': timeSlot,
+          },
+          timestamp: DateTime.now(),
+        );
+        
+        await FCMService.instance.showLocalNotification(notification);
+        print('✅ Immediate notification sent to patient');
+      } catch (e) {
+        print('⚠️ Error sending immediate notification: $e');
+      }
+    });
+  }
+
+  /// Send notifications for appointment booking
+  static Future<void> _sendAppointmentNotifications({
+    required String appointmentId,
+    required String patientId,
+    required String doctorId,
+    required String patientName,
+    required String doctorName,
+    required DateTime appointmentDate,
+    required String timeSlot,
+    required String consultationType,
+  }) async {
+    try {
+      final notificationData = {
+        'appointmentId': appointmentId,
+        'patientId': patientId,
+        'doctorId': doctorId,
+        'patientName': patientName,
+        'doctorName': doctorName,
+        'appointmentDate': appointmentDate.toIso8601String(),
+        'timeSlot': timeSlot,
+        'consultationType': consultationType,
+      };
+
+      // Send both notifications in parallel for speed
+      await Future.wait([
+        // Send notification to patient (Firestore)
+        _firestore.collection('notifications').add({
+          'userId': patientId,
+          'type': 'appointment_booking_confirmation',
+          'title': 'Appointment Booked Successfully',
+          'body': 'Your appointment with Dr. $doctorName is confirmed for ${_formatDate(appointmentDate)} at $timeSlot',
+          'data': notificationData,
+          'timestamp': FieldValue.serverTimestamp(),
+          'isRead': false,
+        }),
+
+        // Send notification to doctor (Firestore)
+        _firestore.collection('notifications').add({
+          'userId': doctorId,
+          'type': 'appointment_booking',
+          'title': 'New Appointment Booking',
+          'body': '$patientName has booked an appointment for ${_formatDate(appointmentDate)} at $timeSlot',
+          'data': notificationData,
+          'timestamp': FieldValue.serverTimestamp(),
+          'isRead': false,
+        }),
+      ]);
+
+      print('✅ Firestore notifications saved for appointment: $appointmentId');
+    } catch (e) {
+      print('⚠️ Error sending Firestore notifications: $e');
+      // Don't throw error - notification failure shouldn't fail the booking
+    }
+  }
+
+  /// Format date for notification
+  static String _formatDate(DateTime date) {
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   /// Get appointments for a user

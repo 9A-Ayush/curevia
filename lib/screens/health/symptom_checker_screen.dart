@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
@@ -215,7 +216,7 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
                 ),
               ),
 
-              // Progress indicator
+              // Progress indicator - always show 3 steps max
               Container(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -225,7 +226,7 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
                         child: Container(
                           height: 4,
                           decoration: BoxDecoration(
-                            color: i <= _currentStep
+                            color: i <= _currentStep && _currentStep < 3
                                 ? ThemeUtils.getPrimaryColor(context)
                                 : ThemeUtils.isDarkMode(context)
                                 ? Colors.grey.shade700
@@ -243,34 +244,35 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
               // Content
               Expanded(child: _buildStepContent()),
 
-              // Bottom buttons
-              Container(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    if (_currentStep > 0)
+              // Bottom buttons - only show when not showing results
+              if (_analysisResult == null)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      if (_currentStep > 0)
+                        Expanded(
+                          child: CustomButton(
+                            text: 'Previous',
+                            onPressed: () {
+                              setState(() {
+                                _currentStep--;
+                              });
+                            },
+                            backgroundColor: AppColors.surfaceVariant,
+                            textColor: AppColors.textPrimary,
+                          ),
+                        ),
+                      if (_currentStep > 0) const SizedBox(width: 16),
                       Expanded(
                         child: CustomButton(
-                          text: 'Previous',
-                          onPressed: () {
-                            setState(() {
-                              _currentStep--;
-                            });
-                          },
-                          backgroundColor: AppColors.surfaceVariant,
-                          textColor: AppColors.textPrimary,
+                          text: _currentStep == 2 ? 'Get Results' : 'Next',
+                          onPressed: _canProceed() ? _handleNext : null,
                         ),
                       ),
-                    if (_currentStep > 0) const SizedBox(width: 16),
-                    Expanded(
-                      child: CustomButton(
-                        text: _currentStep == 2 ? 'Get Results' : 'Next',
-                        onPressed: _canProceed() ? _handleNext : null,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
           // Loading overlay
@@ -691,11 +693,35 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'AI Analysis Results',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'AI Analysis Results',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                onPressed: () {
+                  print('Share button tapped!');
+                  if (_analysisResult != null) {
+                    _shareResults(_analysisResult!);
+                  } else {
+                    print('No analysis result to share');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('No analysis results to share'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.share),
+                tooltip: 'Share Results',
+                color: AppColors.primary,
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Container(
@@ -990,14 +1016,62 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
         severity: _selectedSeverity,
       );
 
-      // Store result for display
-      _analysisResult = result;
-    } catch (e) {
+      // Store result for display - don't change step, just update result
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Analysis failed: $e'),
-            backgroundColor: AppColors.error,
+        setState(() {
+          _analysisResult = result;
+        });
+      }
+    } catch (e) {
+      print('Analysis error: $e');
+      if (mounted) {
+        // Show user-friendly error message
+        final errorMessage = e.toString().replaceAll('Exception: ', '');
+        
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.error_outline, color: AppColors.error),
+                const SizedBox(width: 8),
+                const Text('Analysis Error'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  errorMessage,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Please try again or consult with a healthcare professional.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Go Back'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _performAnalysis(); // Retry
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Try Again'),
+              ),
+            ],
           ),
         );
       }
@@ -1006,6 +1080,120 @@ class _SymptomCheckerScreenState extends ConsumerState<SymptomCheckerScreen> {
         setState(() {
           _isAnalyzing = false;
         });
+      }
+    }
+  }
+
+  /// Share analysis results
+  void _shareResults(SymptomAnalysisResult result) {
+    try {
+      print('=== SHARING RESULTS ===');
+      final StringBuffer shareText = StringBuffer();
+      
+      shareText.writeln('🏥 AI Symptom Analysis Results');
+      shareText.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      shareText.writeln();
+      
+      // Patient Info
+      shareText.writeln('📋 Patient Information:');
+      shareText.writeln('Age: ${_ageController.text.isNotEmpty ? _ageController.text : "Not specified"}');
+      shareText.writeln('Gender: $_selectedGender');
+      if (_selectedDuration != null) {
+        shareText.writeln('Duration: $_selectedDuration');
+      }
+      if (_selectedSeverity != null) {
+        shareText.writeln('Severity: $_selectedSeverity');
+      }
+      shareText.writeln();
+      
+      // Symptoms
+      shareText.writeln('🩺 Reported Symptoms:');
+      for (final symptom in _selectedSymptoms) {
+        shareText.writeln('• $symptom');
+      }
+      if (_symptomsController.text.isNotEmpty) {
+        shareText.writeln();
+        shareText.writeln('Additional Details:');
+        shareText.writeln(_symptomsController.text);
+      }
+      shareText.writeln();
+      
+      // Confidence
+      shareText.writeln('📊 Analysis Confidence: ${result.confidence}');
+      shareText.writeln();
+      
+      // Possible Conditions
+      if (result.possibleConditions.isNotEmpty) {
+        shareText.writeln('🔍 Possible Conditions:');
+        for (final condition in result.possibleConditions) {
+          shareText.writeln('• ${condition.name} (${condition.probability} probability)');
+          if (condition.description.isNotEmpty) {
+            shareText.writeln('  ${condition.description}');
+          }
+        }
+        shareText.writeln();
+      }
+      
+      // Recommendations
+      if (result.recommendations.isNotEmpty) {
+        shareText.writeln('💊 Recommended Actions:');
+        for (final rec in result.recommendations) {
+          shareText.writeln('• $rec');
+        }
+        shareText.writeln();
+      }
+      
+      // Urgent Signs
+      if (result.urgentSigns.isNotEmpty) {
+        shareText.writeln('⚠️ When to Seek Immediate Care:');
+        for (final sign in result.urgentSigns) {
+          shareText.writeln('• $sign');
+        }
+        shareText.writeln();
+      }
+      
+      // Suggested Specialist
+      if (result.suggestedSpecialist.isNotEmpty) {
+        shareText.writeln('👨‍⚕️ Suggested Specialist: ${result.suggestedSpecialist}');
+        shareText.writeln();
+      }
+      
+      // Disclaimer
+      shareText.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      shareText.writeln('⚠️ IMPORTANT DISCLAIMER:');
+      shareText.writeln(result.disclaimer);
+      shareText.writeln();
+      shareText.writeln('---');
+      shareText.writeln('Generated by Curevia - Your Smart Path to Better Health');
+      
+      print('Share text prepared, length: ${shareText.length}');
+      print('Calling Share.share...');
+      
+      Share.share(
+        shareText.toString(),
+        subject: '🏥 Symptom Analysis Results from Curevia',
+      ).then((_) {
+        print('Share completed successfully');
+      }).catchError((error) {
+        print('Share error: $error');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to share: $error'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      });
+    } catch (e) {
+      print('Error in _shareResults: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to share results: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     }
   }

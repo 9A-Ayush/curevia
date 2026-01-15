@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../constants/app_colors.dart';
 import '../../../utils/theme_utils.dart';
 import '../../../providers/auth_provider.dart';
@@ -91,6 +92,9 @@ class _DoctorOnboardingScreenState
     // Initialize page controller
     _pageController = PageController();
     
+    // Load existing doctor data
+    _loadExistingDoctorData();
+    
     // Start initial animations
     _progressAnimationController.forward();
     _slideAnimationController.forward();
@@ -153,6 +157,65 @@ class _DoctorOnboardingScreenState
       // Animate in new step
       _slideAnimationController.forward();
       _fadeAnimationController.forward();
+    }
+  }
+
+  /// Load existing doctor data from Firestore
+  Future<void> _loadExistingDoctorData() async {
+    try {
+      final user = ref.read(authProvider).userModel;
+      if (user == null) return;
+
+      // Load data from both users and doctors collections
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      
+      final doctorDoc = await FirebaseFirestore.instance
+          .collection('doctors')
+          .doc(user.uid)
+          .get();
+
+      final Map<String, dynamic> existingData = {};
+
+      // Load basic info from user document
+      if (userDoc.exists) {
+        final userData = userDoc.data()!;
+        existingData['fullName'] = userData['fullName'];
+        existingData['email'] = userData['email'];
+        existingData['phoneNumber'] = userData['phoneNumber'];
+      }
+
+      // Load doctor-specific info from doctor document
+      if (doctorDoc.exists) {
+        final doctorData = doctorDoc.data()!;
+        
+        // Merge doctor data, but prioritize user document for basic info
+        existingData.addAll(doctorData);
+        
+        // Ensure basic info from user document takes precedence
+        if (userDoc.exists) {
+          final userData = userDoc.data()!;
+          existingData['fullName'] = userData['fullName'];
+          existingData['email'] = userData['email'];
+          if (userData['phoneNumber'] != null) {
+            existingData['phoneNumber'] = userData['phoneNumber'];
+          }
+        }
+      }
+
+      // Update onboarding data with existing data
+      if (existingData.isNotEmpty && mounted) {
+        setState(() {
+          _onboardingData = existingData;
+        });
+        
+        print('✅ Loaded existing doctor data: ${existingData.keys.toList()}');
+      }
+    } catch (e) {
+      print('⚠️ Error loading existing doctor data: $e');
+      // Don't fail the onboarding process if loading existing data fails
     }
   }
 

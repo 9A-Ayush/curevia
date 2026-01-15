@@ -10,13 +10,10 @@ import '../../providers/patient_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/medical_report_provider.dart';
 import '../../services/image_upload_service.dart';
+import '../../services/medical_data_extraction_service.dart';
 import '../../utils/theme_utils.dart';
 import '../../widgets/common/custom_button.dart';
-import '../../widgets/medical_records/share_reports_dialog.dart';
 import '../patient/medical_document_viewer_screen.dart';
-import '../../widgets/medical_records/share_reports_dialog.dart';
-import '../../services/medical_report_sharing_service.dart';
-import 'medical_sharing_history_screen.dart';
 
 class MedicalRecordsScreen extends ConsumerStatefulWidget {
   const MedicalRecordsScreen({super.key});
@@ -60,20 +57,6 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
         elevation: 0,
         foregroundColor: Colors.white,
         title: const Text('Medical Records'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MedicalSharingHistoryScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.history),
-            tooltip: 'Sharing History',
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -182,15 +165,6 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Share Reports Button
-          FloatingActionButton(
-            heroTag: "share_reports",
-            onPressed: _showShareReportsDialog,
-            backgroundColor: ThemeUtils.getSuccessColor(context),
-            foregroundColor: Colors.white,
-            child: const Icon(Icons.share),
-          ),
-          const SizedBox(height: 12),
           // Add Report Button
           FloatingActionButton.extended(
             heroTag: "add_report",
@@ -1113,7 +1087,6 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
           onSelected: (value) => _handleReportAction(value, report),
           itemBuilder: (context) => [
             const PopupMenuItem(value: 'view', child: Text('View Details')),
-            const PopupMenuItem(value: 'share', child: Text('Share with Doctor')),
             const PopupMenuItem(value: 'edit', child: Text('Edit')),
             const PopupMenuItem(value: 'delete', child: Text('Delete')),
           ],
@@ -1179,12 +1152,6 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
               ),
             ),
           ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.share),
-          onPressed: () {
-            // Share document
-          },
         ),
         onTap: () {
           if (report != null && report.attachments.isNotEmpty) {
@@ -1560,88 +1527,6 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
         ],
       ),
     );
-  }
-
-  /// Show share reports dialog
-  void _showShareReportsDialog() {
-    final medicalReportState = ref.read(medicalReportProvider);
-    final reports = medicalReportState.reports;
-
-    if (reports.isEmpty) {
-      _showErrorSnackBar('No medical reports available to share');
-      return;
-    }
-
-    final user = ref.read(authProvider).userModel;
-    if (user == null) {
-      _showErrorSnackBar('User not authenticated');
-      return;
-    }
-
-    final patientModel = ref.read(currentPatientModelProvider);
-    final allergies = patientModel?.allergies ?? [];
-    
-    // Prepare patient vitals from the patient model
-    final patientVitals = <String, dynamic>{};
-    if (patientModel != null) {
-      if (patientModel.height != null) patientVitals['height'] = patientModel.height;
-      if (patientModel.weight != null) patientVitals['weight'] = patientModel.weight;
-      if (patientModel.bloodGroup != null) patientVitals['bloodGroup'] = patientModel.bloodGroup;
-      if (patientModel.age != null) patientVitals['age'] = patientModel.age;
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => ShareReportsDialog(
-        availableReports: reports,
-        patientId: user.uid,
-        patientName: user.fullName,
-        patientAllergies: allergies,
-        patientVitals: patientVitals,
-      ),
-    ).then((result) {
-      if (result == true) {
-        // Reports were shared successfully
-        // The success message is already shown in the dialog
-      }
-    });
-  }
-
-  /// Share individual report with doctor
-  void _shareIndividualReport(MedicalRecordModel report) {
-    final user = ref.read(authProvider).userModel;
-    if (user == null) {
-      _showErrorSnackBar('User not authenticated');
-      return;
-    }
-
-    final patientModel = ref.read(currentPatientModelProvider);
-    final allergies = patientModel?.allergies ?? [];
-    
-    // Prepare patient vitals from the patient model
-    final patientVitals = <String, dynamic>{};
-    if (patientModel != null) {
-      if (patientModel.height != null) patientVitals['height'] = patientModel.height;
-      if (patientModel.weight != null) patientVitals['weight'] = patientModel.weight;
-      if (patientModel.bloodGroup != null) patientVitals['bloodGroup'] = patientModel.bloodGroup;
-      if (patientModel.age != null) patientVitals['age'] = patientModel.age;
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => ShareReportsDialog(
-        availableReports: [report], // Only share this specific report
-        patientId: user.uid,
-        patientName: user.fullName,
-        patientAllergies: allergies,
-        patientVitals: patientVitals,
-      ),
-    ).then((result) {
-      if (result == true) {
-        // Report was shared successfully
-        _showSuccessSnackBar('Report shared successfully with doctor');
-      }
-    });
   }
 
   /// Show upload options dialog
@@ -2126,6 +2011,21 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
             attachments: attachments,
           );
 
+      // Extract and save medical data from the entered text
+      if (recordId != null) {
+        await _extractMedicalDataFromText(
+          patientId: user.uid,
+          recordId: recordId,
+          title: title,
+          diagnosis: diagnosis,
+          treatment: treatment,
+          prescription: prescription,
+          notes: notes,
+          recordDate: recordDate,
+          doctorName: doctorName,
+        );
+      }
+
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
 
@@ -2465,6 +2365,21 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
             attachments: attachments,
           );
 
+      // Extract and save medical data from the PDF content
+      if (recordId != null) {
+        await _extractMedicalDataFromText(
+          patientId: user.uid,
+          recordId: recordId,
+          title: title,
+          diagnosis: diagnosis,
+          treatment: treatment,
+          prescription: prescription,
+          notes: notes,
+          recordDate: recordDate,
+          doctorName: doctorName,
+        );
+      }
+
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
 
@@ -2494,9 +2409,6 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
     switch (action) {
       case 'view':
         _viewReportDetails(report);
-        break;
-      case 'share':
-        _shareIndividualReport(report);
         break;
       case 'edit':
         _editReport(report);
@@ -2694,5 +2606,54 @@ class _MedicalRecordsScreenState extends ConsumerState<MedicalRecordsScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  /// Extract medical data from text fields and save to appropriate collections
+  Future<void> _extractMedicalDataFromText({
+    required String patientId,
+    required String recordId,
+    required String title,
+    String? diagnosis,
+    String? treatment,
+    String? prescription,
+    String? notes,
+    required DateTime recordDate,
+    String? doctorName,
+  }) async {
+    try {
+      // Combine all text fields for extraction
+      final combinedText = [
+        title,
+        diagnosis ?? '',
+        treatment ?? '',
+        prescription ?? '',
+        notes ?? '',
+      ].where((text) => text.isNotEmpty).join(' ');
+
+      if (combinedText.trim().isNotEmpty) {
+        print('Extracting medical data from manual entry...');
+        
+        final extractedData = await MedicalDataExtractionService.extractMedicalData(
+          patientId: patientId,
+          documentText: combinedText,
+          documentTitle: title,
+          documentDate: recordDate,
+          doctorName: doctorName,
+        );
+
+        if (extractedData.hasData) {
+          await MedicalDataExtractionService.saveExtractedData(
+            patientId: patientId,
+            extractedData: extractedData,
+            sourceDocumentId: recordId,
+          );
+          
+          print('Medical data extracted from manual entry: ${extractedData.vitals.length} vitals, ${extractedData.allergies.length} allergies, ${extractedData.medications.length} medications');
+        }
+      }
+    } catch (e) {
+      print('Error extracting medical data from text: $e');
+      // Don't show error to user - this is a background enhancement
+    }
   }
 }

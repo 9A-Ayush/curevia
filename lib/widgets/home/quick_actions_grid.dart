@@ -4,7 +4,7 @@ import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../screens/consultation/video_consultation_screen.dart';
 import '../../screens/patient/find_doctors_screen.dart';
-import '../../screens/health/symptom_checker_screen.dart';
+import '../../screens/health/symptom_checker/symptom_checker_welcome_screen.dart';
 import '../../screens/health/medicine_directory_screen.dart';
 import '../../screens/health/home_remedies_screen.dart';
 import '../../screens/emergency/emergency_screen.dart';
@@ -80,7 +80,7 @@ class QuickActionsGrid extends ConsumerWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const SymptomCheckerScreen(),
+              builder: (context) => const SymptomCheckerWelcomeScreen(),
             ),
           );
         },

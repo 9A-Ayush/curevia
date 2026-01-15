@@ -148,12 +148,16 @@ class HomeRemediesService {
       final querySnapshot = await _firestore
           .collection(_remediesCollection)
           .where('categoryName', isEqualTo: category)
-          .orderBy('id')
           .get();
       
-      return querySnapshot.docs
+      final remedies = querySnapshot.docs
           .map((doc) => HomeRemedyModel.fromMap(doc.data()))
           .toList();
+      
+      // Sort client-side to avoid needing composite index
+      remedies.sort((a, b) => a.id.compareTo(b.id));
+      
+      return remedies;
     } catch (e) {
       print('Error getting remedies by category: $e');
       // Return empty list instead of throwing exception

@@ -226,16 +226,31 @@ class FCMService {
       notification.type.channelId,
       notification.type.channelName,
       channelDescription: notification.type.channelDescription,
-      importance: notification.type.isHighPriority ? Importance.high : Importance.defaultImportance,
-      priority: notification.type.isHighPriority ? Priority.high : Priority.defaultPriority,
+      importance: notification.type.isHighPriority ? Importance.max : Importance.high,
+      priority: notification.type.isHighPriority ? Priority.max : Priority.high,
       sound: RawResourceAndroidNotificationSound(notification.type.androidSoundFile),
       enableVibration: true,
       playSound: true,
-      icon: '@drawable/ic_notification', // Use custom notification icon without blue circle
-      // Force sound to play
+      icon: '@drawable/ic_notification',
+      // Critical: Set audio attributes to ensure sound plays in all states
       audioAttributesUsage: AudioAttributesUsage.notification,
-      color: const Color(0xFF0175C2), // Curevia brand color
+      color: const Color(0xFF0175C2),
       colorized: true,
+      // Additional settings to ensure notification is visible and audible
+      visibility: NotificationVisibility.public,
+      channelShowBadge: true,
+      // Ensure notification shows on lock screen
+      fullScreenIntent: notification.type.isHighPriority,
+      // Set category for better system handling
+      category: AndroidNotificationCategory.event,
+      // Ticker text for accessibility
+      ticker: notification.title,
+      // Auto-cancel when tapped
+      autoCancel: true,
+      // Show when screen is on
+      onlyAlertOnce: false,
+      // Ensure sound plays even if notification is updated
+      tag: notification.id,
     );
 
     final iosDetails = DarwinNotificationDetails(
@@ -243,6 +258,10 @@ class FCMService {
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+      // iOS specific settings
+      interruptionLevel: notification.type.isHighPriority 
+          ? InterruptionLevel.timeSensitive 
+          : InterruptionLevel.active,
     );
 
     final notificationDetails = NotificationDetails(
@@ -250,13 +269,21 @@ class FCMService {
       iOS: iosDetails,
     );
 
-    await _localNotifications.show(
-      notification.id.hashCode,
-      notification.title,
-      notification.body,
-      notificationDetails,
-      payload: jsonEncode(notification.toJson()),
-    );
+    try {
+      await _localNotifications.show(
+        notification.id.hashCode,
+        notification.title,
+        notification.body,
+        notificationDetails,
+        payload: jsonEncode(notification.toJson()),
+      );
+      debugPrint('✅ Notification shown: ${notification.title}');
+      debugPrint('   Channel: ${notification.type.channelId}');
+      debugPrint('   Sound: ${notification.type.androidSoundFile}');
+    } catch (e) {
+      debugPrint('❌ Error showing notification: $e');
+      rethrow;
+    }
   }
 
   /// Create notification channels for Android
@@ -268,20 +295,63 @@ class FCMService {
 
     if (androidImplementation == null) return;
 
-    // Create channels for each notification type
+    // Delete existing channels first to ensure fresh configuration
+    // This prevents issues with channels that were created without sound
+    try {
+      for (final type in NotificationType.values) {
+        // Note: Android doesn't provide a direct way to delete channels programmatically
+        // Channels persist until the app is uninstalled or user manually deletes them
+        // We'll create them with proper settings to override any issues
+      }
+    } catch (e) {
+      debugPrint('Note: Could not clear existing channels: $e');
+    }
+
+    // Create channels for each notification type with proper sound configuration
     for (final type in NotificationType.values) {
       final channel = AndroidNotificationChannel(
         type.channelId,
         type.channelName,
         description: type.channelDescription,
-        importance: type.isHighPriority ? Importance.high : Importance.defaultImportance,
+        importance: type.isHighPriority ? Importance.max : Importance.high,
         sound: RawResourceAndroidNotificationSound(type.androidSoundFile),
         enableVibration: true,
         playSound: true,
+        // Critical: Set audio attributes to ensure sound plays
+        audioAttributesUsage: AudioAttributesUsage.notification,
+        enableLights: true,
+        ledColor: const Color(0xFF0175C2),
       );
 
       await androidImplementation.createNotificationChannel(channel);
-      debugPrint('Created notification channel: ${type.channelId}');
+      debugPrint('✅ Created notification channel: ${type.channelId} with sound: ${type.androidSoundFile}');
+    }
+
+    // Verify channels were created successfully
+    await _verifyNotificationChannels(androidImplementation);
+  }
+
+  /// Verify that notification channels are properly configured
+  Future<void> _verifyNotificationChannels(AndroidFlutterLocalNotificationsPlugin androidImplementation) async {
+    try {
+      // Get all notification channels
+      final channels = await androidImplementation.getNotificationChannels();
+      
+      if (channels == null || channels.isEmpty) {
+        debugPrint('⚠️ Warning: No notification channels found after creation');
+        return;
+      }
+
+      debugPrint('📋 Notification Channels Status:');
+      for (final channel in channels) {
+        debugPrint('  - ${channel.id}: ${channel.name}');
+        debugPrint('    Importance: ${channel.importance}');
+        debugPrint('    Sound: ${channel.sound?.sound ?? "default"}');
+        debugPrint('    Vibration: ${channel.enableVibration}');
+        debugPrint('    Play Sound: ${channel.playSound}');
+      }
+    } catch (e) {
+      debugPrint('Error verifying notification channels: $e');
     }
   }
 
@@ -366,16 +436,25 @@ class FCMService {
       notification.type.channelId,
       notification.type.channelName,
       channelDescription: notification.type.channelDescription,
-      importance: notification.type.isHighPriority ? Importance.high : Importance.defaultImportance,
-      priority: notification.type.isHighPriority ? Priority.high : Priority.defaultPriority,
+      importance: notification.type.isHighPriority ? Importance.max : Importance.high,
+      priority: notification.type.isHighPriority ? Priority.max : Priority.high,
       sound: RawResourceAndroidNotificationSound(notification.type.androidSoundFile),
       enableVibration: true,
       playSound: true,
-      icon: '@drawable/ic_notification', // Use custom notification icon without blue circle
-      // Force sound to play
+      icon: '@drawable/ic_notification',
+      // Critical: Set audio attributes to ensure sound plays in all states
       audioAttributesUsage: AudioAttributesUsage.notification,
-      color: const Color(0xFF0175C2), // Curevia brand color
+      color: const Color(0xFF0175C2),
       colorized: true,
+      // Additional settings for scheduled notifications
+      visibility: NotificationVisibility.public,
+      channelShowBadge: true,
+      fullScreenIntent: notification.type.isHighPriority,
+      category: AndroidNotificationCategory.reminder,
+      ticker: notification.title,
+      autoCancel: true,
+      onlyAlertOnce: false,
+      tag: notification.id,
     );
 
     final iosDetails = DarwinNotificationDetails(
@@ -383,6 +462,9 @@ class FCMService {
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+      interruptionLevel: notification.type.isHighPriority 
+          ? InterruptionLevel.timeSensitive 
+          : InterruptionLevel.active,
     );
 
     final notificationDetails = NotificationDetails(
@@ -390,18 +472,25 @@ class FCMService {
       iOS: iosDetails,
     );
 
-    await _localNotifications.zonedSchedule(
-      notification.id.hashCode,
-      notification.title,
-      notification.body,
-      tz.TZDateTime.from(scheduledTime, tz.local),
-      notificationDetails,
-      payload: jsonEncode(notification.toJson()),
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
+    try {
+      await _localNotifications.zonedSchedule(
+        notification.id.hashCode,
+        notification.title,
+        notification.body,
+        tz.TZDateTime.from(scheduledTime, tz.local),
+        notificationDetails,
+        payload: jsonEncode(notification.toJson()),
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
 
-    debugPrint('Scheduled notification for: $scheduledTime');
+      debugPrint('✅ Scheduled notification for: $scheduledTime');
+      debugPrint('   Channel: ${notification.type.channelId}');
+      debugPrint('   Sound: ${notification.type.androidSoundFile}');
+    } catch (e) {
+      debugPrint('❌ Error scheduling notification: $e');
+      rethrow;
+    }
   }
 
   /// Cancel a scheduled notification

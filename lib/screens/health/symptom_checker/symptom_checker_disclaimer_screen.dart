@@ -155,9 +155,13 @@ class _SymptomCheckerDisclaimerScreenState
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            '• Emergency Services: 911 (US) / 112 (EU) / 000 (AU)\n'
-                            '• Poison Control: 1-800-222-1222 (US)\n'
-                            '• Crisis Helpline: 988 (US)',
+                            '• Emergency Services: 112 (India)\n'
+                            '• Ambulance: 102\n'
+                            '• Police: 100\n'
+                            '• Fire: 101\n'
+                            '• Women Helpline: 1091\n'
+                            '• Child Helpline: 1098\n'
+                            '• Mental Health: 9152987821 (Vandrevala Foundation)',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: ThemeUtils.getTextPrimaryColor(context),
                             ),

@@ -123,11 +123,12 @@ class _SymptomCheckerProcessingScreenState
     return Scaffold(
       backgroundColor: ThemeUtils.getBackgroundColor(context),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
               // Medical AI icon with animations
               AnimatedBuilder(
                 animation: _pulseAnimation,
@@ -290,6 +291,7 @@ class _SymptomCheckerProcessingScreenState
               ),
             ],
           ),
+        ),
         ),
       ),
     );

@@ -81,16 +81,6 @@ class MedicalDocumentCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const PopupMenuItem(
-                          value: 'share',
-                          child: Row(
-                            children: [
-                              Icon(Icons.share, size: 20),
-                              SizedBox(width: 8),
-                              Text('Share'),
-                            ],
-                          ),
-                        ),
                         if (onEdit != null)
                           const PopupMenuItem(
                             value: 'edit',
@@ -338,19 +328,6 @@ class MedicalDocumentCard extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () => _shareDocument(context),
-            icon: const Icon(Icons.share, size: 16),
-            label: const Text('Share'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              side: BorderSide(color: Colors.grey[400]!),
-              foregroundColor: Colors.grey[700],
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -388,9 +365,6 @@ class MedicalDocumentCard extends StatelessWidget {
     switch (action) {
       case 'view':
         _openDocumentViewer(context);
-        break;
-      case 'share':
-        _shareDocument(context);
         break;
       case 'edit':
         onEdit?.call();

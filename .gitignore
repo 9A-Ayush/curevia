@@ -43,3 +43,21 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment variables and sensitive files
+.env
+.env.local
+.env.production
+.env.staging
+*.env
+
+# Email service (separate repository)
+email-service/
+
+# API keys and secrets
+**/serviceAccountKey.json
+**/google-services.json
+**/GoogleService-Info.plist
+
+# Local configuration
+local.properties

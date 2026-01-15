@@ -296,9 +296,12 @@ class DoctorService {
           .where((doctor) => doctor != null)
           .cast<DoctorModel>()
           .where((doctor) {
-            // Filter for verified doctors and pending doctors (for testing)
+            // FIXED: More lenient filtering - show doctors if they have either verification method
             final status = doctor.verificationStatus;
-            return status == null || status == 'verified' || status == 'pending';
+            final isVerified = doctor.isVerified ?? false;
+            
+            // Show if either condition is met (not both required)
+            return (status == 'verified' || status == 'approved') || isVerified;
           })
           .toList();
 
@@ -602,6 +605,48 @@ class DoctorService {
       }
     } catch (e) {
       throw Exception('Failed to verify doctor: $e');
+    }
+  }
+
+  /// Fix verification status inconsistencies (development helper)
+  static Future<int> fixVerificationInconsistencies() async {
+    try {
+      final querySnapshot = await _firestore
+          .collection(AppConstants.doctorsCollection)
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      int fixedCount = 0;
+
+      for (final doc in querySnapshot.docs) {
+        final data = doc.data();
+        final status = data['verificationStatus'];
+        final isVerified = data['isVerified'];
+        bool needsUpdate = false;
+        Map<String, dynamic> updates = {};
+
+        // Fix doctors that have verificationStatus = 'verified' but isVerified != true
+        if (status == 'verified' && isVerified != true) {
+          updates['isVerified'] = true;
+          needsUpdate = true;
+        }
+        
+        // Fix doctors that have isVerified = true but wrong status
+        if (isVerified == true && (status != 'verified' && status != 'approved')) {
+          updates['verificationStatus'] = 'verified';
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          updates['updatedAt'] = FieldValue.serverTimestamp();
+          await doc.reference.update(updates);
+          fixedCount++;
+        }
+      }
+
+      return fixedCount;
+    } catch (e) {
+      throw Exception('Failed to fix verification inconsistencies: $e');
     }
   }
 

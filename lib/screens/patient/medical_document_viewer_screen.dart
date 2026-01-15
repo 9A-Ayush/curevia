@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -124,24 +123,9 @@ class _MedicalDocumentViewerScreenState
                   onPressed: _showDocumentInfo,
                   tooltip: 'Document Info',
                 ),
-                IconButton(
-                  icon: const Icon(Icons.share),
-                  onPressed: _shareDocument,
-                  tooltip: 'Share',
-                ),
                 PopupMenuButton<String>(
                   onSelected: _handleMenuAction,
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'share',
-                      child: Row(
-                        children: [
-                          Icon(Icons.share, size: 20),
-                          SizedBox(width: 8),
-                          Text('Share'),
-                        ],
-                      ),
-                    ),
                     const PopupMenuItem(
                       value: 'info',
                       child: Row(
@@ -276,11 +260,6 @@ class _MedicalDocumentViewerScreenState
                         label: 'Info',
                         onPressed: _showDocumentInfo,
                       ),
-                      _buildBottomButton(
-                        icon: Icons.share,
-                        label: 'Share',
-                        onPressed: _shareDocument,
-                      ),
                     ],
                   ),
                 ),
@@ -353,9 +332,6 @@ class _MedicalDocumentViewerScreenState
 
   void _handleMenuAction(String action) {
     switch (action) {
-      case 'share':
-        _shareDocument();
-        break;
       case 'info':
         _showDocumentInfo();
         break;
@@ -459,37 +435,8 @@ class _MedicalDocumentViewerScreenState
   }
 
   Future<void> _shareDocument() async {
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      final currentImageUrl = widget.medicalRecord.attachments[_currentIndex];
-      
-      // Download the image temporarily for sharing
-      final tempDir = await getTemporaryDirectory();
-      final fileName = 'medical_report_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final filePath = '${tempDir.path}/$fileName';
-
-      final dio = Dio();
-      await dio.download(currentImageUrl, filePath);
-
-      // Share the file
-      await Share.shareXFiles(
-        [XFile(filePath)],
-        text: 'Medical Report: ${widget.medicalRecord.title}\nDate: ${_formatDate(widget.medicalRecord.recordDate)}',
-        subject: 'Medical Report - ${widget.medicalRecord.title}',
-      );
-
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showErrorSnackBar('Failed to share document: $e');
-    }
+    // Share functionality has been removed as requested
+    _showErrorSnackBar('Share functionality has been disabled');
   }
 
   Future<void> _downloadDocument() async {

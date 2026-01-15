@@ -194,8 +194,38 @@ class PatientAllergy {
     );
   }
 
+  factory PatientAllergy.fromMap(Map<String, dynamic> map) {
+    return PatientAllergy(
+      id: map['id'] ?? '',
+      patientId: map['patientId'] ?? '',
+      allergen: map['allergen'] ?? '',
+      severity: map['severity'] ?? 'mild',
+      reaction: map['reaction'] ?? '',
+      firstOccurrence: (map['firstOccurrence'] as Timestamp?)?.toDate(),
+      notes: map['notes'],
+      isActive: map['isActive'] ?? true,
+      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+    );
+  }
+
   Map<String, dynamic> toFirestore() {
     return {
+      'patientId': patientId,
+      'allergen': allergen,
+      'severity': severity,
+      'reaction': reaction,
+      'firstOccurrence': firstOccurrence != null ? Timestamp.fromDate(firstOccurrence!) : null,
+      'notes': notes,
+      'isActive': isActive,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+    };
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
       'patientId': patientId,
       'allergen': allergen,
       'severity': severity,
@@ -263,6 +293,25 @@ class PatientMedication {
     );
   }
 
+  factory PatientMedication.fromMap(Map<String, dynamic> map) {
+    return PatientMedication(
+      id: map['id'] ?? '',
+      patientId: map['patientId'] ?? '',
+      medicationName: map['medicationName'] ?? '',
+      dosage: map['dosage'] ?? '',
+      frequency: map['frequency'] ?? '',
+      route: map['route'] ?? 'oral',
+      startDate: (map['startDate'] as Timestamp).toDate(),
+      endDate: (map['endDate'] as Timestamp?)?.toDate(),
+      prescribedBy: map['prescribedBy'],
+      reason: map['reason'],
+      notes: map['notes'],
+      isActive: map['isActive'] ?? true,
+      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+    );
+  }
+
   Map<String, dynamic> toFirestore() {
     return {
       'patientId': patientId,
@@ -279,6 +328,32 @@ class PatientMedication {
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'patientId': patientId,
+      'medicationName': medicationName,
+      'dosage': dosage,
+      'frequency': frequency,
+      'route': route,
+      'startDate': Timestamp.fromDate(startDate),
+      'endDate': endDate != null ? Timestamp.fromDate(endDate!) : null,
+      'prescribedBy': prescribedBy,
+      'reason': reason,
+      'notes': notes,
+      'isActive': isActive,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+    };
+  }
+
+  /// Check if medication is currently active
+  bool get isCurrentlyActive {
+    if (!isActive) return false;
+    if (endDate == null) return true;
+    return DateTime.now().isBefore(endDate!);
   }
 }
 

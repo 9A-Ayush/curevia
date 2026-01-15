@@ -275,6 +275,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           label: 'Emergency Contact Phone',
           prefixIcon: Icons.phone_outlined,
           keyboardType: TextInputType.phone,
+          validator: (value) => ValidationUtils.validatePhoneNumber(value, isRequired: false),
         ),
         const SizedBox(height: 16),
         CustomTextField(
@@ -448,9 +449,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       // Update basic user info
       final updatedUserData = {
         'fullName': _fullNameController.text.trim(),
-        'phoneNumber': _phoneController.text.trim().isEmpty
-            ? null
-            : _phoneController.text.trim(),
+        'phoneNumber': ValidationUtils.formatPhoneNumber(_phoneController.text),
         'additionalInfo': {
           ...userModel.additionalInfo ?? {},
           'about': _aboutController.text.trim(),
@@ -469,9 +468,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           email: userModel.email,
           fullName: _fullNameController.text.trim(),
           role: userModel.role,
-          phoneNumber: _phoneController.text.trim().isEmpty
-              ? null
-              : _phoneController.text.trim(),
+          phoneNumber: ValidationUtils.formatPhoneNumber(_phoneController.text),
           profileImageUrl: userModel.profileImageUrl,
           createdAt: userModel.createdAt,
           updatedAt: DateTime.now(),
@@ -495,9 +492,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ? null
               : _emergencyContactNameController.text.trim(),
           emergencyContactPhone:
-              _emergencyContactPhoneController.text.trim().isEmpty
-              ? null
-              : _emergencyContactPhoneController.text.trim(),
+              ValidationUtils.formatPhoneNumber(_emergencyContactPhoneController.text),
           address: _addressController.text.trim().isEmpty
               ? null
               : _addressController.text.trim(),

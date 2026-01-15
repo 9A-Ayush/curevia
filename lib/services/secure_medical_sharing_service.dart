@@ -365,38 +365,197 @@ class SecureMedicalSharingService {
     );
   }
 
-  /// Get patient allergies
+  /// Get patient allergies - Extract from medical records and user profile
   static Future<List<PatientAllergy>> getPatientAllergies(String patientId) async {
     try {
-      final snapshot = await _firestore
-          .collection(_allergiesCollection)
-          .where('patientId', isEqualTo: patientId)
-          .where('isActive', isEqualTo: true)
-          .orderBy('createdAt', descending: true)
+      final allergies = <PatientAllergy>[];
+
+      // Get allergies from user profile
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(patientId)
           .get();
 
-      return snapshot.docs
-          .map((doc) => PatientAllergy.fromFirestore(doc))
-          .toList();
+      if (userDoc.exists) {
+        final userData = userDoc.data()!;
+        final profileAllergies = List<String>.from(userData['allergies'] ?? []);
+        
+        for (final allergen in profileAllergies) {
+          allergies.add(PatientAllergy(
+            id: 'profile_${allergen.hashCode}',
+            patientId: patientId,
+            allergen: allergen,
+            severity: 'mild', // Default since not specified in profile
+            reaction: 'Not specified',
+            firstOccurrence: null,
+            notes: 'From user profile',
+            isActive: true,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ));
+        }
+      }
+
+      // Get allergies mentioned in medical records
+      final medicalRecordsSnapshot = await _firestore
+          .collection('users')
+          .doc(patientId)
+          .collection('medical_records')
+          .orderBy('recordDate', descending: true)
+          .get();
+
+      for (final doc in medicalRecordsSnapshot.docs) {
+        final data = doc.data();
+        final notes = (data['notes'] ?? '').toString().toLowerCase();
+        final diagnosis = (data['diagnosis'] ?? '').toString().toLowerCase();
+        final treatment = (data['treatment'] ?? '').toString().toLowerCase();
+        
+        // Look for allergy mentions in medical records
+        final allergyKeywords = ['allergy', 'allergic', 'reaction', 'intolerance'];
+        final commonAllergens = ['penicillin', 'peanut', 'shellfish', 'latex', 'dust', 'pollen'];
+        
+        for (final allergen in commonAllergens) {
+          final fullText = '$notes $diagnosis $treatment';
+          if (fullText.contains(allergen) && 
+              allergyKeywords.any((keyword) => fullText.contains(keyword))) {
+            
+            // Check if we already have this allergen
+            final exists = allergies.any((a) => 
+              a.allergen.toLowerCase().contains(allergen));
+            
+            if (!exists) {
+              final recordDate = (data['recordDate'] as Timestamp).toDate();
+              allergies.add(PatientAllergy(
+                id: '${doc.id}_$allergen',
+                patientId: patientId,
+                allergen: allergen.toUpperCase(),
+                severity: 'moderate', // Assume moderate if mentioned in medical record
+                reaction: 'Mentioned in medical record',
+                firstOccurrence: recordDate,
+                notes: 'Found in medical record: ${data['title'] ?? 'Medical Record'}',
+                isActive: true,
+                createdAt: recordDate,
+                updatedAt: recordDate,
+              ));
+            }
+          }
+        }
+      }
+
+      // Sort by severity and date
+      allergies.sort((a, b) {
+        final severityOrder = {'severe': 0, 'moderate': 1, 'mild': 2};
+        final aOrder = severityOrder[a.severity] ?? 3;
+        final bOrder = severityOrder[b.severity] ?? 3;
+        if (aOrder != bOrder) return aOrder.compareTo(bOrder);
+        return b.createdAt.compareTo(a.createdAt);
+      });
+
+      return allergies;
     } catch (e) {
       print('Error getting patient allergies: $e');
       return [];
     }
   }
 
-  /// Get patient medications
+  /// Get patient medications - Extract from medical records
   static Future<List<PatientMedication>> getPatientMedications(String patientId) async {
     try {
-      final snapshot = await _firestore
-          .collection(_medicationsCollection)
-          .where('patientId', isEqualTo: patientId)
-          .where('isActive', isEqualTo: true)
-          .orderBy('createdAt', descending: true)
+      final medications = <PatientMedication>[];
+
+      // Get medications from medical records
+      final medicalRecordsSnapshot = await _firestore
+          .collection('users')
+          .doc(patientId)
+          .collection('medical_records')
+          .where('type', whereIn: ['prescription', 'consultation', 'checkup'])
+          .orderBy('recordDate', descending: true)
+          .limit(20) // Get recent records that might have prescriptions
           .get();
 
-      return snapshot.docs
-          .map((doc) => PatientMedication.fromFirestore(doc))
-          .toList();
+      for (final doc in medicalRecordsSnapshot.docs) {
+        final data = doc.data();
+        final prescription = data['prescription']?.toString() ?? '';
+        final treatment = data['treatment']?.toString() ?? '';
+        final notes = data['notes']?.toString() ?? '';
+        final recordDate = (data['recordDate'] as Timestamp).toDate();
+        final doctorName = data['doctorName'] ?? 'Unknown Doctor';
+        
+        // Parse prescription text for medications
+        final medicationText = '$prescription $treatment $notes';
+        if (medicationText.trim().isNotEmpty) {
+          
+          // Common medication patterns
+          final medicationPatterns = [
+            RegExp(r'(\w+)\s+(\d+\s*mg)\s+(.*?(?:daily|twice|once|morning|evening|night))', caseSensitive: false),
+            RegExp(r'(\w+)\s+tablet\s+(.*?(?:daily|twice|once))', caseSensitive: false),
+            RegExp(r'(\w+)\s+(\d+\s*ml)\s+(.*?(?:daily|twice|once))', caseSensitive: false),
+          ];
+          
+          for (final pattern in medicationPatterns) {
+            final matches = pattern.allMatches(medicationText);
+            for (final match in matches) {
+              final medicationName = match.group(1) ?? '';
+              final dosage = match.group(2) ?? '';
+              final frequency = match.group(3) ?? '';
+              
+              if (medicationName.length > 2) { // Filter out very short matches
+                medications.add(PatientMedication(
+                  id: '${doc.id}_${medicationName.hashCode}',
+                  patientId: patientId,
+                  medicationName: medicationName,
+                  dosage: dosage,
+                  frequency: frequency,
+                  route: 'oral', // Default
+                  startDate: recordDate,
+                  endDate: null, // Assume ongoing unless specified
+                  prescribedBy: doctorName,
+                  reason: data['diagnosis'] ?? 'As prescribed',
+                  notes: 'From medical record: ${data['title'] ?? 'Medical Record'}',
+                  isActive: true,
+                  createdAt: recordDate,
+                  updatedAt: recordDate,
+                ));
+              }
+            }
+          }
+          
+          // If no structured medications found, create a general entry
+          if (medications.isEmpty && prescription.trim().isNotEmpty) {
+            medications.add(PatientMedication(
+              id: '${doc.id}_general',
+              patientId: patientId,
+              medicationName: 'Prescribed Medication',
+              dosage: 'As prescribed',
+              frequency: 'As directed',
+              route: 'oral',
+              startDate: recordDate,
+              endDate: null,
+              prescribedBy: doctorName,
+              reason: data['diagnosis'] ?? 'Medical treatment',
+              notes: prescription.length > 100 ? '${prescription.substring(0, 100)}...' : prescription,
+              isActive: true,
+              createdAt: recordDate,
+              updatedAt: recordDate,
+            ));
+          }
+        }
+      }
+
+      // Remove duplicates and sort by date
+      final uniqueMedications = <String, PatientMedication>{};
+      for (final med in medications) {
+        final key = '${med.medicationName}_${med.dosage}';
+        if (!uniqueMedications.containsKey(key) || 
+            uniqueMedications[key]!.startDate.isBefore(med.startDate)) {
+          uniqueMedications[key] = med;
+        }
+      }
+      
+      final result = uniqueMedications.values.toList();
+      result.sort((a, b) => b.startDate.compareTo(a.startDate));
+      
+      return result;
     } catch (e) {
       print('Error getting patient medications: $e');
       return [];

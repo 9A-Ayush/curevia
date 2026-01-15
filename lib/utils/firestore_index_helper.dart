@@ -1,182 +1,284 @@
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
-/// Helper class for managing Firestore index status and fallbacks
+/// Helper class for managing Firestore indexes and providing helpful error messages
 class FirestoreIndexHelper {
-  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  /// Map of common Firestore index errors and their solutions
+  static const Map<String, String> _indexSolutions = {
+    'medical_documents': '''
+Medical Documents Index Required:
+- Collection: medical_documents
+- Fields: patientId (ASC), status (ASC), uploadedAt (DESC)
+- Use: Querying patient documents by status and date
+''',
+    'patient_allergies': '''
+Patient Allergies Index Required:
+- Collection: patient_allergies  
+- Fields: patientId (ASC), isActive (ASC), severity (DESC), createdAt (DESC)
+- Use: Querying active allergies by severity
+''',
+    'patient_medications': '''
+Patient Medications Index Required:
+- Collection: patient_medications
+- Fields: patientId (ASC), isActive (ASC), startDate (DESC)
+- Use: Querying active medications by start date
+''',
+    'patient_vitals': '''
+Patient Vitals Index Required:
+- Collection: patient_vitals
+- Fields: patientId (ASC), recordedAt (DESC)
+- Use: Querying patient vitals by date
+''',
+    'doctor_access_logs': '''
+Doctor Access Logs Index Required:
+- Collection: doctor_access_logs
+- Fields: doctorId (ASC), patientId (ASC), accessTime (DESC)
+- Use: Querying doctor access history
+''',
+  };
 
-  /// Check if mood entries indexes are ready by attempting a test query
-  static Future<bool> areMoodIndexesReady(String userId) async {
-    try {
-      // Try a simple query that requires the index
-      await _firestore
-          .collection('mood_entries')
-          .where('userId', isEqualTo: userId)
-          .orderBy('timestamp', descending: true)
-          .limit(1)
-          .get();
-      
-      print('✅ Mood entries indexes are ready!');
-      return true;
-    } catch (e) {
-      if (e.toString().contains('index') || e.toString().contains('FAILED_PRECONDITION')) {
-        print('⏳ Mood entries indexes are still building...');
-        return false;
-      }
-      print('❌ Error checking index status: $e');
-      return false;
-    }
+  /// Extract collection name from Firestore error message
+  static String? _extractCollectionFromError(String errorMessage) {
+    final regex = RegExp(r'collectionGroups/([^/]+)/');
+    final match = regex.firstMatch(errorMessage);
+    return match?.group(1);
   }
 
-  /// Get index status information
-  static Future<IndexStatus> getMoodIndexStatus(String userId) async {
-    try {
-      final isReady = await areMoodIndexesReady(userId);
-      
-      if (isReady) {
-        return IndexStatus(
-          isReady: true,
-          message: 'Indexes are ready! Real-time mood tracking is fully functional.',
-          recommendation: 'You can use all mood tracking features without limitations.',
-        );
-      } else {
-        return IndexStatus(
-          isReady: false,
-          message: 'Indexes are still building. This usually takes 5-10 minutes.',
-          recommendation: 'Mood tracking will work with basic functionality. Full features will be available once indexes are ready.',
-        );
-      }
-    } catch (e) {
-      return IndexStatus(
-        isReady: false,
-        message: 'Unable to check index status: $e',
-        recommendation: 'Please check your internet connection and Firebase configuration.',
-      );
-    }
-  }
-
-  /// Show index status dialog to user
-  static Future<void> showIndexStatusDialog(
-    context, 
-    String userId,
-  ) async {
-    final status = await getMoodIndexStatus(userId);
+  /// Get helpful solution for index error
+  static String getIndexSolution(String errorMessage) {
+    final collection = _extractCollectionFromError(errorMessage);
     
-    if (context.mounted) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                status.isReady ? Icons.check_circle : Icons.hourglass_empty,
-                color: status.isReady ? Colors.green : Colors.orange,
-              ),
-              const SizedBox(width: 8),
-              Text(status.isReady ? 'Indexes Ready' : 'Indexes Building'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(status.message),
-              const SizedBox(height: 12),
-              Text(
-                'Recommendation:',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(status.recommendation),
-              if (!status.isReady) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue[200]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.blue[700]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'You can still log moods and view history. Performance will improve once indexes are ready.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-          actions: [
-            if (!status.isReady)
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  // Check again after a delay
-                  await Future.delayed(const Duration(seconds: 2));
-                  showIndexStatusDialog(context, userId);
-                },
-                child: const Text('Check Again'),
-              ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+    if (collection != null && _indexSolutions.containsKey(collection)) {
+      return _indexSolutions[collection]!;
+    }
+    
+    return '''
+Firestore Index Required:
+1. Copy the index creation URL from the error message
+2. Open the URL in your browser
+3. Click "Create Index" in Firebase Console
+4. Wait for index to build (usually 1-5 minutes)
+5. Retry your query
+
+Collection: ${collection ?? 'Unknown'}
+''';
+  }
+
+  /// Log index error with helpful information
+  static void logIndexError(String errorMessage, {String? context}) {
+    if (kDebugMode) {
+      print('🔥 FIRESTORE INDEX ERROR 🔥');
+      if (context != null) {
+        print('Context: $context');
+      }
+      print('Error: $errorMessage');
+      print('');
+      print('SOLUTION:');
+      print(getIndexSolution(errorMessage));
+      print('');
+      print('📋 Quick Fix:');
+      print('1. Copy the URL from the error above');
+      print('2. Open it in your browser');
+      print('3. Click "Create Index"');
+      print('4. Wait for completion');
+      print('');
     }
   }
 
-  /// Periodically check index status and notify when ready
-  static Stream<bool> watchIndexStatus(String userId) async* {
-    while (true) {
-      final isReady = await areMoodIndexesReady(userId);
-      yield isReady;
-      
-      if (isReady) {
-        break; // Stop checking once ready
+  /// Check if error is a Firestore index error
+  static bool isIndexError(dynamic error) {
+    if (error == null) return false;
+    final errorString = error.toString().toLowerCase();
+    return errorString.contains('failed-precondition') && 
+           errorString.contains('requires an index');
+  }
+
+  /// Handle Firestore query with automatic index error logging
+  static Future<T> handleQuery<T>(
+    Future<T> Function() queryFunction, {
+    String? context,
+    T? fallbackValue,
+  }) async {
+    try {
+      return await queryFunction();
+    } catch (error) {
+      if (isIndexError(error)) {
+        logIndexError(error.toString(), context: context);
       }
       
-      // Wait 30 seconds before checking again
-      await Future.delayed(const Duration(seconds: 30));
+      if (fallbackValue != null) {
+        return fallbackValue;
+      }
+      
+      rethrow;
     }
   }
 
-  /// Get Firebase Console URL for index management
-  static String getFirebaseConsoleIndexUrl() {
-    return 'https://console.firebase.google.com/project/curevia-f31a8/firestore/indexes';
+  /// Handle Firestore stream with automatic index error logging
+  static Stream<T> handleStream<T>(
+    Stream<T> Function() streamFunction, {
+    String? context,
+    T? fallbackValue,
+  }) {
+    try {
+      return streamFunction().handleError((error) {
+        if (isIndexError(error)) {
+          logIndexError(error.toString(), context: context);
+        }
+        
+        if (fallbackValue != null) {
+          // Return fallback value as single item stream
+          return Stream.value(fallbackValue);
+        }
+        
+        throw error;
+      });
+    } catch (error) {
+      if (isIndexError(error)) {
+        logIndexError(error.toString(), context: context);
+      }
+      
+      if (fallbackValue != null) {
+        return Stream.value(fallbackValue);
+      }
+      
+      rethrow;
+    }
   }
 
-  /// Get helpful tips for index building
-  static List<String> getIndexBuildingTips() {
+  /// Get all required indexes for the medical app
+  static List<Map<String, dynamic>> getRequiredIndexes() {
     return [
-      'Index building typically takes 5-10 minutes for new collections',
-      'Larger datasets may take longer to index',
-      'You can monitor progress in the Firebase Console',
-      'The app will work with basic functionality while indexes build',
-      'Real-time features will be fully available once indexes are ready',
+      {
+        'collection': 'medical_documents',
+        'fields': [
+          {'field': 'patientId', 'order': 'ASC'},
+          {'field': 'status', 'order': 'ASC'},
+          {'field': 'uploadedAt', 'order': 'DESC'},
+        ],
+        'description': 'Query patient medical documents by status and date'
+      },
+      {
+        'collection': 'patient_allergies',
+        'fields': [
+          {'field': 'patientId', 'order': 'ASC'},
+          {'field': 'isActive', 'order': 'ASC'},
+          {'field': 'severity', 'order': 'DESC'},
+          {'field': 'createdAt', 'order': 'DESC'},
+        ],
+        'description': 'Query active patient allergies by severity'
+      },
+      {
+        'collection': 'patient_medications',
+        'fields': [
+          {'field': 'patientId', 'order': 'ASC'},
+          {'field': 'isActive', 'order': 'ASC'},
+          {'field': 'startDate', 'order': 'DESC'},
+        ],
+        'description': 'Query active patient medications by start date'
+      },
+      {
+        'collection': 'patient_vitals',
+        'fields': [
+          {'field': 'patientId', 'order': 'ASC'},
+          {'field': 'recordedAt', 'order': 'DESC'},
+        ],
+        'description': 'Query patient vital signs by date'
+      },
+      {
+        'collection': 'doctor_access_logs',
+        'fields': [
+          {'field': 'doctorId', 'order': 'ASC'},
+          {'field': 'patientId', 'order': 'ASC'},
+          {'field': 'accessTime', 'order': 'DESC'},
+        ],
+        'description': 'Query doctor access logs for audit trail'
+      },
     ];
+  }
+
+  /// Generate firestore.indexes.json content
+  static String generateIndexesJson() {
+    final indexes = getRequiredIndexes();
+    final indexesJson = indexes.map((index) => {
+      'collectionGroup': index['collection'],
+      'queryScope': 'COLLECTION',
+      'fields': (index['fields'] as List).map((field) => {
+        'fieldPath': field['field'],
+        'order': field['order'] == 'ASC' ? 'ASCENDING' : 'DESCENDING',
+      }).toList(),
+    }).toList();
+
+    return '''
+{
+  "indexes": ${_prettyPrintJson(indexesJson)},
+  "fieldOverrides": []
+}
+''';
+  }
+
+  /// Pretty print JSON for better readability
+  static String _prettyPrintJson(dynamic json) {
+    // Simple JSON formatting - in production you might want to use a proper JSON formatter
+    return json.toString().replaceAll('{', '{\n    ').replaceAll('}', '\n  }');
+  }
+
+  /// Validate that all required indexes exist (for development)
+  static Future<List<String>> validateIndexes() async {
+    final missingIndexes = <String>[];
+    
+    // This would need to be implemented with actual Firestore admin SDK
+    // For now, just return empty list
+    
+    return missingIndexes;
+  }
+
+  /// Create deployment script for indexes
+  static String generateDeploymentScript() {
+    return '''
+#!/bin/bash
+# Firestore Index Deployment Script
+
+echo "🔥 Deploying Firestore Indexes..."
+
+# Deploy indexes
+firebase deploy --only firestore:indexes
+
+echo "✅ Firestore indexes deployed successfully!"
+echo ""
+echo "📋 Next steps:"
+echo "1. Wait for indexes to build (check Firebase Console)"
+echo "2. Test your queries"
+echo "3. Monitor index usage in Firebase Console"
+''';
   }
 }
 
-/// Data class for index status information
-class IndexStatus {
-  final bool isReady;
-  final String message;
-  final String recommendation;
+/// Extension to add index error handling to common Firestore operations
+extension FirestoreQueryExtension on Future {
+  /// Add automatic index error handling to any Future
+  Future<T> withIndexErrorHandling<T>({
+    String? context,
+    T? fallbackValue,
+  }) {
+    return FirestoreIndexHelper.handleQuery<T>(
+      () => this as Future<T>,
+      context: context,
+      fallbackValue: fallbackValue,
+    );
+  }
+}
 
-  const IndexStatus({
-    required this.isReady,
-    required this.message,
-    required this.recommendation,
-  });
+/// Extension to add index error handling to Firestore streams
+extension FirestoreStreamExtension<T> on Stream<T> {
+  /// Add automatic index error handling to any Stream
+  Stream<T> withIndexErrorHandling({
+    String? context,
+    T? fallbackValue,
+  }) {
+    return FirestoreIndexHelper.handleStream<T>(
+      () => this,
+      context: context,
+      fallbackValue: fallbackValue,
+    );
+  }
 }

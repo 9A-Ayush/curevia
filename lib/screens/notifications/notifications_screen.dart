@@ -6,6 +6,7 @@ import '../../services/notifications/notification_manager.dart';
 import '../../services/notifications/notification_handler.dart';
 import '../../utils/theme_utils.dart';
 import '../../widgets/common/custom_button.dart';
+import '../../providers/auth_provider.dart';
 
 /// Notifications screen to display all notifications
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -39,8 +40,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     setState(() => _isLoading = true);
     
     try {
-      final allNotifications = await NotificationManager.instance.getAllNotifications();
-      final unreadNotifications = await NotificationManager.instance.getUnreadNotifications();
+      // Get current user role
+      final userModel = ref.read(currentUserModelProvider);
+      final userRole = userModel?.role ?? 'patient';
+      
+      // Load notifications filtered by role
+      final allNotifications = await NotificationManager.instance.getAllNotifications(userRole: userRole);
+      final unreadNotifications = await NotificationManager.instance.getUnreadNotifications(userRole: userRole);
       
       setState(() {
         _allNotifications = allNotifications;

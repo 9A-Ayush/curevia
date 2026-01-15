@@ -22,6 +22,19 @@ class ValidationUtils {
     return null;
   }
 
+  /// Formats phone number to digits only (removes spaces, dashes, etc.)
+  static String? formatPhoneNumber(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    
+    // Remove any non-digit characters
+    final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // Return null if empty after cleaning, otherwise return cleaned digits
+    return digitsOnly.isEmpty ? null : digitsOnly;
+  }
+
   /// Validates email addresses
   /// Returns null if valid, error message if invalid
   static String? validateEmail(String? value, {bool isRequired = false}) {

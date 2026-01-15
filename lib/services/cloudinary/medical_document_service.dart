@@ -2,7 +2,11 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:path/path.dart' as path;
 import '../../models/medical_document_model.dart';
+import '../../models/medical_record_model.dart';
 import '../cloudinary_service.dart';
+import '../medical_data_extraction_service.dart';
+import '../firebase/medical_record_service.dart';
+import '../../constants/app_constants.dart';
 
 /// Service for managing medical documents with Cloudinary storage
 class CloudinaryMedicalDocumentService {
@@ -10,7 +14,7 @@ class CloudinaryMedicalDocumentService {
   static const String _collection = 'medical_documents';
   static const String _cloudinaryFolder = 'medical_documents';
 
-  /// Upload a medical document to Cloudinary
+  /// Upload a medical document to Cloudinary and extract medical data
   static Future<String> uploadDocument({
     required String patientId,
     required File file,
@@ -20,6 +24,7 @@ class CloudinaryMedicalDocumentService {
     String? appointmentId,
     DateTime? reportDate,
     List<String> tags = const [],
+    String? extractedText, // Optional: pre-extracted text from OCR
   }) async {
     try {
       final fileName = path.basename(file.path);
@@ -67,8 +72,8 @@ class CloudinaryMedicalDocumentService {
         documentType: documentType,
         category: category,
         uploadedAt: DateTime.now(),
-        reportDate: reportDate,
-        uploadedBy: patientId, // Assuming patient uploads their own documents
+        reportDate: reportDate ?? DateTime.now(),
+        uploadedBy: patientId,
         doctorId: doctorId,
         appointmentId: appointmentId,
         description: description,
@@ -84,6 +89,26 @@ class CloudinaryMedicalDocumentService {
           .add(document.toFirestore());
 
       print('Document uploaded successfully with ID: ${docRef.id}');
+
+      // Extract medical data if text is available or if it's a text-based document
+      if (extractedText != null || documentType == DocumentType.text) {
+        await _extractAndSaveMedicalData(
+          patientId: patientId,
+          documentId: docRef.id,
+          documentText: extractedText ?? description ?? fileName,
+          documentTitle: fileName,
+          documentDate: reportDate ?? DateTime.now(),
+          doctorName: doctorId != null ? 'Doctor' : null, // Could be enhanced to get actual doctor name
+        );
+      }
+
+      // Also create a medical record entry for better integration
+      await _createMedicalRecordFromDocument(
+        patientId: patientId,
+        document: document.copyWith(id: docRef.id),
+        extractedText: extractedText,
+      );
+
       return docRef.id;
     } catch (e) {
       print('Error uploading document: $e');
@@ -482,6 +507,127 @@ class CloudinaryMedicalDocumentService {
       case DocumentType.text:
       case DocumentType.other:
         return 'raw';
+    }
+  }
+
+  /// Extract and save medical data from document
+  static Future<void> _extractAndSaveMedicalData({
+    required String patientId,
+    required String documentId,
+    required String documentText,
+    required String documentTitle,
+    required DateTime documentDate,
+    String? doctorName,
+  }) async {
+    try {
+      print('Extracting medical data from document...');
+      
+      final extractedData = await MedicalDataExtractionService.extractMedicalData(
+        patientId: patientId,
+        documentText: documentText,
+        documentTitle: documentTitle,
+        documentDate: documentDate,
+        doctorName: doctorName,
+      );
+
+      if (extractedData.hasData) {
+        await MedicalDataExtractionService.saveExtractedData(
+          patientId: patientId,
+          extractedData: extractedData,
+          sourceDocumentId: documentId,
+        );
+        
+        print('Medical data extracted and saved: ${extractedData.vitals.length} vitals, ${extractedData.allergies.length} allergies, ${extractedData.medications.length} medications');
+      } else {
+        print('No medical data found in document');
+      }
+    } catch (e) {
+      print('Error extracting medical data: $e');
+      // Don't throw error - document upload should succeed even if extraction fails
+    }
+  }
+
+  /// Create a medical record from uploaded document
+  static Future<void> _createMedicalRecordFromDocument({
+    required String patientId,
+    required MedicalDocument document,
+    String? extractedText,
+  }) async {
+    try {
+      print('Creating medical record from document...');
+      
+      // Determine record type based on document category
+      String recordType = 'consultation';
+      switch (document.category) {
+        case DocumentCategory.labReport:
+          recordType = 'lab_test';
+          break;
+        case DocumentCategory.prescription:
+          recordType = 'prescription';
+          break;
+        case DocumentCategory.vaccination:
+          recordType = 'vaccination';
+          break;
+        case DocumentCategory.xray:
+        case DocumentCategory.ctScan:
+        case DocumentCategory.mri:
+        case DocumentCategory.ultrasound:
+          recordType = 'checkup';
+          break;
+        default:
+          recordType = 'consultation';
+      }
+
+      // Extract basic info from text if available
+      String? diagnosis;
+      String? treatment;
+      String? prescription;
+      
+      if (extractedText != null) {
+        final text = extractedText.toLowerCase();
+        
+        // Look for diagnosis
+        final diagnosisMatch = RegExp(r'(?:diagnosis|impression|findings?):\s*(.*?)(?:\n|$)', 
+            caseSensitive: false).firstMatch(text);
+        if (diagnosisMatch != null) {
+          diagnosis = diagnosisMatch.group(1)?.trim();
+        }
+        
+        // Look for treatment
+        final treatmentMatch = RegExp(r'(?:treatment|plan|recommendation):\s*(.*?)(?:\n|$)', 
+            caseSensitive: false).firstMatch(text);
+        if (treatmentMatch != null) {
+          treatment = treatmentMatch.group(1)?.trim();
+        }
+        
+        // Look for prescription
+        final prescriptionMatch = RegExp(r'(?:prescription|medications?):\s*(.*?)(?:\n\n|\n[A-Z]|$)', 
+            caseSensitive: false, dotAll: true).firstMatch(text);
+        if (prescriptionMatch != null) {
+          prescription = prescriptionMatch.group(1)?.trim();
+        }
+      }
+
+      // Create medical record
+      await MedicalRecordService.addMedicalRecord(
+        userId: patientId,
+        title: document.originalFileName.replaceAll(RegExp(r'\.[^.]+$'), ''), // Remove extension
+        type: recordType,
+        recordDate: document.reportDate ?? DateTime.now(),
+        doctorName: document.doctorId != null ? 'Doctor' : null,
+        diagnosis: diagnosis,
+        treatment: treatment,
+        prescription: prescription,
+        notes: document.description ?? 'Uploaded document: ${document.originalFileName}',
+        attachments: [document.fileUrl],
+        vitals: {}, // Will be populated by extraction service
+        labResults: {}, // Will be populated by extraction service
+      );
+      
+      print('Medical record created from document');
+    } catch (e) {
+      print('Error creating medical record from document: $e');
+      // Don't throw error - document upload should succeed even if record creation fails
     }
   }
 }

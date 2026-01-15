@@ -28,9 +28,10 @@ class SymptomCheckerWelcomeScreen extends ConsumerWidget {
           child: Column(
             children: [
               Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                     // Medical icon
                     Container(
                       width: 120,
@@ -107,6 +108,7 @@ class SymptomCheckerWelcomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
+                ),
                 ),
               ),
               

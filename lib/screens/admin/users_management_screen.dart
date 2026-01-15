@@ -305,14 +305,16 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
               icon: const Icon(Icons.visibility, size: 18),
               label: const Text('View'),
             ),
-            TextButton.icon(
-              onPressed: () => _toggleUserStatus(userId, isActive),
-              icon: Icon(isActive ? Icons.block : Icons.check_circle, size: 18),
-              label: Text(isActive ? 'Deactivate' : 'Activate'),
-              style: TextButton.styleFrom(
-                foregroundColor: isActive ? AppColors.error : AppColors.success,
+            // Hide deactivate button for admin users
+            if (role != 'admin')
+              TextButton.icon(
+                onPressed: () => _toggleUserStatus(userId, isActive),
+                icon: Icon(isActive ? Icons.block : Icons.check_circle, size: 18),
+                label: Text(isActive ? 'Deactivate' : 'Activate'),
+                style: TextButton.styleFrom(
+                  foregroundColor: isActive ? AppColors.error : AppColors.success,
+                ),
               ),
-            ),
           ],
         ),
       ],
@@ -379,12 +381,14 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
               icon: const Icon(Icons.visibility),
               tooltip: 'View Details',
             ),
-            IconButton(
-              onPressed: () => _toggleUserStatus(userId, isActive),
-              icon: Icon(isActive ? Icons.block : Icons.check_circle),
-              tooltip: isActive ? 'Deactivate' : 'Activate',
-              color: isActive ? AppColors.error : AppColors.success,
-            ),
+            // Hide deactivate button for admin users
+            if (role != 'admin')
+              IconButton(
+                onPressed: () => _toggleUserStatus(userId, isActive),
+                icon: Icon(isActive ? Icons.block : Icons.check_circle),
+                tooltip: isActive ? 'Deactivate' : 'Activate',
+                color: isActive ? AppColors.error : AppColors.success,
+              ),
           ],
         ),
       ],

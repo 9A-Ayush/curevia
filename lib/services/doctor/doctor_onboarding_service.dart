@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/doctor_model.dart';
 import '../image_upload_service.dart';
+import '../notifications/role_based_notification_service.dart';
 
 /// Service for handling doctor onboarding operations
 class DoctorOnboardingService {
@@ -257,6 +258,10 @@ class DoctorOnboardingService {
   /// Submit profile for verification
   static Future<bool> submitForVerification(String doctorId) async {
     try {
+      // Get doctor data first
+      final doctorDoc = await _firestore.collection('doctors').doc(doctorId).get();
+      final doctorData = doctorDoc.data();
+      
       // Update doctor document (use set with merge to ensure it exists)
       await _firestore.collection('doctors').doc(doctorId).set(
         {
@@ -278,9 +283,57 @@ class DoctorOnboardingService {
         'reason': null,
       });
 
+      // Send notification to admins
+      try {
+        // Get admin FCM tokens
+        final adminTokens = await _getAdminFCMTokens();
+        
+        if (adminTokens.isNotEmpty && doctorData != null) {
+          // Send notification using RoleBasedNotificationService
+          await RoleBasedNotificationService.instance.sendDoctorVerificationRequestToAdmin(
+            adminFCMTokens: adminTokens,
+            doctorId: doctorId,
+            doctorName: doctorData['fullName'] ?? 'Unknown Doctor',
+            email: doctorData['email'] ?? '',
+            specialization: doctorData['specialty'] ?? 'General Medicine',
+            phoneNumber: doctorData['phoneNumber'] ?? '',
+          );
+          
+          print('✅ Sent verification notification to ${adminTokens.length} admin(s)');
+        } else {
+          print('⚠️ No admin FCM tokens found or doctor data missing');
+        }
+      } catch (notificationError) {
+        // Don't fail the submission if notification fails
+        print('⚠️ Failed to send admin notification: $notificationError');
+      }
+
       return true;
     } catch (e) {
       throw Exception('Error submitting for verification: $e');
+    }
+  }
+
+  /// Get admin FCM tokens from Firestore
+  static Future<List<String>> _getAdminFCMTokens() async {
+    try {
+      final adminsSnapshot = await _firestore
+          .collection('users')
+          .where('role', isEqualTo: 'admin')
+          .get();
+      
+      final tokens = <String>[];
+      for (final doc in adminsSnapshot.docs) {
+        final fcmToken = doc.data()['fcmToken'] as String?;
+        if (fcmToken != null && fcmToken.isNotEmpty) {
+          tokens.add(fcmToken);
+        }
+      }
+      
+      return tokens;
+    } catch (e) {
+      print('Error getting admin FCM tokens: $e');
+      return [];
     }
   }
 
@@ -370,6 +423,27 @@ class DoctorOnboardingService {
         
         processedData['pdfUrl'] = pdfUrl;
         processedData.remove('pdfFile'); // Remove the File object
+      }
+      
+      // Sync phone number and full name to user document if provided
+      if (data['phoneNumber'] != null || data['fullName'] != null) {
+        try {
+          final updateData = <String, dynamic>{};
+          if (data['phoneNumber'] != null && data['phoneNumber'].toString().trim().isNotEmpty) {
+            updateData['phoneNumber'] = data['phoneNumber'].toString().trim();
+          }
+          if (data['fullName'] != null && data['fullName'].toString().trim().isNotEmpty) {
+            updateData['fullName'] = data['fullName'].toString().trim();
+          }
+          
+          if (updateData.isNotEmpty) {
+            updateData['updatedAt'] = FieldValue.serverTimestamp();
+            await _firestore.collection('users').doc(doctorId).update(updateData);
+          }
+        } catch (e) {
+          // Log error but don't fail the entire operation
+          print('Warning: Failed to sync data to user document: $e');
+        }
       }
       
       return await saveDoctorOnboardingStep(doctorId, 2, processedData);

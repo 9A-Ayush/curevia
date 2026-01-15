@@ -2,14 +2,33 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../models/symptom_analysis_model.dart';
+import '../../config/ai_config.dart';
 
-/// Service for AI-powered symptom analysis
+/// Custom exception for Gemini API errors
+class GeminiAPIException implements Exception {
+  final int statusCode;
+  final String message;
+  
+  GeminiAPIException({required this.statusCode, required this.message});
+  
+  @override
+  String toString() {
+    if (statusCode == 503) {
+      return 'The AI service is currently overloaded. Please try again in a few moments.';
+    } else if (statusCode == 429) {
+      return 'Too many requests. Please wait a moment and try again.';
+    } else if (statusCode == 403) {
+      return 'API access denied. Please check your API key configuration.';
+    } else if (statusCode == 400) {
+      return 'Invalid request. Please check your input and try again.';
+    }
+    return 'AI service error (Code: $statusCode). Please try again later.';
+  }
+}
+
+/// Service for AI-powered symptom analysis using Gemini
 class SymptomAnalysisService {
-  static const String _baseUrl = 'https://api.openai.com/v1';
-  static const String _apiKey =
-      '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'; // TODO: Move to environment variables
-
-  /// Analyze symptoms using AI
+  /// Analyze symptoms using Gemini AI
   static Future<SymptomAnalysisResult> analyzeSymptoms({
     required List<String> symptoms,
     required String description,
@@ -20,6 +39,11 @@ class SymptomAnalysisService {
     String? severity,
   }) async {
     try {
+      print('=== ANALYZING SYMPTOMS WITH GEMINI ===');
+      print('Symptoms: ${symptoms.join(", ")}');
+      print('Age: $age, Gender: $gender');
+      print('Duration: $duration, Severity: $severity');
+      
       // Prepare the prompt for AI analysis
       final prompt = _buildAnalysisPrompt(
         symptoms: symptoms,
@@ -30,14 +54,20 @@ class SymptomAnalysisService {
         severity: severity,
       );
 
-      // For now, return mock data since we need to set up OpenAI API properly
-      return _getMockAnalysisResult(symptoms);
-
-      // TODO: Implement actual OpenAI API call
-      // final response = await _callOpenAI(prompt, images);
-      // return _parseAnalysisResponse(response);
+      // Call Gemini API with retry logic
+      final response = await _callGeminiAPI(prompt);
+      
+      // Parse the response
+      return _parseAnalysisResponse(response, symptoms);
+    } on GeminiAPIException catch (e) {
+      print('Gemini API Exception: $e');
+      // Return user-friendly error in the result
+      throw Exception(e.toString());
     } catch (e) {
-      throw Exception('Failed to analyze symptoms: $e');
+      print('Error analyzing symptoms: $e');
+      // Return fallback result instead of throwing
+      print('Returning fallback result due to error');
+      return _getFallbackResult(symptoms);
     }
   }
 
@@ -51,199 +81,247 @@ class SymptomAnalysisService {
     String? severity,
   }) {
     return '''
-You are a medical AI assistant. Analyze the following symptoms and provide a preliminary assessment.
+You are a medical AI assistant. Analyze the following symptoms and provide a preliminary assessment in JSON format.
 
 Patient Information:
-- Age: $age
+- Age: $age years
 - Gender: $gender
+${duration != null ? '- Duration: $duration' : ''}
+${severity != null ? '- Severity: $severity' : ''}
 
 Symptoms: ${symptoms.join(', ')}
 
-Description: $description
+Additional Description: $description
 
-${duration != null ? 'Duration: $duration' : ''}
-${severity != null ? 'Severity: $severity' : ''}
+Please provide your analysis in the following JSON format:
+{
+  "possibleConditions": [
+    {
+      "name": "Condition Name",
+      "probability": "High/Medium/Low",
+      "description": "Brief description"
+    }
+  ],
+  "recommendations": [
+    "Recommendation 1",
+    "Recommendation 2"
+  ],
+  "urgentSigns": [
+    "Sign 1 that requires immediate care",
+    "Sign 2 that requires immediate care"
+  ],
+  "suggestedSpecialist": "Type of specialist",
+  "confidence": "High/Medium/Low"
+}
 
-Please provide:
-1. Possible conditions (with probability levels)
-2. Recommended actions
-3. When to seek immediate medical care
-4. Suggested specialist type if needed
-
-Important: This is for preliminary assessment only and should not replace professional medical advice.
+Important: 
+- Provide 2-4 possible conditions ranked by probability
+- Give 3-5 practical recommendations
+- List 3-5 urgent warning signs
+- Suggest the most appropriate specialist
+- This is for preliminary assessment only and should not replace professional medical advice
+- Be specific and practical in your recommendations
+- Consider the patient's age and gender in your analysis
 ''';
   }
 
-  /// Mock analysis result for development
-  static SymptomAnalysisResult _getMockAnalysisResult(List<String> symptoms) {
-    // Generate mock results based on symptoms
-    List<PossibleCondition> conditions = [];
-    List<String> recommendations = [];
-    List<String> urgentSigns = [];
-    String? suggestedSpecialist;
-
-    // Basic logic for common symptoms
-    if (symptoms.contains('Fever') || symptoms.contains('Headache')) {
-      conditions.addAll([
-        PossibleCondition(
-          name: 'Viral Infection',
-          probability: 'High',
-          description:
-              'Common viral infection causing fever and general symptoms',
-        ),
-        PossibleCondition(
-          name: 'Bacterial Infection',
-          probability: 'Medium',
-          description:
-              'Possible bacterial infection requiring medical evaluation',
-        ),
-      ]);
-      recommendations.addAll([
-        'Rest and stay hydrated',
-        'Monitor temperature regularly',
-        'Take over-the-counter fever reducers if needed',
-      ]);
-      urgentSigns.addAll([
-        'Fever above 103°F (39.4°C)',
-        'Severe headache with neck stiffness',
-        'Difficulty breathing',
-      ]);
-      suggestedSpecialist = 'General Practitioner';
-    }
-
-    if (symptoms.contains('Cough') ||
-        symptoms.contains('Shortness of breath')) {
-      conditions.add(
-        PossibleCondition(
-          name: 'Respiratory Infection',
-          probability: 'High',
-          description: 'Upper or lower respiratory tract infection',
-        ),
+  /// Call Gemini API with retry logic
+  static Future<String> _callGeminiAPI(String prompt, {int retryCount = 0}) async {
+    const maxRetries = 3;
+    const retryDelay = Duration(seconds: 2);
+    
+    try {
+      final url = Uri.parse(
+        '${AIConfig.geminiBaseUrl}/models/${AIConfig.geminiModel}:generateContent?key=${AIConfig.geminiApiKey}',
       );
-      recommendations.addAll([
-        'Stay hydrated and rest',
-        'Use a humidifier',
-        'Avoid irritants like smoke',
-      ]);
-      urgentSigns.addAll([
-        'Severe difficulty breathing',
-        'Chest pain',
-        'Coughing up blood',
-      ]);
-      suggestedSpecialist = 'Pulmonologist';
-    }
 
-    if (symptoms.contains('Stomach pain') || symptoms.contains('Nausea')) {
-      conditions.add(
-        PossibleCondition(
-          name: 'Gastroenteritis',
-          probability: 'Medium',
-          description: 'Inflammation of the stomach and intestines',
-        ),
-      );
-      recommendations.addAll([
-        'Stay hydrated with clear fluids',
-        'Follow BRAT diet (Bananas, Rice, Applesauce, Toast)',
-        'Avoid dairy and fatty foods',
-      ]);
-      urgentSigns.addAll([
-        'Severe dehydration',
-        'Blood in vomit or stool',
-        'Severe abdominal pain',
-      ]);
-      suggestedSpecialist = 'Gastroenterologist';
-    }
+      final requestBody = {
+        'contents': [
+          {
+            'parts': [
+              {'text': prompt}
+            ]
+          }
+        ],
+        'generationConfig': {
+          'temperature': AIConfig.temperature,
+          'topK': AIConfig.topK,
+          'topP': AIConfig.topP,
+          'maxOutputTokens': AIConfig.maxOutputTokens,
+        },
+        'safetySettings': AIConfig.safetySettings.entries.map((entry) {
+          return {
+            'category': entry.key,
+            'threshold': entry.value,
+          };
+        }).toList(),
+      };
 
-    // Default recommendations if none specific
-    if (recommendations.isEmpty) {
-      recommendations.addAll([
-        'Monitor symptoms closely',
-        'Rest and maintain good hydration',
-        'Consider consulting a healthcare provider',
-      ]);
-    }
+      print('Calling Gemini API (attempt ${retryCount + 1}/$maxRetries)...');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(requestBody),
+      ).timeout(const Duration(seconds: 30));
 
-    // Default urgent signs
-    if (urgentSigns.isEmpty) {
-      urgentSigns.addAll([
-        'Symptoms rapidly worsening',
-        'High fever (>101.3°F)',
-        'Severe pain',
-        'Difficulty breathing',
-      ]);
-    }
+      print('Gemini API Response Status: ${response.statusCode}');
 
-    return SymptomAnalysisResult(
-      possibleConditions: conditions,
-      recommendations: recommendations,
-      urgentSigns: urgentSigns,
-      suggestedSpecialist: suggestedSpecialist ?? 'General Practitioner',
-      confidence: 'Medium',
-      disclaimer:
-          'This is a preliminary assessment based on AI analysis. Please consult with a healthcare professional for proper diagnosis and treatment.',
-    );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final text = data['candidates'][0]['content']['parts'][0]['text'] as String;
+        print('Gemini Response received: ${text.substring(0, text.length > 200 ? 200 : text.length)}...');
+        return text;
+      } else if (response.statusCode == 503 && retryCount < maxRetries - 1) {
+        // Model overloaded - retry after delay
+        print('Model overloaded (503), retrying in ${retryDelay.inSeconds} seconds...');
+        await Future.delayed(retryDelay);
+        return _callGeminiAPI(prompt, retryCount: retryCount + 1);
+      } else if (response.statusCode == 429 && retryCount < maxRetries - 1) {
+        // Rate limit - retry after longer delay
+        print('Rate limited (429), retrying in ${retryDelay.inSeconds * 2} seconds...');
+        await Future.delayed(retryDelay * 2);
+        return _callGeminiAPI(prompt, retryCount: retryCount + 1);
+      } else {
+        print('Gemini API Error: ${response.body}');
+        throw GeminiAPIException(
+          statusCode: response.statusCode,
+          message: response.body,
+        );
+      }
+    } catch (e) {
+      if (e is GeminiAPIException) {
+        rethrow;
+      }
+      print('Error calling Gemini API: $e');
+      
+      // Retry on network errors
+      if (retryCount < maxRetries - 1) {
+        print('Network error, retrying in ${retryDelay.inSeconds} seconds...');
+        await Future.delayed(retryDelay);
+        return _callGeminiAPI(prompt, retryCount: retryCount + 1);
+      }
+      
+      throw Exception('Failed to connect to Gemini API after $maxRetries attempts: $e');
+    }
   }
 
-  /// Call OpenAI API (to be implemented)
-  static Future<Map<String, dynamic>> _callOpenAI(
-    String prompt,
-    List<File>? images,
-  ) async {
-    // TODO: Implement OpenAI API integration
-    throw UnimplementedError('OpenAI API integration not yet implemented');
-  }
-
-  /// Parse AI response (to be implemented)
+  /// Parse AI response
   static SymptomAnalysisResult _parseAnalysisResponse(
-    Map<String, dynamic> response,
+    String response,
+    List<String> symptoms,
   ) {
-    // TODO: Parse OpenAI response and create SymptomAnalysisResult
-    throw UnimplementedError('Response parsing not yet implemented');
+    try {
+      // Extract JSON from response (Gemini might wrap it in markdown)
+      String jsonStr = response.trim();
+      
+      // Remove markdown code blocks if present
+      if (jsonStr.startsWith('```json')) {
+        jsonStr = jsonStr.substring(7);
+      } else if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.substring(3);
+      }
+      if (jsonStr.endsWith('```')) {
+        jsonStr = jsonStr.substring(0, jsonStr.length - 3);
+      }
+      jsonStr = jsonStr.trim();
+
+      print('Parsing JSON response...');
+      final data = json.decode(jsonStr);
+
+      // Parse possible conditions
+      final List<PossibleCondition> conditions = [];
+      if (data['possibleConditions'] != null) {
+        for (final condition in data['possibleConditions']) {
+          conditions.add(PossibleCondition(
+            name: condition['name'] ?? 'Unknown Condition',
+            probability: condition['probability'] ?? 'Medium',
+            description: condition['description'] ?? '',
+          ));
+        }
+      }
+
+      // Parse recommendations
+      final List<String> recommendations = [];
+      if (data['recommendations'] != null) {
+        for (final rec in data['recommendations']) {
+          recommendations.add(rec.toString());
+        }
+      }
+
+      // Parse urgent signs
+      final List<String> urgentSigns = [];
+      if (data['urgentSigns'] != null) {
+        for (final sign in data['urgentSigns']) {
+          urgentSigns.add(sign.toString());
+        }
+      }
+
+      print('Successfully parsed analysis result');
+      return SymptomAnalysisResult(
+        possibleConditions: conditions.isNotEmpty ? conditions : _getDefaultConditions(symptoms),
+        recommendations: recommendations.isNotEmpty ? recommendations : _getDefaultRecommendations(),
+        urgentSigns: urgentSigns.isNotEmpty ? urgentSigns : _getDefaultUrgentSigns(),
+        suggestedSpecialist: data['suggestedSpecialist']?.toString() ?? 'General Practitioner',
+        confidence: data['confidence']?.toString() ?? 'Medium',
+        disclaimer:
+            'This is a preliminary assessment based on AI analysis. Please consult with a healthcare professional for proper diagnosis and treatment.',
+      );
+    } catch (e) {
+      print('Error parsing Gemini response: $e');
+      print('Response was: $response');
+      // Return fallback result
+      return _getFallbackResult(symptoms);
+    }
+  }
+
+  /// Get default conditions as fallback
+  static List<PossibleCondition> _getDefaultConditions(List<String> symptoms) {
+    return [
+      PossibleCondition(
+        name: 'Multiple Possible Conditions',
+        probability: 'Medium',
+        description: 'Based on your symptoms, several conditions are possible. Please consult a healthcare provider for accurate diagnosis.',
+      ),
+    ];
+  }
+
+  /// Get default recommendations as fallback
+  static List<String> _getDefaultRecommendations() {
+    return [
+      'Monitor your symptoms closely',
+      'Rest and stay well hydrated',
+      'Maintain good hygiene practices',
+      'Consult a healthcare provider if symptoms persist or worsen',
+    ];
+  }
+
+  /// Get default urgent signs as fallback
+  static List<String> _getDefaultUrgentSigns() {
+    return [
+      'Symptoms rapidly worsening',
+      'High fever (>103°F or 39.4°C)',
+      'Severe pain or discomfort',
+      'Difficulty breathing',
+      'Loss of consciousness or confusion',
+    ];
+  }
+
+  /// Get fallback result when parsing fails
+  static SymptomAnalysisResult _getFallbackResult(List<String> symptoms) {
+    return SymptomAnalysisResult(
+      possibleConditions: _getDefaultConditions(symptoms),
+      recommendations: _getDefaultRecommendations(),
+      urgentSigns: _getDefaultUrgentSigns(),
+      suggestedSpecialist: 'General Practitioner',
+      confidence: 'Low',
+      disclaimer:
+          'Unable to complete full analysis. This is a preliminary assessment. Please consult with a healthcare professional for proper diagnosis and treatment.',
+    );
   }
 
   /// Upload and analyze images (to be implemented)
   static Future<String> analyzeSymptomImages(List<File> images) async {
-    // TODO: Implement image analysis using OpenAI Vision API
+    // TODO: Implement image analysis using Gemini Vision API
     return 'Image analysis not yet implemented';
-  }
-
-  /// Get health tips based on symptoms
-  static List<String> getHealthTips(List<String> symptoms) {
-    List<String> tips = [];
-
-    if (symptoms.contains('Fever')) {
-      tips.addAll([
-        'Drink plenty of fluids to prevent dehydration',
-        'Rest in a cool, comfortable environment',
-        'Use light clothing and bedding',
-      ]);
-    }
-
-    if (symptoms.contains('Cough')) {
-      tips.addAll([
-        'Stay hydrated to thin mucus',
-        'Use honey to soothe throat (not for children under 1 year)',
-        'Avoid smoking and secondhand smoke',
-      ]);
-    }
-
-    if (symptoms.contains('Headache')) {
-      tips.addAll([
-        'Apply cold or warm compress to head or neck',
-        'Practice relaxation techniques',
-        'Ensure adequate sleep',
-      ]);
-    }
-
-    if (tips.isEmpty) {
-      tips.addAll([
-        'Maintain good hygiene practices',
-        'Get adequate rest and sleep',
-        'Stay hydrated throughout the day',
-        'Eat a balanced, nutritious diet',
-      ]);
-    }
-
-    return tips;
   }
 }

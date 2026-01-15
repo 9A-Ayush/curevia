@@ -284,12 +284,18 @@ class NotificationManager {
   // NOTIFICATION HISTORY
 
   /// Get all notifications
-  Future<List<NotificationModel>> getAllNotifications() async {
+  Future<List<NotificationModel>> getAllNotifications({String? userRole}) async {
+    if (userRole != null) {
+      return await NotificationStorageService.getNotificationsForRole(userRole);
+    }
     return await NotificationStorageService.getAllNotifications();
   }
 
   /// Get unread notifications
-  Future<List<NotificationModel>> getUnreadNotifications() async {
+  Future<List<NotificationModel>> getUnreadNotifications({String? userRole}) async {
+    if (userRole != null) {
+      return await NotificationStorageService.getUnreadNotificationsForRole(userRole);
+    }
     return await NotificationStorageService.getUnreadNotifications();
   }
 

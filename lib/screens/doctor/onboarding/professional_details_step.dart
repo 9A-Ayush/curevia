@@ -116,8 +116,8 @@ class _ProfessionalDetailsStepState extends ConsumerState<ProfessionalDetailsSte
   }
 
   void _loadInitialData() {
-    _nameController.text = widget.initialData['name'] ?? '';
-    _phoneController.text = widget.initialData['phone'] ?? '';
+    _nameController.text = widget.initialData['fullName'] ?? '';
+    _phoneController.text = widget.initialData['phoneNumber'] ?? '';
     _emailController.text = widget.initialData['email'] ?? '';
     _licenseController.text = widget.initialData['licenseNumber'] ?? '';
     _registrationController.text = widget.initialData['registrationNumber'] ?? '';
@@ -423,8 +423,8 @@ class _ProfessionalDetailsStepState extends ConsumerState<ProfessionalDetailsSte
 
       // Prepare data
       final data = {
-        'name': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
+        'fullName': _nameController.text.trim(),
+        'phoneNumber': ValidationUtils.formatPhoneNumber(_phoneController.text),
         'email': _emailController.text.trim(),
         'licenseNumber': _licenseController.text.trim(),
         'registrationNumber': _registrationController.text.trim(),
@@ -683,12 +683,13 @@ class _ProfessionalDetailsStepState extends ConsumerState<ProfessionalDetailsSte
     return _buildStyledTextField(
       controller: _emailController,
       label: 'Email Address',
-      hint: 'Enter your email address',
+      hint: 'Your registered email address',
       icon: Icons.email,
       keyboardType: TextInputType.emailAddress,
+      enabled: false, // Make email read-only since it comes from user account
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return 'Please enter your email address';
+          return 'Email address is required';
         }
         if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
           return 'Please enter a valid email address';
@@ -1123,6 +1124,7 @@ class _ProfessionalDetailsStepState extends ConsumerState<ProfessionalDetailsSte
     int maxLines = 1,
     String? Function(String?)? validator,
     List<TextInputFormatter>? inputFormatters,
+    bool enabled = true, // Add enabled parameter
   }) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDarkMode ? AppColors.darkPrimary : AppColors.primary;
@@ -1156,12 +1158,15 @@ class _ProfessionalDetailsStepState extends ConsumerState<ProfessionalDetailsSte
           ),
           child: TextFormField(
             controller: controller,
+            enabled: enabled, // Add enabled property
             keyboardType: keyboardType,
             textCapitalization: textCapitalization ?? TextCapitalization.none,
             maxLines: maxLines,
             validator: validator,
             inputFormatters: inputFormatters,
-            style: TextStyle(color: textColor),
+            style: TextStyle(
+              color: enabled ? textColor : textColor.withOpacity(0.6),
+            ),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(
@@ -1196,7 +1201,7 @@ class _ProfessionalDetailsStepState extends ConsumerState<ProfessionalDetailsSte
                 ),
               ),
               filled: true,
-              fillColor: fillColor,
+              fillColor: enabled ? fillColor : fillColor.withOpacity(0.5),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
           ),

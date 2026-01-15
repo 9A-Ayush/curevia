@@ -47,6 +47,83 @@ class NotificationStorageService {
     }
   }
 
+  /// Get notifications for a specific user role
+  static Future<List<NotificationModel>> getNotificationsForRole(String userRole) async {
+    try {
+      final allNotifications = await getAllNotifications();
+      
+      // Define which notification types are for which roles
+      final patientNotificationTypes = [
+        NotificationType.appointmentBookingConfirmation,
+        NotificationType.appointmentReminder,
+        NotificationType.paymentSuccess,
+        NotificationType.healthTipsReminder,
+        NotificationType.doctorRescheduledAppointment,
+        NotificationType.engagementNotification,
+        NotificationType.fitnessGoalAchieved,
+        NotificationType.medicalReportShared,
+        NotificationType.general,
+      ];
+      
+      final doctorNotificationTypes = [
+        NotificationType.appointmentBooking,
+        NotificationType.paymentReceived,
+        NotificationType.appointmentRescheduledOrCancelled,
+        NotificationType.verificationStatusUpdate,
+        NotificationType.medicalReportShared,
+        NotificationType.general,
+      ];
+      
+      final adminNotificationTypes = [
+        NotificationType.doctorVerificationRequest,
+        NotificationType.general,
+      ];
+      
+      // Filter based on role
+      List<NotificationType> allowedTypes;
+      switch (userRole.toLowerCase()) {
+        case 'patient':
+          allowedTypes = patientNotificationTypes;
+          break;
+        case 'doctor':
+          allowedTypes = doctorNotificationTypes;
+          break;
+        case 'admin':
+          allowedTypes = adminNotificationTypes;
+          break;
+        default:
+          allowedTypes = [NotificationType.general];
+      }
+      
+      return allNotifications.where((n) => allowedTypes.contains(n.type)).toList();
+    } catch (e) {
+      print('Error getting notifications for role: $e');
+      return [];
+    }
+  }
+
+  /// Get unread notifications for a specific user role
+  static Future<List<NotificationModel>> getUnreadNotificationsForRole(String userRole) async {
+    try {
+      final roleNotifications = await getNotificationsForRole(userRole);
+      return roleNotifications.where((n) => !n.isRead).toList();
+    } catch (e) {
+      print('Error getting unread notifications for role: $e');
+      return [];
+    }
+  }
+
+  /// Get unread notification count for a specific user role
+  static Future<int> getUnreadNotificationCountForRole(String userRole) async {
+    try {
+      final unreadNotifications = await getUnreadNotificationsForRole(userRole);
+      return unreadNotifications.length;
+    } catch (e) {
+      print('Error getting unread notification count for role: $e');
+      return 0;
+    }
+  }
+
   /// Get notifications by type
   static Future<List<NotificationModel>> getNotificationsByType(NotificationType type) async {
     try {

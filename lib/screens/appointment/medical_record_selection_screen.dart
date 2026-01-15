@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../models/appointment_model.dart';
@@ -77,13 +78,14 @@ class _MedicalRecordSelectionScreenState
         CloudinaryMedicalDocumentService.getDocuments(patientId: user.uid),
         SecureMedicalSharingService.getPatientAllergies(user.uid),
         SecureMedicalSharingService.getPatientMedications(user.uid),
+        _getVitalsFromMedicalRecords(user.uid), // Get real vitals from medical records
       ]);
 
       setState(() {
         _documents = futures[0] as List<MedicalDocument>;
         _allergies = futures[1] as List<PatientAllergy>;
         _medications = futures[2] as List<PatientMedication>;
-        _vitals = _getMockVitals(); // In real app, load from user profile
+        _vitals = futures[3] as Map<String, dynamic>;
         _isLoading = false;
       });
     } catch (e) {
@@ -94,15 +96,71 @@ class _MedicalRecordSelectionScreenState
     }
   }
 
-  Map<String, dynamic> _getMockVitals() {
-    // In a real app, this would come from the user's profile or recent measurements
-    return {
-      'bloodPressure': '120/80',
-      'heartRate': '72',
-      'temperature': '98.6',
-      'weight': '70',
-      'height': '175',
-    };
+  /// Get vitals from medical records - same source as medical records
+  Future<Map<String, dynamic>> _getVitalsFromMedicalRecords(String patientId) async {
+    try {
+      // Get vitals from medical records
+      final medicalRecordsSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(patientId)
+          .collection('medical_records')
+          .orderBy('recordDate', descending: true)
+          .limit(10) // Get recent records
+          .get();
+
+      Map<String, dynamic> latestVitals = {};
+
+      for (final doc in medicalRecordsSnapshot.docs) {
+        final data = doc.data();
+        final vitalsData = Map<String, dynamic>.from(data['vitals'] ?? {});
+        
+        if (vitalsData.isNotEmpty) {
+          // Use the most recent vitals found
+          if (latestVitals.isEmpty) {
+            // Convert to display format
+            if (vitalsData['systolicBP'] != null && vitalsData['diastolicBP'] != null) {
+              latestVitals['bloodPressure'] = '${vitalsData['systolicBP']}/${vitalsData['diastolicBP']}';
+            }
+            if (vitalsData['heartRate'] != null) {
+              latestVitals['heartRate'] = vitalsData['heartRate'].toString();
+            }
+            if (vitalsData['temperature'] != null) {
+              latestVitals['temperature'] = vitalsData['temperature'].toString();
+            }
+            if (vitalsData['weight'] != null) {
+              latestVitals['weight'] = vitalsData['weight'].toString();
+            }
+            if (vitalsData['height'] != null) {
+              latestVitals['height'] = vitalsData['height'].toString();
+            }
+            break; // Use the most recent record with vitals
+          }
+        }
+      }
+
+      // If no vitals found in medical records, try user profile
+      if (latestVitals.isEmpty) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(patientId)
+            .get();
+
+        if (userDoc.exists) {
+          final userData = userDoc.data()!;
+          if (userData['height'] != null) {
+            latestVitals['height'] = userData['height'].toString();
+          }
+          if (userData['weight'] != null) {
+            latestVitals['weight'] = userData['weight'].toString();
+          }
+        }
+      }
+
+      return latestVitals;
+    } catch (e) {
+      print('Error getting vitals from medical records: $e');
+      return {};
+    }
   }
 
   @override

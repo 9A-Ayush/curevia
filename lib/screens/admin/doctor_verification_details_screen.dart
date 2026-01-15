@@ -6,6 +6,7 @@ import '../../utils/theme_utils.dart';
 import '../../utils/responsive_utils.dart';
 import '../../widgets/common/theme_aware_card.dart';
 import '../../widgets/common/document_viewer_widget.dart';
+import '../../services/email_service.dart';
 
 class DoctorVerificationDetailsScreen extends StatefulWidget {
   final String verificationId;
@@ -647,11 +648,26 @@ class _DoctorVerificationDetailsScreenState extends State<DoctorVerificationDeta
         FirebaseFirestore.instance.collection('doctors').doc(widget.doctorId),
         {
           'verificationStatus': 'verified',
+          'isVerified': true, // Add this field for consistency
+          'verifiedAt': FieldValue.serverTimestamp(), // Add verification timestamp
           'updatedAt': FieldValue.serverTimestamp(),
         },
       );
 
       await batch.commit();
+
+      // Send approval email
+      try {
+        await EmailService.sendDoctorVerificationEmail(
+          doctorId: widget.doctorId,
+          status: 'approved',
+          adminId: 'admin', // Replace with actual admin ID
+        );
+        debugPrint('✅ Doctor approval email sent successfully');
+      } catch (emailError) {
+        debugPrint('⚠️ Failed to send approval email: $emailError');
+        // Don't fail the verification process if email fails
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -729,12 +745,26 @@ class _DoctorVerificationDetailsScreenState extends State<DoctorVerificationDeta
         FirebaseFirestore.instance.collection('doctors').doc(widget.doctorId),
         {
           'verificationStatus': 'rejected',
+          'isVerified': false, // Explicitly set to false
           'verificationReason': reason,
           'updatedAt': FieldValue.serverTimestamp(),
         },
       );
 
       await batch.commit();
+
+      // Send rejection email
+      try {
+        await EmailService.sendDoctorVerificationEmail(
+          doctorId: widget.doctorId,
+          status: 'rejected',
+          adminId: 'admin', // Replace with actual admin ID
+        );
+        debugPrint('✅ Doctor rejection email sent successfully');
+      } catch (emailError) {
+        debugPrint('⚠️ Failed to send rejection email: $emailError');
+        // Don't fail the verification process if email fails
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

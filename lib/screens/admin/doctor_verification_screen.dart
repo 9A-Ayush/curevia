@@ -166,6 +166,8 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
         FirebaseFirestore.instance.collection('doctors').doc(doctorId),
         {
           'verificationStatus': 'verified',
+          'isVerified': true, // Add this field for consistency
+          'verifiedAt': FieldValue.serverTimestamp(), // Add verification timestamp
           'updatedAt': FieldValue.serverTimestamp(),
         },
       );
@@ -257,6 +259,7 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
         FirebaseFirestore.instance.collection('doctors').doc(doctorId),
         {
           'verificationStatus': 'rejected',
+          'isVerified': false, // Explicitly set to false
           'verificationReason': reason,
           'updatedAt': FieldValue.serverTimestamp(),
         },

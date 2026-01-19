@@ -48,13 +48,54 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Initialize notification system and app data for the logged-in user
   Future<void> _initializeNotifications(UserModel userModel) async {
     try {
-      // Initialize notifications
-      await NotificationIntegrationService.instance.setupUserNotifications(
-        user: userModel,
-        specializations: userModel.role == 'doctor' ? ['General Medicine'] : null,
-        location: null, // Can be added later from user preferences
-      );
-      print('✅ Notifications initialized for user: ${userModel.fullName} (${userModel.role})');
+      // Ensure notification system is fully initialized first
+      final notificationService = NotificationIntegrationService.instance;
+      
+      // Initialize with retry logic
+      bool initialized = false;
+      for (int attempt = 1; attempt <= 3; attempt++) {
+        try {
+          print('🔔 Initializing notifications (attempt $attempt/3)...');
+          initialized = await notificationService.initialize();
+          if (initialized && notificationService.isReady) {
+            print('✅ Notification service ready');
+            break;
+          } else {
+            print('⚠️ Notification service not ready, retrying...');
+            await Future.delayed(Duration(seconds: 2));
+          }
+        } catch (e) {
+          print('❌ Notification initialization attempt $attempt failed: $e');
+          if (attempt < 3) {
+            await Future.delayed(Duration(seconds: 2));
+          }
+        }
+      }
+      
+      if (initialized && notificationService.isReady) {
+        // Setup user notifications
+        await notificationService.setupUserNotifications(
+          user: userModel,
+          specializations: userModel.role == 'doctor' ? ['General Medicine'] : null,
+          location: null, // Can be added later from user preferences
+        );
+        print('✅ Notifications initialized for user: ${userModel.fullName} (${userModel.role})');
+      } else {
+        print('⚠️ Notification service not ready, will retry later');
+        // Schedule a retry after a delay
+        Future.delayed(Duration(seconds: 5), () async {
+          try {
+            await notificationService.setupUserNotifications(
+              user: userModel,
+              specializations: userModel.role == 'doctor' ? ['General Medicine'] : null,
+              location: null,
+            );
+            print('✅ Delayed notification setup successful');
+          } catch (e) {
+            print('❌ Delayed notification setup failed: $e');
+          }
+        });
+      }
       
       // Initialize app data (medicines and home remedies) after authentication
       await DataInitializationService.initializeAfterAuth();
@@ -222,23 +263,48 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
       
-      // Cleanup notifications before signing out
+      // Start Firebase signout immediately (don't wait for cleanup)
+      final signOutFuture = AuthService.signOut();
+      
+      // Run cleanup in parallel (fire and forget)
       if (state.userModel != null) {
-        await NotificationIntegrationService.instance.cleanupUserNotifications(
+        // Don't await - let it run in background
+        _cleanupInBackground(
           userId: state.userModel!.uid,
           userRole: state.userModel!.role,
-          specializations: state.userModel!.role == 'doctor' ? ['General Medicine'] : null,
-          location: null,
         );
       }
       
-      await AuthService.signOut();
+      // Wait only for Firebase signout
+      await signOutFuture;
+      
       // Reset biometric authentication state
       AppLifecycleBiometricService.reset();
+      
       // State will be updated by auth state listener
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
+  }
+
+  /// Background cleanup (fire and forget)
+  void _cleanupInBackground({
+    required String userId,
+    required String userRole,
+  }) {
+    // Run cleanup without blocking logout with timeout
+    NotificationIntegrationService.instance.cleanupUserNotifications(
+      userId: userId,
+      userRole: userRole,
+      specializations: userRole == 'doctor' ? ['General Medicine'] : null,
+      location: null,
+    ).timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => print('Background cleanup timeout - continuing anyway'),
+    ).catchError((error) {
+      // Log error but don't block logout
+      print('Background cleanup error: $error');
+    });
   }
 
   /// Send password reset email

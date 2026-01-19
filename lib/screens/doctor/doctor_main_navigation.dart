@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../utils/theme_utils.dart';
 import '../../widgets/navigation/custom_bottom_navigation_bar.dart';
@@ -19,6 +20,8 @@ class DoctorMainNavigation extends ConsumerStatefulWidget {
 }
 
 class _DoctorMainNavigationState extends ConsumerState<DoctorMainNavigation> {
+  DateTime? _lastBackPressed;
+  
   final List<Widget> _screens = [
     const DoctorDashboardScreen(),
     const DoctorAppointmentsScreen(),
@@ -55,19 +58,64 @@ class _DoctorMainNavigationState extends ConsumerState<DoctorMainNavigation> {
     ),
   ];
 
+  Future<bool> _onWillPop() async {
+    final currentIndex = ref.read(doctorNavigationProvider);
+    
+    // If not on dashboard tab, go to dashboard first
+    if (currentIndex != 0) {
+      ref.read(doctorNavigationProvider.notifier).setTabIndex(0);
+      return false;
+    }
+    
+    // Double tap to exit logic
+    final now = DateTime.now();
+    if (_lastBackPressed == null || now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
+      _lastBackPressed = now;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Press back again to exit'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: ThemeUtils.getPrimaryColor(context),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+    
+    // Exit the app
+    SystemNavigator.pop();
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(doctorNavigationProvider);
 
-    return Scaffold(
-      backgroundColor: ThemeUtils.getBackgroundColor(context),
-      body: IndexedStack(index: currentIndex, children: _screens),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: (index) {
-          ref.read(doctorNavigationProvider.notifier).setTabIndex(index);
-        },
-        items: _navigationItems,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        final shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: ThemeUtils.getBackgroundColor(context),
+        body: IndexedStack(index: currentIndex, children: _screens),
+        bottomNavigationBar: CustomBottomNavigationBar(
+          currentIndex: currentIndex,
+          onTap: (index) {
+            ref.read(doctorNavigationProvider.notifier).setTabIndex(index);
+          },
+          items: _navigationItems,
+        ),
       ),
     );
   }

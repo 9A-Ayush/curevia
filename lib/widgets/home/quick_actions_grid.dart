@@ -13,6 +13,7 @@ import '../../screens/profile/medical_records_screen.dart';
 import '../../screens/fitness/fitness_tracker_screen.dart';
 import '../../screens/mental_health/mental_health_screen.dart';
 import '../../screens/health/bmi_calculator_screen.dart';
+import '../../screens/patient/patient_prescriptions_screen.dart';
 import '../../providers/home_provider.dart';
 import '../../providers/appointment_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -225,6 +226,21 @@ class QuickActionsGrid extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
+                  _buildMoreOption(
+                    context,
+                    icon: Icons.receipt_long_outlined,
+                    title: 'My Prescriptions',
+                    subtitle: 'View your prescriptions from doctors',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PatientPrescriptionsScreen(),
+                        ),
+                      );
+                    },
+                  ),
                   _buildMoreOption(
                     context,
                     icon: Icons.health_and_safety,

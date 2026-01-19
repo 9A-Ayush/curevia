@@ -341,7 +341,7 @@ class _DoctorOnboardingScreenState
                 : [
                     AppColors.primary.withOpacity(0.1),
                     AppColors.secondary.withOpacity(0.05),
-                    Colors.white,
+                    ThemeUtils.getBackgroundColor(context),
                   ],
           ),
         ),
@@ -445,7 +445,7 @@ class _DoctorOnboardingScreenState
 
   Widget _buildModernProgressIndicator(List<StepInfo> stepInfos) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : ThemeUtils.getSurfaceColor(context);
     final borderColor = isDarkMode ? AppColors.darkBorderLight : AppColors.borderLight;
     final textSecondaryColor = isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary;
     
@@ -556,7 +556,7 @@ class _DoctorOnboardingScreenState
 
   Widget _buildContentArea() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final surfaceColor = isDarkMode ? AppColors.darkSurface : ThemeUtils.getSurfaceColor(context);
     
     return Container(
       margin: const EdgeInsets.all(24),

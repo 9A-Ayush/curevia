@@ -107,8 +107,8 @@ class _HealthTipsAdminScreenState extends State<HealthTipsAdminScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Health Tips Newsletter'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: ThemeUtils.getPrimaryColor(context),
+        foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -276,8 +276,8 @@ class _HealthTipsAdminScreenState extends State<HealthTipsAdminScreen> {
                 child: ElevatedButton(
                   onPressed: _isSending ? null : _sendHealthTip,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
+                    backgroundColor: ThemeUtils.getSuccessColor(context),
+                    foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: _isSending
@@ -289,7 +289,9 @@ class _HealthTipsAdminScreenState extends State<HealthTipsAdminScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                ThemeUtils.getTextOnPrimaryColor(context),
+                              ),
                             ),
                           ),
                           SizedBox(width: 12),

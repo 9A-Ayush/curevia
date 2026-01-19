@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/doctor_model.dart';
+import '../../models/appointment_model.dart';
 import '../../constants/app_constants.dart';
 
 /// Service for doctor-related operations
@@ -113,17 +114,55 @@ class DoctorService {
   /// Get doctor by ID
   static Future<DoctorModel?> getDoctorById(String doctorId) async {
     try {
+      print('🔍 DoctorService.getDoctorById called with: "$doctorId"');
+      
+      if (doctorId.isEmpty) {
+        print('❌ Doctor ID is empty, returning null');
+        return null;
+      }
+      
       final doc = await _firestore
           .collection(AppConstants.doctorsCollection)
           .doc(doctorId)
           .get();
 
+      print('📄 Firestore document exists: ${doc.exists}');
+      
       if (doc.exists) {
-        return DoctorModel.fromMap(doc.data()!);
+        final doctorData = doc.data()!;
+        print('✅ Doctor data retrieved: ${doctorData['fullName'] ?? 'No name'}');
+        return DoctorModel.fromMap(doctorData);
       }
+      
+      print('❌ Doctor document not found');
       return null;
     } catch (e) {
+      print('❌ Error in getDoctorById: $e');
       throw Exception('Failed to get doctor: $e');
+    }
+  }
+
+  /// Search doctors by name
+  static Future<List<DoctorModel>> searchDoctorsByName(String name) async {
+    try {
+      print('🔍 DoctorService.searchDoctorsByName called with: "$name"');
+      
+      if (name.isEmpty) {
+        print('❌ Name is empty, returning empty list');
+        return [];
+      }
+      
+      // Use the existing searchDoctors method with name as searchQuery
+      final doctors = await searchDoctors(
+        searchQuery: name,
+        limit: 10, // Limit to 10 results for name search
+      );
+      
+      print('✅ Found ${doctors.length} doctors matching name: $name');
+      return doctors;
+    } catch (e) {
+      print('❌ Error in searchDoctorsByName: $e');
+      throw Exception('Failed to search doctors by name: $e');
     }
   }
 
@@ -296,12 +335,12 @@ class DoctorService {
           .where((doctor) => doctor != null)
           .cast<DoctorModel>()
           .where((doctor) {
-            // FIXED: More lenient filtering - show doctors if they have either verification method
+            // FIXED: Check both verification methods properly
             final status = doctor.verificationStatus;
             final isVerified = doctor.isVerified ?? false;
             
-            // Show if either condition is met (not both required)
-            return (status == 'verified' || status == 'approved') || isVerified;
+            // Show if doctor is verified through either method
+            return isVerified == true || status == 'verified' || status == 'approved';
           })
           .toList();
 
@@ -672,6 +711,61 @@ class DoctorService {
           .toList();
     } catch (e) {
       return [];
+    }
+  }
+
+  /// Sync doctor statistics with their profile
+  static Future<void> syncDoctorStatistics(String doctorId) async {
+    try {
+      // Get appointment statistics
+      final appointmentsQuery = await _firestore
+          .collection(AppConstants.appointmentsCollection)
+          .where('doctorId', isEqualTo: doctorId)
+          .get();
+
+      final uniquePatients = <String>{};
+      int totalConsultations = 0;
+      int completedConsultations = 0;
+
+      for (final doc in appointmentsQuery.docs) {
+        final appointment = AppointmentModel.fromMap(doc.data());
+        totalConsultations++;
+        
+        if (appointment.status == 'completed') {
+          completedConsultations++;
+        }
+        
+        uniquePatients.add(appointment.patientId);
+      }
+
+      // Update doctor profile with statistics
+      await _firestore
+          .collection(AppConstants.doctorsCollection)
+          .doc(doctorId)
+          .update({
+        'totalPatients': uniquePatients.length,
+        'totalConsultations': totalConsultations,
+        'completedConsultations': completedConsultations,
+        'lastStatsUpdate': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Doctor statistics synced for: $doctorId');
+    } catch (e) {
+      print('❌ Error syncing doctor statistics: $e');
+    }
+  }
+
+  /// Get doctor profile with fresh statistics
+  static Future<Map<String, dynamic>?> getDoctorProfileWithStats(String doctorId) async {
+    try {
+      // First sync the statistics
+      await syncDoctorStatistics(doctorId);
+      
+      // Then get the updated profile
+      return await getDoctorProfile(doctorId);
+    } catch (e) {
+      print('❌ Error getting doctor profile with stats: $e');
+      return await getDoctorProfile(doctorId);
     }
   }
 }

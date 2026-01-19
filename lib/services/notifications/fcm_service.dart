@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -74,6 +76,8 @@ class FCMService {
       rethrow;
     }
   }
+ 
+
 
   /// Request notification permissions
   Future<void> _requestPermissions() async {
@@ -173,6 +177,9 @@ class FCMService {
       _fcmToken = token;
       debugPrint('FCM Token refreshed: $token');
       _saveFCMToken(token);
+      
+      // TODO: Send updated token to backend
+      _updateTokenOnServer(token);
     });
   }
 
@@ -365,11 +372,56 @@ class FCMService {
     }
   }
 
+  /// Update FCM token on server
+  Future<void> _updateTokenOnServer(String token) async {
+    try {
+      // Get current user ID from Firebase Auth
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        debugPrint('⚠️ No authenticated user, skipping token update');
+        return;
+      }
+      
+      // Update token in Firestore user document
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({'fcmToken': token});
+      
+      debugPrint('✅ FCM token updated on server for user: ${user.uid}');
+    } catch (e) {
+      debugPrint('❌ Error updating FCM token on server: $e');
+      // Don't throw error - token refresh should not fail the app
+    }
+  }
+
   /// Get saved FCM token from SharedPreferences
   Future<String?> getSavedFCMToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('fcm_token');
+      final savedToken = prefs.getString('fcm_token');
+      if (savedToken != null) {
+        debugPrint('Retrieved saved FCM token: ${savedToken.substring(0, 20)}...');
+        return savedToken;
+      }
+      
+      // If no saved token, try to get a fresh one
+      debugPrint('No saved FCM token found, attempting to get fresh token...');
+      final freshToken = await _firebaseMessaging.getToken();
+      if (freshToken != null) {
+        await prefs.setString('fcm_token', freshToken);
+        debugPrint('Fresh FCM token obtained and saved: ${freshToken.substring(0, 20)}...');
+        _fcmToken = freshToken;
+        return freshToken;
+      }
+      
+      debugPrint('Unable to get FCM token - this might be due to:');
+      debugPrint('• Google Play Services not available or outdated');
+      debugPrint('• Device not connected to internet');
+      debugPrint('• Firebase configuration issues');
+      debugPrint('• App permissions not granted');
+      
+      return null;
     } catch (e) {
       debugPrint('Error getting saved FCM token: $e');
       return null;

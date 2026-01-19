@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../models/doctor_model.dart';
 import '../image_upload_service.dart';
 import '../notifications/role_based_notification_service.dart';
+import '../notifications/fcm_token_service.dart';
 
 /// Service for handling doctor onboarding operations
 class DoctorOnboardingService {
@@ -286,7 +287,7 @@ class DoctorOnboardingService {
       // Send notification to admins
       try {
         // Get admin FCM tokens
-        final adminTokens = await _getAdminFCMTokens();
+        final adminTokens = await FCMTokenService.getAdminFCMTokens();
         
         if (adminTokens.isNotEmpty && doctorData != null) {
           // Send notification using RoleBasedNotificationService
@@ -311,29 +312,6 @@ class DoctorOnboardingService {
       return true;
     } catch (e) {
       throw Exception('Error submitting for verification: $e');
-    }
-  }
-
-  /// Get admin FCM tokens from Firestore
-  static Future<List<String>> _getAdminFCMTokens() async {
-    try {
-      final adminsSnapshot = await _firestore
-          .collection('users')
-          .where('role', isEqualTo: 'admin')
-          .get();
-      
-      final tokens = <String>[];
-      for (final doc in adminsSnapshot.docs) {
-        final fcmToken = doc.data()['fcmToken'] as String?;
-        if (fcmToken != null && fcmToken.isNotEmpty) {
-          tokens.add(fcmToken);
-        }
-      }
-      
-      return tokens;
-    } catch (e) {
-      print('Error getting admin FCM tokens: $e');
-      return [];
     }
   }
 
@@ -425,8 +403,8 @@ class DoctorOnboardingService {
         processedData.remove('pdfFile'); // Remove the File object
       }
       
-      // Sync phone number and full name to user document if provided
-      if (data['phoneNumber'] != null || data['fullName'] != null) {
+      // Sync phone number, full name, and email to user document if provided
+      if (data['phoneNumber'] != null || data['fullName'] != null || data['email'] != null) {
         try {
           final updateData = <String, dynamic>{};
           if (data['phoneNumber'] != null && data['phoneNumber'].toString().trim().isNotEmpty) {
@@ -434,6 +412,9 @@ class DoctorOnboardingService {
           }
           if (data['fullName'] != null && data['fullName'].toString().trim().isNotEmpty) {
             updateData['fullName'] = data['fullName'].toString().trim();
+          }
+          if (data['email'] != null && data['email'].toString().trim().isNotEmpty) {
+            updateData['email'] = data['email'].toString().trim();
           }
           
           if (updateData.isNotEmpty) {

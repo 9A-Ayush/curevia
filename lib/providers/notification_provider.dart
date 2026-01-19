@@ -1,16 +1,26 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/notification_model.dart';
 import '../services/notifications/notification_manager.dart';
+import '../services/notifications/role_based_notification_channel_service.dart';
+import 'auth_provider.dart';
 
-/// Notifier for managing notification count state
+/// Notifier for managing notification count state with role-based filtering
 class NotificationCountNotifier extends StateNotifier<AsyncValue<int>> {
-  NotificationCountNotifier() : super(const AsyncValue.loading()) {
+  final Ref ref;
+  
+  NotificationCountNotifier(this.ref) : super(const AsyncValue.loading()) {
     _loadCount();
   }
 
   Future<void> _loadCount() async {
     try {
-      final count = await NotificationManager.instance.getUnreadNotificationCount();
+      // Get current user role
+      final userModel = ref.read(currentUserModelProvider);
+      final userRole = userModel?.role ?? 'patient';
+      
+      // Get role-based unread count
+      final count = await RoleBasedNotificationChannelService.instance
+          .getUnreadNotificationCountForRole(userRole);
       state = AsyncValue.data(count);
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
@@ -49,9 +59,9 @@ class NotificationCountNotifier extends StateNotifier<AsyncValue<int>> {
   }
 }
 
-/// Provider for notification count with real-time updates
+/// Provider for notification count with real-time updates and role-based filtering
 final notificationCountProvider = StateNotifierProvider<NotificationCountNotifier, AsyncValue<int>>((ref) {
-  return NotificationCountNotifier();
+  return NotificationCountNotifier(ref);
 });
 
 /// Legacy provider for backward compatibility
@@ -59,42 +69,66 @@ final notificationCountLegacyProvider = FutureProvider<int>((ref) async {
   return await NotificationManager.instance.getUnreadNotificationCount();
 });
 
-/// Provider for all notifications
+/// Provider for all notifications with role-based filtering
 final notificationsProvider = FutureProvider<List<NotificationModel>>((ref) async {
-  return await NotificationManager.instance.getAllNotifications();
+  final userModel = ref.read(currentUserModelProvider);
+  final userRole = userModel?.role ?? 'patient';
+  
+  return await RoleBasedNotificationChannelService.instance
+      .getRoleBasedNotifications(userRole);
 });
 
-/// Provider for unread notifications
+/// Provider for unread notifications with role-based filtering
 final unreadNotificationsProvider = FutureProvider<List<NotificationModel>>((ref) async {
-  return await NotificationManager.instance.getUnreadNotifications();
+  final userModel = ref.read(currentUserModelProvider);
+  final userRole = userModel?.role ?? 'patient';
+  
+  return await RoleBasedNotificationChannelService.instance
+      .getUnreadRoleBasedNotifications(userRole);
 });
 
-/// Provider for notification statistics
+/// Provider for notification statistics with role-based filtering
 final notificationStatsProvider = FutureProvider<Map<String, int>>((ref) async {
-  return await NotificationManager.instance.getNotificationStats();
+  final userModel = ref.read(currentUserModelProvider);
+  final userRole = userModel?.role ?? 'patient';
+  
+  return await RoleBasedNotificationChannelService.instance
+      .getRoleNotificationStats(userRole);
 });
 
-/// Provider for unread notifications count with userId parameter (for backward compatibility)
+/// Provider for unread notifications count with userId parameter (role-based)
 final unreadNotificationsCountProvider = FutureProvider.family<int, String>((ref, userId) async {
-  // For now, we'll use the global count since our new system doesn't separate by userId in local storage
-  return await NotificationManager.instance.getUnreadNotificationCount();
+  final userModel = ref.read(currentUserModelProvider);
+  final userRole = userModel?.role ?? 'patient';
+  
+  return await RoleBasedNotificationChannelService.instance
+      .getUnreadNotificationCountForRole(userRole);
 });
 
-/// Provider for notifications with userId parameter (for backward compatibility)
+/// Provider for notifications with userId parameter (role-based)
 final notificationsProviderWithUserId = FutureProvider.family<List<NotificationModel>, String>((ref, userId) async {
-  // For now, we'll use the global notifications since our new system doesn't separate by userId in local storage
-  return await NotificationManager.instance.getAllNotifications();
+  final userModel = ref.read(currentUserModelProvider);
+  final userRole = userModel?.role ?? 'patient';
+  
+  return await RoleBasedNotificationChannelService.instance
+      .getRoleBasedNotifications(userRole);
 });
 
-/// Notifier for managing notification state
+/// Notifier for managing notification state with role-based filtering
 class NotificationNotifier extends StateNotifier<AsyncValue<List<NotificationModel>>> {
-  NotificationNotifier() : super(const AsyncValue.loading()) {
+  final Ref ref;
+  
+  NotificationNotifier(this.ref) : super(const AsyncValue.loading()) {
     _loadNotifications();
   }
 
   Future<void> _loadNotifications() async {
     try {
-      final notifications = await NotificationManager.instance.getAllNotifications();
+      final userModel = ref.read(currentUserModelProvider);
+      final userRole = userModel?.role ?? 'patient';
+      
+      final notifications = await RoleBasedNotificationChannelService.instance
+          .getRoleBasedNotifications(userRole);
       state = AsyncValue.data(notifications);
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
@@ -132,9 +166,9 @@ class NotificationNotifier extends StateNotifier<AsyncValue<List<NotificationMod
   }
 }
 
-/// Provider for notification notifier
+/// Provider for notification notifier with role-based filtering
 final notificationNotifierProvider = StateNotifierProvider<NotificationNotifier, AsyncValue<List<NotificationModel>>>((ref) {
-  return NotificationNotifier();
+  return NotificationNotifier(ref);
 });
 
 /// Provider for notification actions (for backward compatibility)
@@ -150,4 +184,31 @@ final fcmTokenProvider = FutureProvider<String?>((ref) async {
 /// Provider for checking if notification system is initialized
 final notificationInitializedProvider = Provider<bool>((ref) {
   return NotificationManager.instance.isInitialized;
+});
+
+/// Provider for notifications by category (role-based)
+final notificationsByCategoryProvider = FutureProvider.family<List<NotificationModel>, String>((ref, category) async {
+  final userModel = ref.read(currentUserModelProvider);
+  final userRole = userModel?.role ?? 'patient';
+  
+  return await RoleBasedNotificationChannelService.instance
+      .getNotificationsByCategory(userRole, category);
+});
+
+/// Provider for role-based notification preferences
+final notificationPreferencesProvider = Provider<Map<String, dynamic>>((ref) {
+  final userModel = ref.read(currentUserModelProvider);
+  final userRole = userModel?.role ?? 'patient';
+  
+  return RoleBasedNotificationChannelService.instance
+      .getRoleNotificationPreferences(userRole);
+});
+
+/// Provider for allowed notification types for current user role
+final allowedNotificationTypesProvider = Provider<List<NotificationType>>((ref) {
+  final userModel = ref.read(currentUserModelProvider);
+  final userRole = userModel?.role ?? 'patient';
+  
+  return RoleBasedNotificationChannelService.instance
+      .getAllowedNotificationTypes(userRole);
 });

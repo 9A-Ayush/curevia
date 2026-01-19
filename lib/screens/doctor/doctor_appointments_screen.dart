@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/appointment_provider.dart';
 import '../../models/appointment_model.dart';
 import '../../services/doctor/doctor_service.dart';
+import '../../services/firebase/appointment_service.dart';
+import '../../services/notifications/payment_notification_service.dart';
 import '../../widgets/common/custom_button.dart';
 
 /// Doctor appointments screen for managing appointments
@@ -20,16 +23,11 @@ class _DoctorAppointmentsScreenState
     extends ConsumerState<DoctorAppointmentsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  List<AppointmentModel> _todayAppointments = [];
-  List<AppointmentModel> _upcomingAppointments = [];
-  List<AppointmentModel> _pastAppointments = [];
-  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadAppointments();
   }
 
   @override
@@ -38,51 +36,23 @@ class _DoctorAppointmentsScreenState
     super.dispose();
   }
 
-  Future<void> _loadAppointments() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final user = ref.read(authProvider).userModel;
-      if (user != null) {
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-        final tomorrow = today.add(const Duration(days: 1));
-
-        final futures = await Future.wait([
-          DoctorService.getDoctorAppointments(
-            doctorId: user.uid,
-            startDate: today,
-            endDate: tomorrow,
-          ),
-          DoctorService.getDoctorAppointments(
-            doctorId: user.uid,
-            startDate: tomorrow,
-          ),
-          DoctorService.getDoctorAppointments(
-            doctorId: user.uid,
-            endDate: today,
-          ),
-        ]);
-
-        setState(() {
-          _todayAppointments = futures[0];
-          _upcomingAppointments = futures[1];
-          _pastAppointments = futures[2];
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading appointments: $e')),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(currentUserModelProvider);
+    
+    if (user == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Please log in to view appointments'),
+        ),
+      );
+    }
+
+    // Watch the stream providers
+    final todayAppointmentsAsync = ref.watch(todayDoctorAppointmentsProvider(user.uid));
+    final upcomingAppointmentsAsync = ref.watch(upcomingDoctorAppointmentsProvider(user.uid));
+    final pastAppointmentsAsync = ref.watch(pastDoctorAppointmentsProvider(user.uid));
+
     return Scaffold(
       backgroundColor: ThemeUtils.getPrimaryColor(context),
       body: Column(
@@ -141,6 +111,14 @@ class _DoctorAppointmentsScreenState
                         ),
                         tooltip: 'Filter',
                       ),
+                      IconButton(
+                        onPressed: _showDebugMenu,
+                        icon: const Icon(
+                          Icons.bug_report,
+                          color: Colors.white,
+                        ),
+                        tooltip: 'Debug',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -167,7 +145,7 @@ class _DoctorAppointmentsScreenState
               ),
               child: Column(
                 children: [
-                  // Tab bar
+                  // Tab bar with counts
                   Container(
                     margin: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -192,27 +170,11 @@ class _DoctorAppointmentsScreenState
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text('Today'),
-                              if (_todayAppointments.isNotEmpty) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    '${_todayAppointments.length}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              todayAppointmentsAsync.when(
+                                data: (appointments) => appointments.isNotEmpty ? _buildCountBadge(appointments.length) : const SizedBox.shrink(),
+                                loading: () => const SizedBox.shrink(),
+                                error: (_, __) => const SizedBox.shrink(),
+                              ),
                             ],
                           ),
                         ),
@@ -221,27 +183,11 @@ class _DoctorAppointmentsScreenState
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text('Upcoming'),
-                              if (_upcomingAppointments.isNotEmpty) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    '${_upcomingAppointments.length}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              upcomingAppointmentsAsync.when(
+                                data: (appointments) => appointments.isNotEmpty ? _buildCountBadge(appointments.length) : const SizedBox.shrink(),
+                                loading: () => const SizedBox.shrink(),
+                                error: (_, __) => const SizedBox.shrink(),
+                              ),
                             ],
                           ),
                         ),
@@ -255,12 +201,9 @@ class _DoctorAppointmentsScreenState
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        _buildAppointmentsList(_todayAppointments, 'today'),
-                        _buildAppointmentsList(
-                          _upcomingAppointments,
-                          'upcoming',
-                        ),
-                        _buildAppointmentsList(_pastAppointments, 'past'),
+                        _buildAppointmentsTab(todayAppointmentsAsync, 'today'),
+                        _buildAppointmentsTab(upcomingAppointmentsAsync, 'upcoming'),
+                        _buildAppointmentsTab(pastAppointmentsAsync, 'past'),
                       ],
                     ),
                   ),
@@ -280,27 +223,91 @@ class _DoctorAppointmentsScreenState
     );
   }
 
-  Widget _buildAppointmentsList(
-    List<AppointmentModel> appointments,
-    String type,
-  ) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+  Widget _buildCountBadge(int count) {
+    return Container(
+      margin: const EdgeInsets.only(left: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        '$count',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
 
-    if (appointments.isEmpty) {
-      return _buildEmptyState(type);
-    }
+  Widget _buildAppointmentsTab(AsyncValue<List<AppointmentModel>> appointmentsAsync, String type) {
+    return appointmentsAsync.when(
+      data: (appointments) {
+        if (appointments.isEmpty) {
+          return _buildEmptyState(type);
+        }
 
-    return RefreshIndicator(
-      onRefresh: _loadAppointments,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: appointments.length,
-        itemBuilder: (context, index) {
-          final appointment = appointments[index];
-          return _buildAppointmentCard(appointment, type);
-        },
+        return RefreshIndicator(
+          onRefresh: () async {
+            // Invalidate the providers to refresh data
+            final user = ref.read(currentUserModelProvider);
+            if (user != null) {
+              ref.invalidate(todayDoctorAppointmentsProvider(user.uid));
+              ref.invalidate(upcomingDoctorAppointmentsProvider(user.uid));
+              ref.invalidate(pastDoctorAppointmentsProvider(user.uid));
+            }
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: appointments.length,
+            itemBuilder: (context, index) {
+              final appointment = appointments[index];
+              return _buildAppointmentCard(appointment, type);
+            },
+          ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppColors.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading appointments',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error.toString(),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: ThemeUtils.getTextSecondaryColor(context),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                final user = ref.read(currentUserModelProvider);
+                if (user != null) {
+                  ref.invalidate(todayDoctorAppointmentsProvider(user.uid));
+                  ref.invalidate(upcomingDoctorAppointmentsProvider(user.uid));
+                  ref.invalidate(pastDoctorAppointmentsProvider(user.uid));
+                }
+              },
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -611,43 +618,121 @@ class _DoctorAppointmentsScreenState
         appointment.status == 'inprogress';
     final canCancel =
         appointment.status == 'pending' || appointment.status == 'confirmed';
+    final canReschedule = 
+        appointment.status == 'pending' || appointment.status == 'confirmed';
+    final isCompleted = appointment.status == 'completed';
 
-    return Row(
+    return Column(
       children: [
-        if (canStart)
-          Expanded(
-            child: CustomButton(
-              text: 'Start Consultation',
-              onPressed: () =>
-                  _updateAppointmentStatus(appointment.id, 'in_progress'),
-              backgroundColor: AppColors.success,
-              textColor: AppColors.textOnPrimary,
-              icon: Icons.play_arrow,
-            ),
+        // Main action buttons
+        if (canStart || canComplete || canCancel) ...[
+          Row(
+            children: [
+              if (canStart) ...[
+                Expanded(
+                  child: CustomButton(
+                    text: appointment.consultationType == 'video' ? 'Start Video Call' : 'Start Consultation',
+                    onPressed: () => appointment.consultationType == 'video' 
+                        ? _startVideoCall(appointment)
+                        : _updateAppointmentStatus(appointment.id, 'in_progress'),
+                    backgroundColor: AppColors.success,
+                    textColor: AppColors.textOnPrimary,
+                    icon: appointment.consultationType == 'video' ? Icons.videocam : Icons.play_arrow,
+                  ),
+                ),
+              ],
+              if (canComplete) ...[
+                Expanded(
+                  child: CustomButton(
+                    text: 'Complete',
+                    onPressed: () =>
+                        _updateAppointmentStatus(appointment.id, 'completed'),
+                    backgroundColor: AppColors.primary,
+                    textColor: AppColors.textOnPrimary,
+                    icon: Icons.check,
+                  ),
+                ),
+              ],
+              if (canCancel && (canStart || canComplete)) const SizedBox(width: 8),
+              if (canCancel) ...[
+                Expanded(
+                  child: CustomButton(
+                    text: 'Cancel',
+                    onPressed: () => _showCancelDialog(appointment),
+                    backgroundColor: AppColors.error,
+                    textColor: AppColors.textOnPrimary,
+                    icon: Icons.cancel,
+                  ),
+                ),
+              ],
+            ],
           ),
-        if (canComplete) ...[
-          Expanded(
-            child: CustomButton(
-              text: 'Complete',
-              onPressed: () =>
-                  _updateAppointmentStatus(appointment.id, 'completed'),
-              backgroundColor: AppColors.primary,
-              textColor: AppColors.textOnPrimary,
-              icon: Icons.check,
-            ),
-          ),
-          const SizedBox(width: 8),
         ],
-        if (canCancel) ...[
-          if (canStart || canComplete) const SizedBox(width: 8),
-          Expanded(
-            child: CustomButton(
-              text: 'Cancel',
-              onPressed: () => _showCancelDialog(appointment),
-              backgroundColor: AppColors.error,
-              textColor: AppColors.textOnPrimary,
-              icon: Icons.cancel,
-            ),
+        
+        // Secondary action buttons (Reschedule, Prescription, Payment)
+        if (canReschedule || canComplete || isCompleted) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              // Reschedule button
+              if (canReschedule) ...[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showRescheduleDialog(appointment),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.warning,
+                      side: BorderSide(color: AppColors.warning),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    icon: const Icon(Icons.schedule, size: 16),
+                    label: const Text(
+                      'Reschedule',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              
+              // Prescription button
+              if (canComplete || isCompleted) ...[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _handlePrescription(appointment),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: BorderSide(color: AppColors.primary),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    icon: const Icon(Icons.receipt_long, size: 16),
+                    label: Text(
+                      isCompleted ? 'View Prescription' : 'Create Prescription',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ),
+              ],
+              
+              // Payment button
+              if (appointment.paymentStatus == 'pay_on_clinic' && isCompleted) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _markPaymentReceived(appointment),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.success,
+                      side: BorderSide(color: AppColors.success),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    icon: const Icon(Icons.payment, size: 16),
+                    label: const Text(
+                      'Mark Paid',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ],
@@ -667,15 +752,26 @@ class _DoctorAppointmentsScreenState
       if (success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Appointment status updated')),
+            const SnackBar(
+              content: Text('Appointment status updated'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
-        _loadAppointments(); // Refresh the list
+        
+        // Refresh the stream providers
+        final user = ref.read(currentUserModelProvider);
+        if (user != null) {
+          ref.invalidate(todayDoctorAppointmentsProvider(user.uid));
+          ref.invalidate(upcomingDoctorAppointmentsProvider(user.uid));
+          ref.invalidate(pastDoctorAppointmentsProvider(user.uid));
+        }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Failed to update appointment status'),
+              backgroundColor: Colors.red,
             ),
           );
         }
@@ -683,7 +779,10 @@ class _DoctorAppointmentsScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating appointment: $e')),
+          SnackBar(
+            content: Text('Error updating appointment: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -714,6 +813,161 @@ class _DoctorAppointmentsScreenState
     );
   }
 
+  /// Start video call for video consultations
+  void _startVideoCall(AppointmentModel appointment) async {
+    try {
+      // Update appointment status to in_progress
+      await _updateAppointmentStatus(appointment.id, 'in_progress');
+      
+      // Navigate to video call screen
+      if (mounted) {
+        Navigator.pushNamed(
+          context,
+          '/video_call',
+          arguments: {
+            'appointmentId': appointment.id,
+            'patientName': appointment.patientName,
+            'patientId': appointment.patientId,
+            'doctorId': appointment.doctorId,
+            'isDoctor': true,
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error starting video call: $e')),
+        );
+      }
+    }
+  }
+
+  /// Show reschedule dialog
+  void _showRescheduleDialog(AppointmentModel appointment) {
+    final dateController = TextEditingController();
+    final timeController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reschedule Appointment'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Reschedule appointment with ${appointment.patientName}',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: dateController,
+                decoration: const InputDecoration(
+                  labelText: 'New Date',
+                  prefixIcon: Icon(Icons.calendar_today),
+                  border: OutlineInputBorder(),
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now().add(const Duration(days: 1)),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (date != null) {
+                    dateController.text = '${date.day}/${date.month}/${date.year}';
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: timeController,
+                decoration: const InputDecoration(
+                  labelText: 'New Time',
+                  prefixIcon: Icon(Icons.access_time),
+                  border: OutlineInputBorder(),
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.now(),
+                  );
+                  if (time != null) {
+                    timeController.text = time.format(context);
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (dateController.text.isEmpty || timeController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please select both date and time')),
+                );
+                return;
+              }
+              
+              Navigator.pop(context);
+              await _rescheduleAppointment(
+                appointment,
+                dateController.text,
+                timeController.text,
+              );
+            },
+            child: const Text('Reschedule'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Reschedule appointment
+  Future<void> _rescheduleAppointment(
+    AppointmentModel appointment,
+    String newDateString,
+    String newTimeString,
+  ) async {
+    try {
+      // Parse the date string (format: dd/mm/yyyy)
+      final dateParts = newDateString.split('/');
+      final newDate = DateTime(
+        int.parse(dateParts[2]), // year
+        int.parse(dateParts[1]), // month
+        int.parse(dateParts[0]), // day
+      );
+
+      await AppointmentService.rescheduleAppointment(
+        appointmentId: appointment.id,
+        newDate: newDate,
+        newTimeSlot: newTimeString,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Appointment rescheduled successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error rescheduling appointment: $e')),
+        );
+      }
+    }
+  }
+
   String _getTypeDisplayText(String? type) {
     switch (type?.toLowerCase()) {
       case 'online':
@@ -729,10 +983,56 @@ class _DoctorAppointmentsScreenState
     }
   }
 
+  IconData _getConsultationIcon(String? type) {
+    switch (type?.toLowerCase()) {
+      case 'online':
+      case 'video':
+        return Icons.video_call;
+      case 'offline':
+        return Icons.local_hospital;
+      case 'chat':
+        return Icons.chat;
+      default:
+        return Icons.medical_services;
+    }
+  }
+
   String _formatTime(DateTime dateTime) {
     final hour = dateTime.hour.toString().padLeft(2, '0');
     final minute = dateTime.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+
+  Widget _buildInfoItem(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: ThemeUtils.getTextSecondaryColor(context),
+        ),
+        const SizedBox(width: 6),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: ThemeUtils.getTextSecondaryColor(context),
+                fontSize: 10,
+              ),
+            ),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _buildInfoChip(IconData icon, String text) {
@@ -793,6 +1093,158 @@ class _DoctorAppointmentsScreenState
               },
             ),
           ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDebugMenu() {
+    final user = ref.read(currentUserModelProvider);
+    if (user == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Debug Menu'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.notifications),
+              title: const Text('Test Payment Notifications'),
+              onTap: () {
+                Navigator.pop(context);
+                _testPaymentNotifications();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.refresh),
+              title: const Text('Refresh All Data'),
+              onTap: () {
+                Navigator.pop(context);
+                _refreshAllData();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info),
+              title: const Text('Show Debug Info'),
+              onTap: () {
+                Navigator.pop(context);
+                _showDebugInfo();
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _testPaymentNotifications() async {
+    final user = ref.read(currentUserModelProvider);
+    if (user == null) return;
+
+    try {
+      await PaymentNotificationService.testPaymentNotifications(
+        patientId: 'test_patient_id',
+        doctorId: user.uid,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Test notifications sent! Check your notifications.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sending test notifications: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _refreshAllData() {
+    final user = ref.read(currentUserModelProvider);
+    if (user != null) {
+      ref.invalidate(todayDoctorAppointmentsProvider(user.uid));
+      ref.invalidate(upcomingDoctorAppointmentsProvider(user.uid));
+      ref.invalidate(pastDoctorAppointmentsProvider(user.uid));
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Data refreshed'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  void _showDebugInfo() {
+    final user = ref.read(currentUserModelProvider);
+    if (user == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Debug Info'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Doctor ID: ${user.uid}'),
+              Text('Doctor Name: ${user.fullName}'),
+              Text('Role: ${user.role}'),
+              const SizedBox(height: 16),
+              const Text('Stream Providers Status:'),
+              Consumer(
+                builder: (context, ref, child) {
+                  final todayAsync = ref.watch(todayDoctorAppointmentsProvider(user.uid));
+                  final upcomingAsync = ref.watch(upcomingDoctorAppointmentsProvider(user.uid));
+                  final pastAsync = ref.watch(pastDoctorAppointmentsProvider(user.uid));
+                  
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Today: ${todayAsync.when(
+                        data: (data) => '${data.length} appointments',
+                        loading: () => 'Loading...',
+                        error: (e, _) => 'Error: $e',
+                      )}'),
+                      Text('Upcoming: ${upcomingAsync.when(
+                        data: (data) => '${data.length} appointments',
+                        loading: () => 'Loading...',
+                        error: (e, _) => 'Error: $e',
+                      )}'),
+                      Text('Past: ${pastAsync.when(
+                        data: (data) => '${data.length} appointments',
+                        loading: () => 'Loading...',
+                        error: (e, _) => 'Error: $e',
+                      )}'),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -876,8 +1328,7 @@ class _DoctorAppointmentsScreenState
                   ),
                   items: const [
                     DropdownMenuItem(value: 'online', child: Text('Online')),
-                    DropdownMenuItem(value: 'offline', child: Text('Offline')),
-                    DropdownMenuItem(value: 'video', child: Text('Video Call')),
+                    DropdownMenuItem(value: 'offline', child: Text('In-Person')),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -893,47 +1344,18 @@ class _DoctorAppointmentsScreenState
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
-            TextButton(
-              onPressed: () async {
-                if (patientNameController.text.isEmpty ||
-                    dateController.text.isEmpty ||
-                    timeController.text.isEmpty) {
+            ElevatedButton(
+              onPressed: () {
+                if (patientNameController.text.isNotEmpty &&
+                    dateController.text.isNotEmpty &&
+                    timeController.text.isNotEmpty) {
+                  Navigator.pop(context);
+                  // TODO: Implement appointment creation
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Please fill all fields'),
+                      content: Text('Appointment creation feature coming soon'),
                     ),
                   );
-                  return;
-                }
-
-                Navigator.pop(context);
-
-                try {
-                  final user = ref.read(authProvider).userModel;
-                  if (user != null) {
-                    await DoctorService.createAppointment(
-                      doctorId: user.uid,
-                      patientName: patientNameController.text,
-                      date: dateController.text,
-                      time: timeController.text,
-                      consultationType: consultationType,
-                    );
-
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Appointment created successfully'),
-                        ),
-                      );
-                      _loadAppointments();
-                    }
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error creating appointment: $e')),
-                    );
-                  }
                 }
               },
               child: const Text('Create'),
@@ -944,44 +1366,143 @@ class _DoctorAppointmentsScreenState
     );
   }
 
-  IconData _getConsultationIcon(String? type) {
-    switch (type?.toLowerCase()) {
-      case 'video':
-        return Icons.video_call;
-      case 'offline':
-      case 'in-person':
-        return Icons.local_hospital;
-      case 'chat':
-        return Icons.chat;
-      default:
-        return Icons.medical_services;
+  /// Handle prescription creation/viewing
+  void _handlePrescription(AppointmentModel appointment) {
+    Navigator.pushNamed(
+      context,
+      '/doctor/create-prescription',
+      arguments: {
+        'appointmentId': appointment.id,
+        'patientId': appointment.patientId,
+        'patientName': appointment.patientName,
+        'doctorId': appointment.doctorId,
+        'doctorName': appointment.doctorName,
+        'doctorSpecialty': appointment.doctorSpecialty,
+        'isEdit': appointment.status == 'completed',
+      },
+    ).then((_) {
+      // Refresh the stream providers after prescription is created
+      final user = ref.read(currentUserModelProvider);
+      if (user != null) {
+        ref.invalidate(todayDoctorAppointmentsProvider(user.uid));
+        ref.invalidate(upcomingDoctorAppointmentsProvider(user.uid));
+        ref.invalidate(pastDoctorAppointmentsProvider(user.uid));
+      }
+    });
+  }
+
+  /// Mark payment as received for pay-on-clinic appointments
+  Future<void> _markPaymentReceived(AppointmentModel appointment) async {
+    try {
+      // Show payment method selection dialog
+      final paymentMethod = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Payment Method'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.money),
+                title: const Text('Cash'),
+                onTap: () => Navigator.pop(context, 'cash'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.credit_card),
+                title: const Text('Card'),
+                onTap: () => Navigator.pop(context, 'card'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.account_balance),
+                title: const Text('UPI'),
+                onTap: () => Navigator.pop(context, 'upi'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (paymentMethod != null) {
+        await AppointmentService.markPaymentReceived(
+          appointmentId: appointment.id,
+          paymentMethod: paymentMethod,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Payment marked as received'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+
+        // Send payment notification to patient
+        _sendPaymentNotification(appointment, paymentMethod);
+
+        // Refresh the stream providers
+        final user = ref.read(currentUserModelProvider);
+        if (user != null) {
+          ref.invalidate(todayDoctorAppointmentsProvider(user.uid));
+          ref.invalidate(upcomingDoctorAppointmentsProvider(user.uid));
+          ref.invalidate(pastDoctorAppointmentsProvider(user.uid));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error marking payment: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  Widget _buildInfoItem(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: ThemeUtils.getTextSecondaryColor(context)),
-        const SizedBox(width: 4),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: ThemeUtils.getTextSecondaryColor(context),
-                fontSize: 10,
-              ),
-            ),
-            Text(
-              value,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-      ],
-    );
+  /// Send payment notification to patient
+  Future<void> _sendPaymentNotification(
+    AppointmentModel appointment,
+    String paymentMethod,
+  ) async {
+    try {
+      // Send notification to patient
+      await PaymentNotificationService.sendPaymentSuccessToPatient(
+        patientId: appointment.patientId,
+        appointmentId: appointment.id,
+        amount: appointment.consultationFee ?? 0,
+        paymentMethod: paymentMethod,
+        doctorName: appointment.doctorName,
+      );
+
+      // Send notification to doctor
+      await PaymentNotificationService.sendPaymentReceivedToDoctor(
+        doctorId: appointment.doctorId,
+        appointmentId: appointment.id,
+        amount: appointment.consultationFee ?? 0,
+        paymentMethod: paymentMethod,
+        patientName: appointment.patientName,
+      );
+
+      print('✅ Payment notifications sent successfully');
+      
+      // Refresh the stream providers
+      final user = ref.read(currentUserModelProvider);
+      if (user != null) {
+        ref.invalidate(todayDoctorAppointmentsProvider(user.uid));
+        ref.invalidate(upcomingDoctorAppointmentsProvider(user.uid));
+        ref.invalidate(pastDoctorAppointmentsProvider(user.uid));
+      }
+    } catch (e) {
+      print('⚠️ Error sending payment notifications: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error marking payment: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

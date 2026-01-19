@@ -944,7 +944,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
+              
+              // Show immediate feedback
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Logging out...'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              }
+              
+              // Perform logout
               await ref.read(authProvider.notifier).signOut();
+              
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const LoginScreen()),

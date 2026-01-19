@@ -265,8 +265,8 @@ await NotificationTestingService.instance.testAllPatientNotifications();
 
 ``` bash
 # Clone the repository
-git clone https://github.com/your-username/Curevia.git
-cd Curevia
+git clone https://github.com/9A-Ayush/curevia.git
+cd curevia
 
 # Install dependencies
 flutter pub get
@@ -274,6 +274,59 @@ flutter pub get
 # Run the app
 flutter run
 ```
+
+### 🔐 **Important Security Setup**
+
+**⚠️ CRITICAL: Never commit sensitive files to GitHub**
+
+Before running the app, you need to set up the following files that are **NOT included in the repository** for security reasons:
+
+#### **Required Environment Files:**
+1. **`.env`** (Root directory) - Contains API keys and sensitive configuration
+2. **`lib/config/ai_config.dart`** - Google Gemini API configuration (copy from template)
+3. **`lib/firebase_options.dart`** - Firebase configuration (copy from template)
+4. **`android/app/google-services.json`** - Firebase Android configuration
+5. **`ios/Runner/GoogleService-Info.plist`** - Firebase iOS configuration
+6. **`curevia-f31a8-firebase-adminsdk-fbsvc-*.json`** - Firebase Admin SDK key
+7. **`email-service/.env`** - Email service configuration
+8. **`email-service/serviceAccountKey.json`** - Firebase service account
+
+#### **Setup Instructions:**
+1. **Create `.env` file** in root directory with your API keys:
+   ```env
+   GEMINI_API_KEY=your_gemini_api_key_here
+   RAZORPAY_KEY_ID=your_razorpay_key_id
+   RAZORPAY_KEY_SECRET=your_razorpay_secret
+   CLOUDINARY_CLOUD_NAME=your_cloudinary_name
+   CLOUDINARY_API_KEY=your_cloudinary_key
+   CLOUDINARY_API_SECRET=your_cloudinary_secret
+   ```
+
+2. **Configure AI Services**:
+   ```bash
+   # Copy template and add your Gemini API key
+   cp lib/config/ai_config.dart.template lib/config/ai_config.dart
+   # Edit lib/config/ai_config.dart and replace YOUR_GEMINI_API_KEY_HERE
+   ```
+
+3. **Configure Firebase**:
+   ```bash
+   # Copy template and add your Firebase config
+   cp lib/firebase_options.dart.template lib/firebase_options.dart
+   # Edit lib/firebase_options.dart with your Firebase project details
+   ```
+
+4. **Download Firebase Configuration Files** from Firebase Console:
+   - `android/app/google-services.json` (Android)
+   - `ios/Runner/GoogleService-Info.plist` (iOS)
+
+5. **Email Service Setup** - Configure email service environment variables in `email-service/.env`
+
+#### **Security Notes:**
+- ✅ All sensitive files are already in `.gitignore`
+- ✅ Never share API keys in public repositories
+- ✅ Use environment variables for production deployment
+- ✅ Rotate API keys regularly for security
 
 ### 🧪 **Testing Notifications (Debug Mode)**
 
@@ -304,7 +357,14 @@ The notification system automatically initializes when the app starts with enhan
 
 ## 🆕 Recent Updates
 
-### **v1.3.0 - Production Ready & Enhanced Reliability** (Latest - January 16, 2026)
+### **v1.4.0 - Enhanced Security & Documentation** (Latest - January 19, 2026)
+- � **Documentation Update** - Comprehensive README refresh with latest features and security guidelines
+- �️ **Security Best Practices** - Added critical security notes for API keys and environment files
+- 🔐 **Environment Protection** - Enhanced .gitignore and security documentation for sensitive data
+- 📝 **Developer Guidelines** - Clear instructions for secure development and deployment practices
+- � **Repository Sync** - Updated GitHub repository with latest codebase improvements
+
+### **v1.3.0 - Production Ready & Enhanced Reliability** (January 16, 2026)
 - 🔧 **Compilation Fixes** - Resolved all build errors, app now compiles successfully
 - 🔔 **Notification Sound Fix** - Fixed push notification sounds working reliably across all device states
 - 🧹 **Codebase Cleanup** - Removed unused test files, debug screens, and example code for cleaner production build
@@ -337,12 +397,46 @@ The notification system automatically initializes when the app starts with enhan
 
 ------------------------------------------------------------------------
 
+## � Security & Privacy
+
+### **Data Protection**
+- �️ **API Key Security** - All sensitive API keys are stored in environment files (not in repository)
+- 🔒 **Firebase Security** - Comprehensive Firestore rules and authentication
+- 📱 **Local Storage** - Secure local data storage with encryption
+- 🌐 **HTTPS Only** - All API communications use secure HTTPS protocols
+
+### **Files NOT in Repository (Security)**
+The following files contain sensitive information and are **excluded from GitHub**:
+- `.env` - API keys and configuration
+- `lib/config/ai_config.dart` - Google Gemini API configuration
+- `lib/firebase_options.dart` - Firebase project configuration
+- `android/app/google-services.json` - Firebase Android config
+- `ios/Runner/GoogleService-Info.plist` - Firebase iOS config
+- `curevia-f31a8-firebase-adminsdk-*.json` - Firebase Admin SDK
+- `email-service/` - Complete email service folder (separate repository)
+- `email-service/.env` - Email service secrets
+- `email-service/serviceAccountKey.json` - Service account key
+
+**Template files are provided** for easy setup:
+- `lib/config/ai_config.dart.template` → Copy to `ai_config.dart`
+- `lib/firebase_options.dart.template` → Copy to `firebase_options.dart`
+
+### **Privacy Compliance**
+- 📋 **User Consent** - Clear privacy policies and user agreements
+- 🗑️ **Data Deletion** - Users can delete their accounts and data
+- 📧 **Email Preferences** - Complete control over email subscriptions
+- 🔍 **Transparent Processing** - Clear information about data usage
+
+------------------------------------------------------------------------
+
 ## 👨‍💻 Author
 
 **Ayush Kumar**\
 [![GitHub](https://img.shields.io/badge/GitHub-9A--Ayush-black?logo=github)](https://github.com/9A-Ayush)\
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Ayush%20Kumar-blue?logo=linkedin)](http://www.linkedin.com/in/ayush-kumar-849a1324b)\
 [![Instagram](https://img.shields.io/badge/Instagram-%40ayush__ix__xi-pink?logo=instagram)](https://www.instagram.com/ayush_ix_xi)
+
+**Repository**: [https://github.com/9A-Ayush/curevia.git](https://github.com/9A-Ayush/curevia.git)
 
 ------------------------------------------------------------------------
 

@@ -5,6 +5,7 @@ import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/admin/admin_theme_settings_widget.dart';
+import '../../widgets/common/notification_badge.dart';
 import 'doctor_verification_screen.dart';
 import 'users_management_screen.dart';
 import 'appointments_management_screen.dart';
@@ -24,6 +25,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   String _adminName = 'Admin';
   String _greeting = 'Good Day';
   late PageController _pageController;
+  DateTime? _lastBackPressed;
 
   @override
   void initState() {
@@ -146,41 +148,137 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: ThemeUtils.getBackgroundColor(context),
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() => _selectedIndex = index);
-        },
-        children: [
-          // Dashboard (index 0)
-          SafeArea(
-            child: RefreshIndicator(
-              onRefresh: _loadStats,
-              color: ThemeUtils.getPrimaryColor(context),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(),
-                    _buildQuickActions(),
-                    _buildOverviewSection(),
-                  ],
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        backgroundColor: ThemeUtils.getBackgroundColor(context),
+        body: PageView(
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() => _selectedIndex = index);
+          },
+          children: [
+            // Dashboard (index 0)
+            SafeArea(
+              child: RefreshIndicator(
+                onRefresh: _loadStats,
+                color: ThemeUtils.getPrimaryColor(context),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(),
+                      _buildQuickActions(),
+                      _buildOverviewSection(),
+                    ],
+                  ),
                 ),
               ),
             ),
+            // Other screens with app bar
+            _buildScreenWithAppBar(const DoctorVerificationScreen(), 'Doctor Verifications'),
+            _buildScreenWithAppBar(const UsersManagementScreen(), 'Users Management'),
+            _buildScreenWithAppBar(const AppointmentsManagementScreen(), 'Appointments Management'),
+            _buildScreenWithAppBar(const AnalyticsScreen(), 'Analytics'),
+          ],
+        ),
+        bottomNavigationBar: _buildBottomNav(),
+      ),
+    );
+  }
+
+  Future<bool> _onWillPop() async {
+    // If not on the main dashboard, go back to dashboard first
+    if (_selectedIndex != 0) {
+      _pageController.animateToPage(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      return false;
+    }
+
+    // Double-tap to exit logic
+    final now = DateTime.now();
+    if (_lastBackPressed == null || now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
+      _lastBackPressed = now;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Press back again to exit admin panel'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: ThemeUtils.getPrimaryColor(context),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
           ),
-          // Other screens with app bar
-          _buildScreenWithAppBar(const DoctorVerificationScreen(), 'Doctor Verifications'),
-          _buildScreenWithAppBar(const UsersManagementScreen(), 'Users Management'),
-          _buildScreenWithAppBar(const AppointmentsManagementScreen(), 'Appointments Management'),
-          _buildScreenWithAppBar(const AnalyticsScreen(), 'Analytics'),
+        ),
+      );
+      return false;
+    }
+    
+    // Show exit confirmation dialog
+    return await _showExitConfirmation();
+  }
+
+  Future<bool> _showExitConfirmation() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ThemeUtils.getSurfaceColor(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.exit_to_app,
+              color: ThemeUtils.getPrimaryColor(context),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Exit Admin Panel',
+              style: TextStyle(
+                color: ThemeUtils.getTextPrimaryColor(context),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to exit the admin panel?',
+          style: TextStyle(
+            color: ThemeUtils.getTextSecondaryColor(context),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: ThemeUtils.getTextSecondaryColor(context),
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ThemeUtils.getPrimaryColor(context),
+              foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Exit'),
+          ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
+    
+    return result ?? false;
   }
 
   Widget _buildHeader() {
@@ -550,8 +648,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     ),
                     child: Text(
                       badge.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: ThemeUtils.getTextOnPrimaryColor(context),
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -904,6 +1002,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
 
     if (confirm == true && mounted) {
+      // Show immediate feedback
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logging out...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+      
+      // Perform logout
       await ref.read(authProvider.notifier).signOut();
     }
   }

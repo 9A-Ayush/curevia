@@ -6,6 +6,7 @@ import '../../utils/theme_utils.dart';
 import '../../utils/responsive_utils.dart';
 import '../common/theme_aware_card.dart';
 import '../common/document_viewer_widget.dart';
+import 'document_preview_card.dart' as admin;
 
 class ExpandableVerificationCard extends StatefulWidget {
   final String verificationId;
@@ -344,7 +345,7 @@ class _ExpandableVerificationCardState extends State<ExpandableVerificationCard>
             
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: DocumentPreviewCard(
+              child: admin.DocumentPreviewCard(
                 documentUrl: documentUrl,
                 documentName: documentName,
                 documentType: _getDocumentTypeFromUrl(documentUrl),
@@ -439,44 +440,101 @@ class _ExpandableVerificationCardState extends State<ExpandableVerificationCard>
   }
 
   Widget _buildActionButtons(BuildContext context, bool isMobile) {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: widget.onViewDetails,
-            icon: const Icon(Icons.visibility, size: 18),
-            label: const Text('View Details'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: ThemeUtils.getPrimaryColor(context),
-              side: BorderSide(color: ThemeUtils.getPrimaryColor(context)),
+    return Container(
+      padding: const EdgeInsets.only(top: 8),
+      child: isMobile 
+          ? Column(
+              children: [
+                // First row: View Details (full width)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: widget.onViewDetails,
+                    icon: const Icon(Icons.visibility, size: 18),
+                    label: const Text('View Details'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: ThemeUtils.getPrimaryColor(context),
+                      side: BorderSide(color: ThemeUtils.getPrimaryColor(context)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Second row: Reject and Approve
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: widget.onReject,
+                        icon: const Icon(Icons.close, size: 18),
+                        label: const Text('Reject'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: widget.onApprove,
+                        icon: const Icon(Icons.check, size: 18),
+                        label: const Text('Approve'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.success,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: OutlinedButton.icon(
+                    onPressed: widget.onViewDetails,
+                    icon: const Icon(Icons.visibility, size: 18),
+                    label: const Text('View Details'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: ThemeUtils.getPrimaryColor(context),
+                      side: BorderSide(color: ThemeUtils.getPrimaryColor(context)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: widget.onReject,
+                    icon: const Icon(Icons.close, size: 18),
+                    label: const Text('Reject'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: widget.onApprove,
+                    icon: const Icon(Icons.check, size: 18),
+                    label: const Text('Approve'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: widget.onReject,
-            icon: const Icon(Icons.close, size: 18),
-            label: const Text('Reject'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: widget.onApprove,
-            icon: const Icon(Icons.check, size: 18),
-            label: const Text('Approve'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.success,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ),
-      ],
     );
   }
 

@@ -415,6 +415,76 @@ class _ProfessionalDetailsStepState extends ConsumerState<ProfessionalDetailsSte
       return;
     }
 
+    // Check if email has been changed from the original
+    final originalEmail = widget.initialData['email'];
+    final currentEmail = _emailController.text.trim();
+    bool emailChanged = originalEmail != null && originalEmail != currentEmail;
+
+    // Show warning if email changed
+    if (emailChanged && mounted) {
+      final shouldContinue = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: ThemeUtils.getSurfaceColor(context),
+          title: Row(
+            children: [
+              Icon(Icons.warning, color: AppColors.warning),
+              const SizedBox(width: 8),
+              Text(
+                'Email Address Changed',
+                style: TextStyle(color: ThemeUtils.getTextPrimaryColor(context)),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'You have changed your email address from:',
+                style: TextStyle(color: ThemeUtils.getTextPrimaryColor(context)),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: ThemeUtils.getSurfaceVariantColor(context),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'From: $originalEmail\nTo: $currentEmail',
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    color: ThemeUtils.getTextSecondaryColor(context),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'This will update your account email address. Make sure you have access to the new email for future communications.',
+                style: TextStyle(color: ThemeUtils.getTextPrimaryColor(context)),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldContinue != true) {
+        return; // User cancelled
+      }
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -447,6 +517,18 @@ class _ProfessionalDetailsStepState extends ConsumerState<ProfessionalDetailsSte
       widget.onDataUpdate(data);
 
       setState(() => _isLoading = false);
+
+      // Show success message if email was changed
+      if (emailChanged && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Email address updated successfully'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
 
       // Continue to next step
       widget.onContinue();
@@ -683,13 +765,12 @@ class _ProfessionalDetailsStepState extends ConsumerState<ProfessionalDetailsSte
     return _buildStyledTextField(
       controller: _emailController,
       label: 'Email Address',
-      hint: 'Your registered email address',
+      hint: 'Enter your email address',
       icon: Icons.email,
       keyboardType: TextInputType.emailAddress,
-      enabled: false, // Make email read-only since it comes from user account
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return 'Email address is required';
+          return 'Please enter your email address';
         }
         if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
           return 'Please enter a valid email address';

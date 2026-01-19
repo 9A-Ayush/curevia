@@ -14,6 +14,7 @@ import '../../widgets/common/loading_overlay.dart';
 import '../../services/firebase/appointment_service.dart';
 import '../../services/notifications/notification_manager.dart';
 import '../../services/notifications/notification_integration_service.dart';
+import '../../services/notifications/fcm_token_service.dart';
 import '../payment/payment_screen.dart';
 
 /// Video consultation appointment booking screen
@@ -645,15 +646,23 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
               }
               
               // Send payment received notification to doctor
-              await NotificationIntegrationService.instance.notifyDoctorPaymentReceived(
-                doctorId: widget.doctor.uid,
-                doctorFCMToken: 'doctor_token', // TODO: Get actual doctor FCM token
-                patientName: userModel.fullName,
-                paymentId: paymentId,
-                amount: widget.doctor.consultationFee?.toDouble() ?? 0.0,
-                currency: 'INR',
-                appointmentId: appointmentId,
-              );
+              // Get doctor's actual FCM token from database
+              final doctorFCMToken = await FCMTokenService.getDoctorFCMToken(widget.doctor.uid);
+              
+              if (doctorFCMToken != null) {
+                await NotificationIntegrationService.instance.notifyDoctorPaymentReceived(
+                  doctorId: widget.doctor.uid,
+                  doctorFCMToken: doctorFCMToken,
+                  patientName: userModel.fullName,
+                  paymentId: paymentId,
+                  amount: widget.doctor.consultationFee?.toDouble() ?? 0.0,
+                  currency: 'INR',
+                  appointmentId: appointmentId,
+                );
+                debugPrint('✅ Doctor payment notification sent successfully');
+              } else {
+                debugPrint('⚠️ Doctor FCM token not found, notification not sent');
+              }
               
               // Send notification to doctor
               await NotificationManager.instance.sendTestNotification(

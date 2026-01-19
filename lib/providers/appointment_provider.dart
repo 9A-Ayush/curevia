@@ -452,3 +452,59 @@ final appointmentsStreamProvider = StreamProvider.family<List<AppointmentModel>,
     status: params['status'],
   );
 });
+
+/// Doctor appointments stream provider for real-time updates
+final doctorAppointmentsStreamProvider = StreamProvider.family.autoDispose<List<AppointmentModel>, Map<String, dynamic>>((ref, params) {
+  final doctorId = params['doctorId'] as String;
+  final status = params['status'] as String?;
+  final date = params['date'] as DateTime?;
+  
+  print('🔄 Setting up doctor appointments stream for doctorId: $doctorId');
+  
+  return AppointmentService.getDoctorAppointmentsStream(
+    doctorId: doctorId,
+    status: status,
+    date: date,
+  );
+});
+
+/// Today's doctor appointments provider
+final todayDoctorAppointmentsProvider = StreamProvider.family.autoDispose<List<AppointmentModel>, String>((ref, doctorId) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  
+  return AppointmentService.getDoctorAppointmentsStream(
+    doctorId: doctorId,
+    date: today,
+  );
+});
+
+/// Upcoming doctor appointments provider (excluding today)
+final upcomingDoctorAppointmentsProvider = StreamProvider.family.autoDispose<List<AppointmentModel>, String>((ref, doctorId) {
+  return AppointmentService.getDoctorAppointmentsStream(
+    doctorId: doctorId,
+  ).map((appointments) {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    
+    return appointments.where((appointment) {
+      return appointment.appointmentDate.isAfter(tomorrow) &&
+             (appointment.status == 'confirmed' || appointment.status == 'pending');
+    }).toList();
+  });
+});
+
+/// Past doctor appointments provider
+final pastDoctorAppointmentsProvider = StreamProvider.family.autoDispose<List<AppointmentModel>, String>((ref, doctorId) {
+  return AppointmentService.getDoctorAppointmentsStream(
+    doctorId: doctorId,
+  ).map((appointments) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
+    return appointments.where((appointment) {
+      return appointment.appointmentDate.isBefore(today) &&
+             appointment.status == 'completed';
+    }).toList();
+  });
+});

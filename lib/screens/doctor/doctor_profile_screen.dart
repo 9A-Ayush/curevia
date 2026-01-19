@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/doctor/doctor_service.dart';
+import '../../services/firebase/doctor_service.dart';
 import 'doctor_profile_edit_screen.dart';
 
 /// Doctor profile screen for managing doctor information
@@ -31,7 +31,8 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     try {
       final user = ref.read(authProvider).userModel;
       if (user != null) {
-        final profile = await DoctorService.getDoctorProfile(user.uid);
+        // Use the new method that syncs statistics
+        final profile = await DoctorService.getDoctorProfileWithStats(user.uid);
         setState(() {
           _doctorProfile = profile;
           _isLoading = false;
@@ -289,7 +290,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
             const SizedBox(height: 4),
 
             Text(
-              _doctorProfile?['specialty'] ?? 'General Medicine',
+              _doctorProfile?['specialty'] ?? _doctorProfile?['specialization'] ?? 'General Medicine',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: AppColors.textOnPrimary.withOpacity(0.9),
               ),
@@ -304,7 +305,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 Icon(Icons.star, color: Colors.amber, size: 20),
                 const SizedBox(width: 4),
                 Text(
-                  '${_doctorProfile?['rating'] ?? '4.8'} (${_doctorProfile?['totalReviews'] ?? '127'} reviews)',
+                  '${(_doctorProfile?['rating'] ?? 4.8).toStringAsFixed(1)} (${_doctorProfile?['totalReviews'] ?? 127} reviews)',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textOnPrimary.withOpacity(0.9),
                   ),
@@ -317,7 +318,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  '${_doctorProfile?['experienceYears'] ?? '5'}+ years',
+                  '${_doctorProfile?['experienceYears'] ?? _doctorProfile?['experience'] ?? 5}+ years',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textOnPrimary.withOpacity(0.9),
                   ),
@@ -331,6 +332,12 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
   }
 
   Widget _buildProfessionalStats(BuildContext context) {
+    // Get real data from the doctor profile
+    final totalPatients = _doctorProfile?['totalPatients'] ?? 0;
+    final totalConsultations = _doctorProfile?['totalConsultations'] ?? 0;
+    final experienceYears = _doctorProfile?['experienceYears'] ?? _doctorProfile?['experience'] ?? 0;
+    final rating = _doctorProfile?['rating'] ?? 0.0;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -354,7 +361,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 child: _buildStatCard(
                   context,
                   'Total Patients',
-                  '${_doctorProfile?['totalPatients'] ?? 0}',
+                  '$totalPatients',
                   Icons.people,
                   AppColors.primary,
                 ),
@@ -364,7 +371,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 child: _buildStatCard(
                   context,
                   'Consultations',
-                  '${_doctorProfile?['totalConsultations'] ?? 0}',
+                  '$totalConsultations',
                   Icons.medical_services,
                   AppColors.success,
                 ),
@@ -378,7 +385,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 child: _buildStatCard(
                   context,
                   'Experience',
-                  '${_doctorProfile?['experience'] ?? 0} years',
+                  '$experienceYears years',
                   Icons.star,
                   AppColors.warning,
                 ),
@@ -388,7 +395,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 child: _buildStatCard(
                   context,
                   'Rating',
-                  '${_doctorProfile?['rating'] ?? 0.0}/5',
+                  '${rating.toStringAsFixed(1)}/5',
                   Icons.thumb_up,
                   AppColors.info,
                 ),
@@ -438,6 +445,12 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
   }
 
   Widget _buildAboutSection(BuildContext context, user) {
+    // Get real data from the doctor profile
+    final bio = _doctorProfile?['bio'] ?? _doctorProfile?['about'] ?? 'No bio available';
+    final education = _doctorProfile?['education'] ?? _doctorProfile?['qualification'] ?? 'Not specified';
+    final specialization = _doctorProfile?['specialization'] ?? _doctorProfile?['specialty'] ?? 'General';
+    final location = _doctorProfile?['location'] ?? _doctorProfile?['city'] ?? 'Not specified';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -456,26 +469,26 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            _doctorProfile?['bio'] ?? 'No bio available',
+            bio,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
           _buildInfoRowWithIcon(
             Icons.school,
             'Education',
-            _doctorProfile?['education'] ?? 'Not specified',
+            education,
           ),
           const SizedBox(height: 8),
           _buildInfoRowWithIcon(
             Icons.medical_services,
             'Specialization',
-            _doctorProfile?['specialization'] ?? 'General',
+            specialization,
           ),
           const SizedBox(height: 8),
           _buildInfoRowWithIcon(
             Icons.location_on,
             'Location',
-            _doctorProfile?['location'] ?? 'Not specified',
+            location,
           ),
         ],
       ),
@@ -855,9 +868,21 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ref.read(authProvider.notifier).signOut();
+              
+              // Show immediate feedback
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Logging out...'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              }
+              
+              // Perform logout
+              await ref.read(authProvider.notifier).signOut();
             },
             child: const Text('Logout'),
           ),

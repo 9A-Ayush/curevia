@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../models/notification_model.dart';
 import 'fcm_service.dart';
+import 'fcm_direct_service.dart';
 import 'notification_handler.dart';
 import 'notification_scheduler.dart';
 import '../storage/notification_storage_service.dart';
@@ -236,33 +237,52 @@ class NotificationManager {
     List<String>? specializations,
   }) async {
     try {
-      // Unsubscribe from general topics
-      await FCMService.instance.unsubscribeFromTopic('all_users');
-      await FCMService.instance.unsubscribeFromTopic(userType);
-      await FCMService.instance.unsubscribeFromTopic('user_$userId');
+      // Collect all unsubscribe operations
+      List<Future<void>> unsubscribeOperations = [
+        // General topics
+        FCMService.instance.unsubscribeFromTopic('all_users'),
+        FCMService.instance.unsubscribeFromTopic(userType),
+        FCMService.instance.unsubscribeFromTopic('user_$userId'),
+      ];
 
-      // Unsubscribe from role-specific topics
+      // Add role-specific topics
       switch (userType) {
         case 'patient':
-          await FCMService.instance.unsubscribeFromTopic('patients');
+          unsubscribeOperations.add(
+            FCMService.instance.unsubscribeFromTopic('patients')
+          );
           break;
         case 'doctor':
-          await FCMService.instance.unsubscribeFromTopic('doctors');
+          unsubscribeOperations.add(
+            FCMService.instance.unsubscribeFromTopic('doctors')
+          );
           if (specializations != null) {
             for (final specialization in specializations) {
-              await FCMService.instance.unsubscribeFromTopic('doctors_$specialization');
+              unsubscribeOperations.add(
+                FCMService.instance.unsubscribeFromTopic('doctors_$specialization')
+              );
             }
           }
           break;
         case 'admin':
-          await FCMService.instance.unsubscribeFromTopic('admins');
-          await FCMService.instance.unsubscribeFromTopic('doctor_verification_requests');
+          unsubscribeOperations.addAll([
+            FCMService.instance.unsubscribeFromTopic('admins'),
+            FCMService.instance.unsubscribeFromTopic('doctor_verification_requests'),
+          ]);
           break;
       }
+
+      // Execute all unsubscribe operations in parallel
+      await Future.wait(
+        unsubscribeOperations.map((op) => 
+          op.catchError((e) => debugPrint('Unsubscribe error: $e'))
+        )
+      );
 
       debugPrint('Unsubscribed from topics for $userType: $userId');
     } catch (e) {
       debugPrint('Error unsubscribing from topics: $e');
+      // Don't rethrow - unsubscribe errors shouldn't block logout
     }
   }
 
@@ -368,15 +388,61 @@ class NotificationManager {
   }
 
   /// Private method to send FCM message (placeholder)
+  /// Get channel ID for notification type
+  String _getChannelIdForType(NotificationType type) {
+    switch (type) {
+      case NotificationType.appointmentBooking:
+      case NotificationType.appointmentBookingConfirmation:
+      case NotificationType.appointmentReminder:
+      case NotificationType.appointmentRescheduledOrCancelled:
+      case NotificationType.doctorRescheduledAppointment:
+        return 'appointments';
+      case NotificationType.paymentSuccess:
+      case NotificationType.paymentReceived:
+        return 'payments';
+      case NotificationType.doctorVerificationRequest:
+      case NotificationType.verificationStatusUpdate:
+        return 'verification';
+      case NotificationType.healthTipsReminder:
+        return 'health_tips';
+      case NotificationType.engagementNotification:
+        return 'engagement';
+      case NotificationType.fitnessGoalAchieved:
+        return 'fitness';
+      case NotificationType.medicalReportShared:
+        return 'medical_sharing';
+      case NotificationType.general:
+      default:
+        return 'general';
+    }
+  }
+
+  /// Private method to send FCM message (now uses direct FCM service)
   Future<void> _sendFCMMessage(String token, NotificationModel notification) async {
-    // TODO: Implement actual FCM message sending via your backend API
-    // This is typically done through your server, not directly from the client
-    
-    debugPrint('Would send FCM message to token: ${token.substring(0, 20)}...');
-    debugPrint('Notification: ${notification.title} - ${notification.body}');
-    
-    // For now, just save the notification locally for testing
-    await NotificationStorageService.saveNotification(notification);
+    try {
+      // Use direct FCM service for immediate sending
+      final success = await FCMDirectService.sendTestNotification(
+        fcmToken: token,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+        channelId: _getChannelIdForType(notification.type),
+        sound: 'default',
+      );
+      
+      if (success) {
+        debugPrint('✅ FCM message sent successfully to token: ${token.substring(0, 20)}...');
+      } else {
+        debugPrint('❌ Failed to send FCM message to token: ${token.substring(0, 20)}...');
+      }
+      
+      // Also save locally for record keeping
+      await NotificationStorageService.saveNotification(notification);
+    } catch (e) {
+      debugPrint('❌ Error sending FCM message: $e');
+      // Still save locally even if FCM fails
+      await NotificationStorageService.saveNotification(notification);
+    }
   }
 
   /// Handle app lifecycle changes

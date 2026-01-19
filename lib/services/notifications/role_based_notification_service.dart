@@ -605,20 +605,32 @@ class RoleBasedNotificationService {
     String? location,
   }) async {
     try {
-      await NotificationManager.instance.unsubscribeFromAllTopics(
-        userType: userRole,
-        userId: userId,
-        specializations: specializations,
-      );
+      // Run unsubscribe operations in parallel
+      List<Future<void>> operations = [
+        NotificationManager.instance.unsubscribeFromAllTopics(
+          userType: userRole,
+          userId: userId,
+          specializations: specializations,
+        ),
+      ];
       
-      // Unsubscribe from location-based topics if provided
+      // Add location unsubscribe if provided
       if (location != null) {
-        await FCMService.instance.unsubscribeFromTopic('location_${location.toLowerCase()}');
+        operations.add(
+          FCMService.instance.unsubscribeFromTopic('location_${location.toLowerCase()}')
+        );
       }
+      
+      await Future.wait(
+        operations.map((op) => 
+          op.catchError((e) => debugPrint('Role unsubscribe error: $e'))
+        )
+      );
       
       debugPrint('Unsubscribed user $userId from $userRole topics');
     } catch (e) {
       debugPrint('Error unsubscribing user from role topics: $e');
+      // Don't rethrow - unsubscribe errors shouldn't block logout
     }
   }
 

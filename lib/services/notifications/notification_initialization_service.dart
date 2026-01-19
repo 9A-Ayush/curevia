@@ -106,6 +106,9 @@ class NotificationInitializationService {
   /// Send role-specific welcome notification
   Future<void> _sendWelcomeNotification(UserModel user) async {
     try {
+      // Add a small delay to ensure FCM is fully ready
+      await Future.delayed(Duration(milliseconds: 500));
+      
       String title;
       String body;
       
@@ -127,7 +130,7 @@ class NotificationInitializationService {
           body = 'Hi ${user.fullName}! Thanks for joining our healthcare platform.';
       }
 
-      // Create and send welcome notification
+      // Create and send welcome notification with retry logic
       final notification = NotificationModel(
         id: 'welcome_${user.uid}_${DateTime.now().millisecondsSinceEpoch}',
         title: title,
@@ -141,7 +144,34 @@ class NotificationInitializationService {
         timestamp: DateTime.now(),
       );
 
-      await FCMService.instance.showLocalNotification(notification);
+      // Try to show notification with retry
+      bool notificationSent = false;
+      for (int attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await FCMService.instance.showLocalNotification(notification);
+          notificationSent = true;
+          debugPrint('✅ Welcome notification sent successfully (attempt $attempt)');
+          break;
+        } catch (e) {
+          debugPrint('❌ Welcome notification attempt $attempt failed: $e');
+          if (attempt < 3) {
+            await Future.delayed(Duration(seconds: 1));
+          }
+        }
+      }
+      
+      if (!notificationSent) {
+        debugPrint('⚠️ All welcome notification attempts failed, scheduling retry');
+        // Schedule a retry after 10 seconds
+        Future.delayed(Duration(seconds: 10), () async {
+          try {
+            await FCMService.instance.showLocalNotification(notification);
+            debugPrint('✅ Delayed welcome notification sent successfully');
+          } catch (e) {
+            debugPrint('❌ Delayed welcome notification also failed: $e');
+          }
+        });
+      }
     } catch (e) {
       debugPrint('Error sending welcome notification: $e');
     }
@@ -157,23 +187,32 @@ class NotificationInitializationService {
     try {
       debugPrint('🧹 Cleaning up notifications for user: $userId');
 
-      // Step 1: Unsubscribe from all topics
-      await RoleBasedNotificationService.instance.unsubscribeUserFromRoleTopics(
-        userId: userId,
-        userRole: userRole.toLowerCase(),
-        specializations: specializations,
-        location: location,
-      );
-
-      // Step 2: Clear FCM token
-      await NotificationManager.instance.clearToken();
-
-      // Step 3: Clear local notifications (optional)
-      // await NotificationManager.instance.clearAllNotifications();
+      // Run all cleanup operations in parallel with timeout
+      await Future.wait([
+        // Step 1: Unsubscribe from all topics
+        RoleBasedNotificationService.instance.unsubscribeUserFromRoleTopics(
+          userId: userId,
+          userRole: userRole.toLowerCase(),
+          specializations: specializations,
+          location: location,
+        ).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => debugPrint('Topic unsubscribe timeout'),
+        ).catchError((e) => debugPrint('Topic unsubscribe error: $e')),
+        
+        // Step 2: Clear FCM token
+        NotificationManager.instance.clearToken()
+          .timeout(
+            const Duration(seconds: 3),
+            onTimeout: () => debugPrint('Token clear timeout'),
+          )
+          .catchError((e) => debugPrint('Token clear error: $e')),
+      ]);
 
       debugPrint('✅ User notifications cleanup complete');
     } catch (e) {
       debugPrint('❌ Error cleaning up user notifications: $e');
+      // Don't rethrow - cleanup errors shouldn't block logout
     }
   }
 

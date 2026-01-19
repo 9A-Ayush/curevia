@@ -5,13 +5,17 @@ import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/doctor_navigation_provider.dart';
 import '../../widgets/common/custom_button.dart';
+import '../../widgets/common/notification_badge.dart';
 import '../../models/appointment_model.dart';
 import '../../services/doctor/doctor_service.dart';
 import '../../services/firebase/appointment_service.dart';
 import '../../providers/doctor_navigation_provider.dart';
 import 'doctor_consultation_screen.dart';
 import 'doctor_schedule_screen.dart';
+import 'doctor_notifications_screen.dart';
+import 'doctor_prescriptions_screen.dart';
 
 /// Doctor dashboard screen with overview and quick actions
 class DoctorDashboardScreen extends ConsumerStatefulWidget {
@@ -168,73 +172,14 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                               ),
                             ),
                             // Notification Icon with Badge
-                            Consumer(
-                              builder: (context, ref, child) {
-                                final user = ref.watch(authProvider).userModel;
-                                if (user == null) {
-                                  return IconButton(
-                                    onPressed: () => _showNotificationsDialog(),
-                                    icon: Icon(
-                                      Icons.notifications_outlined,
-                                      color: AppColors.textOnPrimary,
-                                    ),
-                                  );
-                                }
-
-                                final unreadCountAsync = ref.watch(
-                                  unreadNotificationsCountProvider(user.uid),
-                                );
-
-                                return unreadCountAsync.when(
-                                  data: (unreadCount) => Stack(
-                                    children: [
-                                      IconButton(
-                                        onPressed: () => _showNotificationsDialog(),
-                                        icon: Icon(
-                                          Icons.notifications_outlined,
-                                          color: AppColors.textOnPrimary,
-                                        ),
-                                      ),
-                                      if (unreadCount > 0)
-                                        Positioned(
-                                          right: 8,
-                                          top: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.all(2),
-                                            decoration: BoxDecoration(
-                                              color: AppColors.error,
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            constraints: const BoxConstraints(
-                                              minWidth: 16,
-                                              minHeight: 16,
-                                            ),
-                                            child: Text(
-                                              unreadCount > 99 ? '99+' : unreadCount.toString(),
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                  loading: () => IconButton(
-                                    onPressed: () => _showNotificationsDialog(),
-                                    icon: Icon(
-                                      Icons.notifications_outlined,
-                                      color: AppColors.textOnPrimary,
-                                    ),
-                                  ),
-                                  error: (_, __) => IconButton(
-                                    onPressed: () => _showNotificationsDialog(),
-                                    icon: Icon(
-                                      Icons.notifications_outlined,
-                                      color: AppColors.textOnPrimary,
-                                    ),
+                            NotificationIconWithBadge(
+                              icon: Icons.notifications_outlined,
+                              iconColor: AppColors.textOnPrimary,
+                              onTap: () {
+                                // Navigate to notifications screen
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const DoctorNotificationsScreen(),
                                   ),
                                 );
                               },
@@ -1077,14 +1022,12 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   }
 
   void _navigateToPrescriptions() {
-    // Navigate to prescriptions screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Opening prescriptions...'),
-        duration: Duration(seconds: 1),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DoctorPrescriptionsScreen(),
       ),
     );
-    // TODO: Implement navigation to prescriptions screen when created
   }
 
   void _navigateToAppointments() {

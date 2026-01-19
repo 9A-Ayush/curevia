@@ -4,6 +4,8 @@ import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../widgets/admin/expandable_verification_card.dart';
 import '../../services/email_service.dart';
+import '../../services/notifications/fcm_token_service.dart';
+import '../../services/notifications/role_based_notification_service.dart';
 import 'doctor_verification_details_screen.dart';
 
 class DoctorVerificationScreen extends StatefulWidget {
@@ -187,6 +189,23 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
         // Don't fail the verification process if email fails
       }
       
+      // Send push notification to doctor
+      try {
+        final doctorFCMToken = await FCMTokenService.getDoctorFCMToken(doctorId);
+        if (doctorFCMToken != null) {
+          await RoleBasedNotificationService.instance.sendVerificationStatusUpdate(
+            doctorId: doctorId,
+            doctorFCMToken: doctorFCMToken,
+            status: 'approved',
+          );
+          debugPrint('✅ Doctor approval push notification sent successfully');
+        } else {
+          debugPrint('⚠️ Doctor FCM token not found for approval notification');
+        }
+      } catch (notificationError) {
+        debugPrint('⚠️ Failed to send approval push notification: $notificationError');
+      }
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -278,6 +297,24 @@ class _DoctorVerificationScreenState extends State<DoctorVerificationScreen> {
       } catch (emailError) {
         debugPrint('⚠️ Failed to send rejection email: $emailError');
         // Don't fail the verification process if email fails
+      }
+      
+      // Send push notification to doctor
+      try {
+        final doctorFCMToken = await FCMTokenService.getDoctorFCMToken(doctorId);
+        if (doctorFCMToken != null) {
+          await RoleBasedNotificationService.instance.sendVerificationStatusUpdate(
+            doctorId: doctorId,
+            doctorFCMToken: doctorFCMToken,
+            status: 'rejected',
+            rejectionReason: reason,
+          );
+          debugPrint('✅ Doctor rejection push notification sent successfully');
+        } else {
+          debugPrint('⚠️ Doctor FCM token not found for rejection notification');
+        }
+      } catch (notificationError) {
+        debugPrint('⚠️ Failed to send rejection push notification: $notificationError');
       }
       
       if (mounted) {

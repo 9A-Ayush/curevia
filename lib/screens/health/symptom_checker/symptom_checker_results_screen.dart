@@ -36,10 +36,7 @@ class SymptomCheckerResultsScreen extends ConsumerWidget {
         foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined),
-            onPressed: () => _shareResults(context, analysisResult),
-          ),
+          // Share button removed for privacy and security reasons
         ],
       ),
       body: SingleChildScrollView(
@@ -713,14 +710,8 @@ class SymptomCheckerResultsScreen extends ConsumerWidget {
     );
   }
 
-  void _shareResults(BuildContext context, SymptomAnalysisResult result) {
-    // TODO: Implement sharing functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Share functionality will be implemented'),
-      ),
-    );
-  }
+  // Sharing functionality removed for privacy and security reasons
+  // Users can take screenshots if they need to save results
 
   void _navigateToFindDoctors(BuildContext context, String specialty) {
     Navigator.of(context).push(

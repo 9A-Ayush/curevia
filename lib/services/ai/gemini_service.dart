@@ -131,8 +131,8 @@ Please analyze and respond with valid JSON only.
         final jsonResponse = json.decode(cleanContent);
         return SymptomAnalysisResult.fromJson(jsonResponse);
       } catch (e) {
-        // If JSON parsing fails, create a fallback response
-        return _createFallbackResponse(content);
+        // If JSON parsing fails, throw error instead of returning fallback
+        throw Exception('Failed to parse AI response: $e');
       }
     } else {
       throw Exception('Gemini API error: ${response.statusCode} - ${response.body}');
@@ -206,48 +206,15 @@ Please analyze and respond with valid JSON only.
         final jsonResponse = json.decode(cleanContent);
         return SymptomAnalysisResult.fromJson(jsonResponse);
       } catch (e) {
-        return _createFallbackResponse(content);
+        throw Exception('Failed to parse AI response: $e');
       }
     } else {
       throw Exception('Gemini API error: ${response.statusCode} - ${response.body}');
     }
   }
 
-  /// Create fallback response when JSON parsing fails
-  static SymptomAnalysisResult _createFallbackResponse(String content) {
-    return SymptomAnalysisResult(
-      possibleConditions: [
-        PossibleCondition(
-          name: 'Analysis Available',
-          probability: 'Medium',
-          description: 'Please consult with a healthcare professional for proper diagnosis.',
-          severity: SeverityLevel.moderate,
-          symptoms: [],
-        ),
-      ],
-      recommendations: [
-        'Consult with a healthcare professional',
-        'Monitor your symptoms',
-        'Seek medical attention if symptoms worsen',
-      ],
-      urgentSigns: [
-        'Severe pain',
-        'Difficulty breathing',
-        'High fever',
-        'Persistent symptoms',
-      ],
-      suggestedSpecialist: 'General Practitioner',
-      confidence: 'Medium',
-      disclaimer: 'This analysis is for informational purposes only and should not replace professional medical advice. Always consult with a qualified healthcare provider for proper diagnosis and treatment.',
-      overallSeverity: SeverityLevel.moderate,
-      nextSteps: [
-        'Schedule an appointment with your doctor',
-        'Keep track of your symptoms',
-        'Follow general health guidelines',
-      ],
-      emergencyAdvice: 'If you experience severe symptoms, seek immediate medical attention or call emergency services.',
-    );
-  }
+  /// REMOVED: No longer providing hardcoded fallback responses
+  /// This ensures users know when AI analysis fails instead of getting generic results
 
   /// Test API connection
   static Future<bool> testConnection() async {

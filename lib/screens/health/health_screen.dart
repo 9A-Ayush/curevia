@@ -5,6 +5,7 @@ import 'symptom_checker/symptom_checker_welcome_screen.dart';
 import 'medicine_directory_screen.dart';
 import 'home_remedies_screen.dart';
 import 'health_tips_screen.dart';
+import '../patient/patient_prescriptions_screen.dart';
 
 /// Health screen with symptom checker, medicines, and remedies
 class HealthScreen extends StatelessWidget {
@@ -130,6 +131,22 @@ class HealthScreen extends StatelessWidget {
                               MaterialPageRoute(
                                 builder: (context) =>
                                     const SymptomCheckerWelcomeScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildHealthCard(
+                          context,
+                          icon: Icons.receipt_long_outlined,
+                          title: 'My Prescriptions',
+                          subtitle: 'View prescriptions',
+                          color: AppColors.primary,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const PatientPrescriptionsScreen(),
                               ),
                             );
                           },

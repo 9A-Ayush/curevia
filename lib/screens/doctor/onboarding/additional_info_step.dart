@@ -4,7 +4,6 @@ import '../../../constants/app_colors.dart';
 import '../../../utils/theme_utils.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/doctor/doctor_onboarding_service.dart';
-import '../../../widgets/common/custom_button.dart';
 
 /// Additional information step in doctor onboarding
 class AdditionalInfoStep extends ConsumerStatefulWidget {
@@ -161,7 +160,7 @@ class _AdditionalInfoStepState extends ConsumerState<AdditionalInfoStep>
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                     side: BorderSide(
-                      color: isSelected ? AppColors.info : AppColors.borderLight,
+                      color: isSelected ? AppColors.info : ThemeUtils.getBorderLightColor(context),
                     ),
                   );
                 }).toList(),
@@ -259,7 +258,7 @@ class _AdditionalInfoStepState extends ConsumerState<AdditionalInfoStep>
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                     side: BorderSide(
-                      color: isSelected ? AppColors.success : AppColors.borderLight,
+                      color: isSelected ? AppColors.success : ThemeUtils.getBorderLightColor(context),
                     ),
                   );
                 }).toList(),
@@ -363,7 +362,7 @@ class _AdditionalInfoStepState extends ConsumerState<AdditionalInfoStep>
           colors: [
             AppColors.info.withOpacity(0.05),
             AppColors.info.withOpacity(0.02),
-            Colors.white,
+            ThemeUtils.getBackgroundColor(context),
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -601,8 +600,8 @@ class _AdditionalInfoStepState extends ConsumerState<AdditionalInfoStep>
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: AppColors.borderLight),
+                color: ThemeUtils.getSurfaceColor(context),
+                border: Border.all(color: ThemeUtils.getBorderLightColor(context)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -738,8 +737,8 @@ class _AdditionalInfoStepState extends ConsumerState<AdditionalInfoStep>
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: AppColors.borderLight),
+                color: ThemeUtils.getSurfaceColor(context),
+                border: Border.all(color: ThemeUtils.getBorderLightColor(context)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -920,11 +919,11 @@ class _AdditionalInfoStepState extends ConsumerState<AdditionalInfoStep>
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: AppColors.borderLight),
+                borderSide: BorderSide(color: ThemeUtils.getBorderLightColor(context)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: AppColors.borderLight),
+                borderSide: BorderSide(color: ThemeUtils.getBorderLightColor(context)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -953,7 +952,7 @@ class _AdditionalInfoStepState extends ConsumerState<AdditionalInfoStep>
             height: 56,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.borderLight),
+              border: Border.all(color: ThemeUtils.getBorderLightColor(context)),
             ),
             child: TextButton(
               onPressed: widget.onBack,

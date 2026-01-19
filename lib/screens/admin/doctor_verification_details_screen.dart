@@ -6,6 +6,7 @@ import '../../utils/theme_utils.dart';
 import '../../utils/responsive_utils.dart';
 import '../../widgets/common/theme_aware_card.dart';
 import '../../widgets/common/document_viewer_widget.dart';
+import '../../widgets/admin/document_preview_card.dart' as admin;
 import '../../services/email_service.dart';
 
 class DoctorVerificationDetailsScreen extends StatefulWidget {
@@ -208,7 +209,7 @@ class _DoctorVerificationDetailsScreenState extends State<DoctorVerificationDeta
             ),
             child: Icon(
               _getStatusIcon(status),
-              color: Colors.white,
+              color: ThemeUtils.getTextOnPrimaryColor(context),
               size: 24,
             ),
           ),
@@ -414,7 +415,7 @@ class _DoctorVerificationDetailsScreenState extends State<DoctorVerificationDeta
               
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: DocumentPreviewCard(
+                child: admin.DocumentPreviewCard(
                   documentUrl: documentUrl,
                   documentName: documentName,
                   documentType: _getDocumentTypeFromUrl(documentUrl),
@@ -531,7 +532,7 @@ class _DoctorVerificationDetailsScreenState extends State<DoctorVerificationDeta
             ),
             child: Icon(
               icon,
-              color: Colors.white,
+              color: ThemeUtils.getTextOnPrimaryColor(context),
               size: 16,
             ),
           ),
@@ -621,7 +622,7 @@ class _DoctorVerificationDetailsScreenState extends State<DoctorVerificationDeta
             label: Text(_isProcessing ? 'Processing...' : 'Approve'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
-              foregroundColor: Colors.white,
+              foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
           ),

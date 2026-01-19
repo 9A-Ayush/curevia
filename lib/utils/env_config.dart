@@ -22,6 +22,9 @@ class EnvConfig {
       dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '';
   static String get firebaseAppId => dotenv.env['FIREBASE_APP_ID'] ?? '';
 
+  // FCM Configuration
+  static String? get fcmServerKey => dotenv.env['FCM_SERVER_KEY'];
+
   // Google Maps API
   static String get googleMapsApiKey => dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
 

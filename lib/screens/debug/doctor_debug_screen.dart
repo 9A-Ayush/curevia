@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/firebase/doctor_service.dart';
 import '../../services/doctor/secure_patient_data_service.dart';
+import '../../services/notifications/fcm_service.dart';
+import '../../services/notifications/fcm_direct_service.dart';
 import '../../constants/app_constants.dart';
+import '../../providers/auth_provider.dart';
+import 'appointment_debug_screen.dart';
 
-class DoctorDebugScreen extends StatefulWidget {
+class DoctorDebugScreen extends ConsumerStatefulWidget {
   const DoctorDebugScreen({super.key});
 
   @override
-  State<DoctorDebugScreen> createState() => _DoctorDebugScreenState();
+  ConsumerState<DoctorDebugScreen> createState() => _DoctorDebugScreenState();
 }
 
-class _DoctorDebugScreenState extends State<DoctorDebugScreen> {
+class _DoctorDebugScreenState extends ConsumerState<DoctorDebugScreen> {
   List<Map<String, dynamic>> _allDoctors = [];
   List<Map<String, dynamic>> _verifiedDoctors = [];
   bool _isLoading = false;
@@ -124,32 +129,37 @@ class _DoctorDebugScreenState extends State<DoctorDebugScreen> {
         final isVerified = doctor['isVerified'];
         final isActive = doctor['isActive'];
         
-        if (isActive == true) {
-          bool needsUpdate = false;
-          Map<String, dynamic> updates = {};
+        bool needsUpdate = false;
+        Map<String, dynamic> updates = {};
 
-          // Fix doctors that have verificationStatus = 'verified' but isVerified != true
-          if (status == 'verified' && isVerified != true) {
-            updates['isVerified'] = true;
-            needsUpdate = true;
-            buffer.writeln('Fixing ${doctor['fullName']}: setting isVerified = true');
-          }
-          
-          // Fix doctors that have isVerified = true but wrong status
-          if (isVerified == true && (status != 'verified' && status != 'approved')) {
-            updates['verificationStatus'] = 'verified';
-            needsUpdate = true;
-            buffer.writeln('Fixing ${doctor['fullName']}: setting verificationStatus = verified');
-          }
+        // Fix doctors that have verificationStatus = 'verified' but isVerified != true
+        if (status == 'verified' && isVerified != true) {
+          updates['isVerified'] = true;
+          needsUpdate = true;
+          buffer.writeln('Fixing ${doctor['fullName']}: setting isVerified = true');
+        }
+        
+        // Fix doctors that have isVerified = true but wrong status
+        if (isVerified == true && (status != 'verified' && status != 'approved')) {
+          updates['verificationStatus'] = 'verified';
+          needsUpdate = true;
+          buffer.writeln('Fixing ${doctor['fullName']}: setting verificationStatus = verified');
+        }
 
-          if (needsUpdate) {
-            updates['updatedAt'] = FieldValue.serverTimestamp();
-            await FirebaseFirestore.instance
-                .collection(AppConstants.doctorsCollection)
-                .doc(doctor['id'])
-                .update(updates);
-            fixedCount++;
-          }
+        // CRITICAL FIX: Set isActive = true for verified doctors that don't have it set
+        if ((status == 'verified' || isVerified == true) && isActive != true) {
+          updates['isActive'] = true;
+          needsUpdate = true;
+          buffer.writeln('Fixing ${doctor['fullName']}: setting isActive = true');
+        }
+
+        if (needsUpdate) {
+          updates['updatedAt'] = FieldValue.serverTimestamp();
+          await FirebaseFirestore.instance
+              .collection(AppConstants.doctorsCollection)
+              .doc(doctor['id'])
+              .update(updates);
+          fixedCount++;
         }
       }
 
@@ -244,6 +254,15 @@ class _DoctorDebugScreenState extends State<DoctorDebugScreen> {
                 child: const Text('Add Sample Medical Data'),
               ),
             ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _testFCMIntegration,
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
+                child: const Text('Test FCM Integration'),
+              ),
+            ),
             const SizedBox(height: 16),
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
@@ -309,6 +328,164 @@ class _DoctorDebugScreenState extends State<DoctorDebugScreen> {
     } catch (e) {
       setState(() {
         _debugOutput = 'Error adding sample medical data: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _testFCMIntegration() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final buffer = StringBuffer();
+      buffer.writeln('=== FCM INTEGRATION TEST ===\n');
+      
+      // Initialize FCM service if not already done
+      if (!FCMService.instance.isInitialized) {
+        buffer.writeln('🔄 Initializing FCM Service...');
+        try {
+          await FCMService.instance.initialize();
+          buffer.writeln('✅ FCM Service initialized');
+        } catch (e) {
+          buffer.writeln('❌ FCM Service initialization failed: $e');
+          buffer.writeln('This might be due to:');
+          buffer.writeln('• Google Play Services not available');
+          buffer.writeln('• Firebase configuration issues');
+          buffer.writeln('• Network connectivity problems');
+        }
+      } else {
+        buffer.writeln('✅ FCM Service already initialized');
+      }
+      
+      // Try to get FCM token with retry logic
+      String? fcmToken;
+      for (int attempt = 1; attempt <= 3; attempt++) {
+        buffer.writeln('\n🔄 Attempting to get FCM token (attempt $attempt/3)...');
+        
+        try {
+          // First try to get current token
+          fcmToken = FCMService.instance.fcmToken;
+          
+          // If null, try to get saved token
+          if (fcmToken == null) {
+            buffer.writeln('   Current token is null, checking saved token...');
+            fcmToken = await FCMService.instance.getSavedFCMToken();
+          }
+          
+          // If still null, try to force refresh
+          if (fcmToken == null) {
+            buffer.writeln('   No saved token, forcing FCM service refresh...');
+            await FCMService.instance.initialize();
+            await Future.delayed(Duration(seconds: 2));
+            fcmToken = FCMService.instance.fcmToken;
+          }
+          
+          if (fcmToken != null) {
+            buffer.writeln('✅ FCM Token obtained successfully!');
+            buffer.writeln('Token: ${fcmToken.substring(0, 20)}...');
+            buffer.writeln('Full Token: $fcmToken');
+            break;
+          } else {
+            buffer.writeln('❌ FCM Token is null (attempt $attempt)');
+            if (attempt < 3) {
+              buffer.writeln('⏳ Waiting 3 seconds before retry...');
+              await Future.delayed(Duration(seconds: 3));
+            }
+          }
+        } catch (e) {
+          buffer.writeln('❌ Error getting FCM token (attempt $attempt): $e');
+          if (attempt < 3) {
+            buffer.writeln('⏳ Waiting 3 seconds before retry...');
+            await Future.delayed(Duration(seconds: 3));
+          }
+        }
+      }
+      
+      if (fcmToken != null) {
+        // Test backend connectivity
+        buffer.writeln('\n🔄 Testing backend connectivity...');
+        try {
+          final healthStatus = await FCMDirectService.getServiceHealth();
+          if (healthStatus != null) {
+            buffer.writeln('✅ Backend service is running');
+            buffer.writeln('Status: ${healthStatus['status']}');
+            
+            // Test FCM token validation
+            buffer.writeln('\n🔄 Testing FCM token validation...');
+            final isValid = await FCMDirectService.validateFCMToken(fcmToken);
+            buffer.writeln('Token validation: ${isValid ? '✅ Valid' : '❌ Invalid'}');
+            
+            // Test sending notification
+            buffer.writeln('\n🔄 Sending test notification...');
+            final success = await FCMDirectService.sendTestNotification(
+              fcmToken: fcmToken,
+              title: '🧪 FCM Test from Flutter',
+              body: 'This is a test notification sent from the debug screen!',
+              data: {'test': 'true', 'source': 'debug_screen'},
+              channelId: 'test_notifications',
+              sound: 'default',
+            );
+            
+            if (success) {
+              buffer.writeln('✅ Test notification sent successfully!');
+              buffer.writeln('📱 Check your device for the notification.');
+            } else {
+              buffer.writeln('❌ Failed to send test notification');
+              buffer.writeln('Check backend logs for more details.');
+            }
+            
+            buffer.writeln('\n=== FCM INTEGRATION TEST COMPLETE ===');
+            buffer.writeln('✅ FCM Service: Working');
+            buffer.writeln('✅ Backend Integration: Working');
+            buffer.writeln('✅ Token Validation: ${isValid ? 'Working' : 'Failed'}');
+            buffer.writeln('✅ Notification Sending: ${success ? 'Working' : 'Failed'}');
+            
+          } else {
+            buffer.writeln('❌ Backend service not reachable');
+            buffer.writeln('Make sure email service is running on localhost:3000');
+            buffer.writeln('\n📋 Your FCM Token (copy this for manual testing):');
+            buffer.writeln(fcmToken);
+            buffer.writeln('\n🔧 Manual Test Command:');
+            buffer.writeln('curl -X POST http://localhost:3000/test-fcm \\');
+            buffer.writeln('  -H "Content-Type: application/json" \\');
+            buffer.writeln('  -d \'{"fcmToken":"$fcmToken","title":"Test","body":"Hello!"}\'');
+          }
+        } catch (e) {
+          buffer.writeln('❌ Backend connectivity test failed: $e');
+          buffer.writeln('\n📋 Your FCM Token (copy this for manual testing):');
+          buffer.writeln(fcmToken);
+          buffer.writeln('\n🔧 Manual Test Command:');
+          buffer.writeln('curl -X POST http://localhost:3000/test-fcm \\');
+          buffer.writeln('  -H "Content-Type: application/json" \\');
+          buffer.writeln('  -d \'{"fcmToken":"$fcmToken","title":"Test","body":"Hello!"}\'');
+        }
+        
+      } else {
+        buffer.writeln('\n❌ Failed to get FCM token after 3 attempts');
+        buffer.writeln('\n🔧 Troubleshooting Steps:');
+        buffer.writeln('1. Check if Google Play Services is installed and updated');
+        buffer.writeln('2. Ensure device has internet connectivity');
+        buffer.writeln('3. Check if Firebase project is properly configured');
+        buffer.writeln('4. Verify google-services.json is in android/app/');
+        buffer.writeln('5. Try restarting the app');
+        buffer.writeln('\n📋 Alternative Testing:');
+        buffer.writeln('You can test the backend with a dummy token:');
+        buffer.writeln('curl -X POST http://localhost:3000/validate-fcm-token \\');
+        buffer.writeln('  -H "Content-Type: application/json" \\');
+        buffer.writeln('  -d \'{"fcmToken":"dummy_token"}\'');
+      }
+
+      setState(() {
+        _debugOutput = buffer.toString();
+      });
+    } catch (e) {
+      setState(() {
+        _debugOutput = 'Error testing FCM integration: $e\n\nThis might be due to:\n• Google Play Services not available\n• Firebase configuration issues\n• Network connectivity problems\n\nTry restarting the app or check your internet connection.';
       });
     } finally {
       setState(() {

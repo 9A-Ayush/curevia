@@ -54,10 +54,27 @@ app.*.map.json
 # Email service (separate repository)
 email-service/
 
-# API keys and secrets
-**/serviceAccountKey.json
+# Firebase configuration files
 **/google-services.json
 **/GoogleService-Info.plist
+lib/firebase_options.dart
+firebase_options.dart
+# Keep templates but not the actual config
+!lib/firebase_options.dart.template
+curevia-f31a8-firebase-adminsdk-*.json
+
+# AI Configuration files (contains Gemini API keys)
+lib/config/ai_config.dart
+**/ai_config.dart
+# Keep template but not the actual config
+!lib/config/ai_config.dart.template
 
 # Local configuration
 local.properties
+
+# Firebase Admin SDK keys
+*firebase-adminsdk*.json
+
+# Any file containing API keys
+*api_key*
+*API_KEY*

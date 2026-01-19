@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/theme_utils.dart';
+import '../common/notification_badge.dart';
 
 /// Custom bottom navigation bar for doctor interface
 class CustomBottomNavigationBar extends StatelessWidget {
@@ -57,13 +58,25 @@ class CustomBottomNavigationBar extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          isSelected ? item.activeIcon : item.icon,
-                          color: isSelected
-                              ? ThemeUtils.getPrimaryColor(context)
-                              : ThemeUtils.getTextSecondaryColor(context),
-                          size: 22,
-                        ),
+                        // Add notification badge for notifications tab
+                        if (item.showNotificationBadge)
+                          NotificationBadge(
+                            child: Icon(
+                              isSelected ? item.activeIcon : item.icon,
+                              color: isSelected
+                                  ? ThemeUtils.getPrimaryColor(context)
+                                  : ThemeUtils.getTextSecondaryColor(context),
+                              size: 22,
+                            ),
+                          )
+                        else
+                          Icon(
+                            isSelected ? item.activeIcon : item.icon,
+                            color: isSelected
+                                ? ThemeUtils.getPrimaryColor(context)
+                                : ThemeUtils.getTextSecondaryColor(context),
+                            size: 22,
+                          ),
                         const SizedBox(height: 2),
                         Flexible(
                           child: Text(
@@ -103,10 +116,12 @@ class NavigationItem {
   final IconData icon;
   final IconData activeIcon;
   final String label;
+  final bool showNotificationBadge;
 
   NavigationItem({
     required this.icon,
     required this.activeIcon,
     required this.label,
+    this.showNotificationBadge = false,
   });
 }

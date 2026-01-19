@@ -555,6 +555,10 @@ class _VerificationPendingScreenState
             isPrimary: true,
           ),
         ],
+        
+        // Add logout button for all statuses
+        const SizedBox(height: 20),
+        _buildLogoutButton(),
       ],
     );
   }
@@ -760,6 +764,163 @@ class _VerificationPendingScreenState
       case 'not_submitted':
       default:
         return 'Apply for Verification';
+    }
+  }
+
+  Widget _buildLogoutButton() {
+    return Container(
+      width: double.infinity,
+      height: 48,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: ThemeUtils.getErrorColor(context).withOpacity(0.3)),
+      ),
+      child: TextButton.icon(
+        onPressed: _showLogoutDialog,
+        icon: Icon(
+          Icons.logout,
+          color: ThemeUtils.getErrorColor(context),
+          size: 20,
+        ),
+        label: Text(
+          'Logout',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: ThemeUtils.getErrorColor(context),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        style: TextButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showLogoutDialog() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: ThemeUtils.getSurfaceColor(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(
+              Icons.logout,
+              color: ThemeUtils.getErrorColor(context),
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Logout',
+              style: TextStyle(
+                color: ThemeUtils.getTextPrimaryColor(context),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to logout? You can continue the verification process later.',
+          style: TextStyle(
+            color: ThemeUtils.getTextSecondaryColor(context),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: ThemeUtils.getTextSecondaryColor(context),
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: ThemeUtils.getErrorColor(context),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                'Logout',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true && mounted) {
+      await _performLogout();
+    }
+  }
+
+  Future<void> _performLogout() async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: ThemeUtils.getSurfaceColor(context),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    ThemeUtils.getPrimaryColor(context),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Logging out...',
+                  style: TextStyle(
+                    color: ThemeUtils.getTextPrimaryColor(context),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Perform logout
+      await ref.read(authProvider.notifier).signOut();
+
+      // Navigate to login screen
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/login',
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      // Hide loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error logging out: $e'),
+            backgroundColor: ThemeUtils.getErrorColor(context),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
     }
   }
 

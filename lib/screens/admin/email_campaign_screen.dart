@@ -176,8 +176,8 @@ class _EmailCampaignScreenState extends State<EmailCampaignScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Email Campaign'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: ThemeUtils.getPrimaryColor(context),
+        foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
         actions: [
           IconButton(
             onPressed: _sendTestEmail,
@@ -367,8 +367,8 @@ class _EmailCampaignScreenState extends State<EmailCampaignScreen> {
                 child: ElevatedButton(
                   onPressed: _isSending ? null : _sendCampaign,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: ThemeUtils.getPrimaryColor(context),
+                    foregroundColor: ThemeUtils.getTextOnPrimaryColor(context),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: _isSending
@@ -380,7 +380,9 @@ class _EmailCampaignScreenState extends State<EmailCampaignScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                ThemeUtils.getTextOnPrimaryColor(context),
+                              ),
                             ),
                           ),
                           SizedBox(width: 12),

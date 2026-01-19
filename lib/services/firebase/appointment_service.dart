@@ -4,6 +4,8 @@ import '../../models/notification_model.dart';
 import '../../constants/app_constants.dart';
 import 'revenue_service.dart';
 import '../notifications/fcm_service.dart';
+import '../notifications/fcm_token_service.dart';
+import '../notifications/role_based_notification_service.dart';
 
 /// Service for appointment-related operations
 class AppointmentService {
@@ -83,6 +85,8 @@ class AppointmentService {
         appointmentDate: appointmentDate,
         timeSlot: timeSlot,
         consultationType: consultationType,
+        paymentStatus: paymentStatus,
+        consultationFee: consultationFee,
       ).catchError((e) {
         print('⚠️ Error sending Firestore notifications: $e');
       });
@@ -136,6 +140,8 @@ class AppointmentService {
     required DateTime appointmentDate,
     required String timeSlot,
     required String consultationType,
+    String? paymentStatus,
+    double? consultationFee,
   }) async {
     try {
       final notificationData = {
@@ -148,6 +154,10 @@ class AppointmentService {
         'timeSlot': timeSlot,
         'consultationType': consultationType,
       };
+
+      // Get FCM tokens for both patient and doctor
+      final patientFCMToken = await FCMTokenService.getUserFCMToken(patientId);
+      final doctorFCMToken = await FCMTokenService.getDoctorFCMToken(doctorId);
 
       // Send both notifications in parallel for speed
       await Future.wait([
@@ -174,9 +184,42 @@ class AppointmentService {
         }),
       ]);
 
-      print('✅ Firestore notifications saved for appointment: $appointmentId');
+      // Send FCM push notifications if tokens are available
+      if (patientFCMToken != null) {
+        try {
+          await RoleBasedNotificationService.instance.sendAppointmentBookingConfirmation(
+            patientId: patientId,
+            patientFCMToken: patientFCMToken,
+            doctorName: doctorName,
+            appointmentId: appointmentId,
+            appointmentTime: appointmentDate,
+            appointmentType: consultationType,
+          );
+          print('✅ FCM notification sent to patient');
+        } catch (e) {
+          print('⚠️ Error sending FCM notification to patient: $e');
+        }
+      }
+
+      if (doctorFCMToken != null) {
+        try {
+          await RoleBasedNotificationService.instance.sendAppointmentBookingToDoctor(
+            doctorId: doctorId,
+            doctorFCMToken: doctorFCMToken,
+            patientName: patientName,
+            appointmentId: appointmentId,
+            appointmentTime: appointmentDate,
+            appointmentType: consultationType,
+          );
+          print('✅ FCM notification sent to doctor');
+        } catch (e) {
+          print('⚠️ Error sending FCM notification to doctor: $e');
+        }
+      }
+
+      print('✅ All notifications processed for appointment: $appointmentId');
     } catch (e) {
-      print('⚠️ Error sending Firestore notifications: $e');
+      print('⚠️ Error sending notifications: $e');
       // Don't throw error - notification failure shouldn't fail the booking
     }
   }
@@ -229,12 +272,15 @@ class AppointmentService {
     int limit = 50,
   }) async {
     try {
+      print('🔍 Getting doctor appointments for doctorId: $doctorId');
+      
       Query query = _firestore
           .collection(AppConstants.appointmentsCollection)
           .where('doctorId', isEqualTo: doctorId);
 
       if (status != null) {
         query = query.where('status', isEqualTo: status);
+        print('🔍 Filtering by status: $status');
       }
 
       if (date != null) {
@@ -249,6 +295,7 @@ class AppointmentService {
               'appointmentDate',
               isLessThanOrEqualTo: Timestamp.fromDate(endOfDay),
             );
+        print('🔍 Filtering by date: ${startOfDay.toString()} to ${endOfDay.toString()}');
       }
 
       final querySnapshot = await query
@@ -256,15 +303,91 @@ class AppointmentService {
           .limit(limit)
           .get();
 
-      return querySnapshot.docs
+      print('✅ Found ${querySnapshot.docs.length} appointments for doctor');
+      
+      final appointments = querySnapshot.docs
           .map(
-            (doc) =>
-                AppointmentModel.fromMap(doc.data() as Map<String, dynamic>),
+            (doc) {
+              try {
+                final appointment = AppointmentModel.fromMap(doc.data() as Map<String, dynamic>);
+                print('📋 Appointment: ${appointment.patientName} - ${appointment.status} - ${appointment.appointmentDate}');
+                return appointment;
+              } catch (e) {
+                print('❌ Error parsing appointment: $e');
+                return null;
+              }
+            },
           )
+          .where((appointment) => appointment != null)
+          .cast<AppointmentModel>()
           .toList();
+
+      return appointments;
     } catch (e) {
+      print('❌ Error getting doctor appointments: $e');
       throw Exception('Failed to get doctor appointments: $e');
     }
+  }
+
+  /// Stream of doctor appointments for real-time updates
+  static Stream<List<AppointmentModel>> getDoctorAppointmentsStream({
+    required String doctorId,
+    String? status,
+    DateTime? date,
+  }) {
+    print('🔄 Setting up doctor appointments stream for doctorId: $doctorId');
+    
+    Query query = _firestore
+        .collection(AppConstants.appointmentsCollection)
+        .where('doctorId', isEqualTo: doctorId);
+
+    if (status != null) {
+      query = query.where('status', isEqualTo: status);
+    }
+
+    if (date != null) {
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+      query = query
+          .where(
+            'appointmentDate',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+          )
+          .where(
+            'appointmentDate',
+            isLessThanOrEqualTo: Timestamp.fromDate(endOfDay),
+          );
+    }
+
+    return query
+        .orderBy('appointmentDate')
+        .limit(100)
+        .snapshots()
+        .map(
+          (snapshot) {
+            print('🔄 Doctor appointments stream update: ${snapshot.docs.length} documents');
+            final appointments = snapshot.docs
+                .map(
+                  (doc) {
+                    try {
+                      final appointment = AppointmentModel.fromMap(
+                        doc.data() as Map<String, dynamic>,
+                      );
+                      return appointment;
+                    } catch (e) {
+                      print('❌ Error parsing doctor appointment: $e');
+                      return null;
+                    }
+                  },
+                )
+                .where((appointment) => appointment != null)
+                .cast<AppointmentModel>()
+                .toList();
+            
+            print('✅ Parsed ${appointments.length} valid doctor appointments');
+            return appointments;
+          },
+        );
   }
 
   /// Get appointment by ID
@@ -363,12 +486,12 @@ class AppointmentService {
           }
         }
 
-        // If confirming without explicit payment status, set it to completed
+        // Set payment status to completed if not specified
         if (paymentStatus == null) {
           updateData['paymentStatus'] = 'completed';
         }
       } else if (status == 'completed') {
-        // Update revenue status to completed if it exists
+        // Update revenue status to completed
         await RevenueService.updateRevenueStatus(
           appointmentId: appointmentId,
           status: 'completed',
@@ -381,6 +504,24 @@ class AppointmentService {
           .update(updateData);
     } catch (e) {
       throw Exception('Failed to update appointment status: $e');
+    }
+  }
+
+  /// Update appointment with custom fields
+  static Future<void> updateAppointment({
+    required String appointmentId,
+    required Map<String, dynamic> updates,
+  }) async {
+    try {
+      final updateData = Map<String, dynamic>.from(updates);
+      updateData['updatedAt'] = Timestamp.now();
+
+      await _firestore
+          .collection(AppConstants.appointmentsCollection)
+          .doc(appointmentId)
+          .update(updateData);
+    } catch (e) {
+      throw Exception('Failed to update appointment: $e');
     }
   }
 

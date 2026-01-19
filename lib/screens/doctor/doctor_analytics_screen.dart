@@ -195,12 +195,38 @@ class _DoctorAnalyticsScreenState extends ConsumerState<DoctorAnalyticsScreen>
 
   Widget _buildKeyMetrics() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Key Metrics',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: _buildLoadingCard()),
+              const SizedBox(width: 12),
+              Expanded(child: _buildLoadingCard()),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _buildLoadingCard()),
+              const SizedBox(width: 12),
+              Expanded(child: _buildLoadingCard()),
+            ],
+          ),
+        ],
+      );
     }
 
     final totalConsultations = _analyticsData['totalConsultations'] ?? 0;
-    final satisfaction = _analyticsData['patientSatisfaction'] ?? 0.0;
-    final avgResponseTime = _analyticsData['avgResponseTime'] ?? 0.0;
+    final satisfaction = (_analyticsData['patientSatisfaction'] ?? 0.0).toDouble();
+    final avgResponseTime = (_analyticsData['avgResponseTime'] ?? 0.0).toDouble();
     final revenue = _analyticsData['revenue'] ?? 0;
     final consultationsChange = _analyticsData['consultationsChange'] ?? '+0%';
     final satisfactionChange = _analyticsData['satisfactionChange'] ?? '+0.0';
@@ -265,6 +291,61 @@ class _DoctorAnalyticsScreenState extends ConsumerState<DoctorAnalyticsScreen>
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildLoadingCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ThemeUtils.getSurfaceColor(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                width: 40,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: 60,
+            height: 24,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            width: 80,
+            height: 12,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

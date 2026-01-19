@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../models/symptom_analysis_model.dart';
+import '../../models/symptom_checker_models.dart';
 import '../../config/ai_config.dart';
 
 /// Custom exception for Gemini API errors
@@ -65,9 +65,8 @@ class SymptomAnalysisService {
       throw Exception(e.toString());
     } catch (e) {
       print('Error analyzing symptoms: $e');
-      // Return fallback result instead of throwing
-      print('Returning fallback result due to error');
-      return _getFallbackResult(symptoms);
+      // Instead of returning fallback result, throw the error to inform user
+      throw Exception('AI analysis failed: ${e.toString()}. Please try again or consult with a healthcare professional.');
     }
   }
 
@@ -240,12 +239,21 @@ Important:
         }
       }
 
+      // Validate that we have meaningful results
+      if (conditions.isEmpty) {
+        throw Exception('AI analysis did not return any conditions. Please try again.');
+      }
+
       // Parse recommendations
       final List<String> recommendations = [];
       if (data['recommendations'] != null) {
         for (final rec in data['recommendations']) {
           recommendations.add(rec.toString());
         }
+      }
+
+      if (recommendations.isEmpty) {
+        throw Exception('AI analysis did not return recommendations. Please try again.');
       }
 
       // Parse urgent signs
@@ -258,9 +266,9 @@ Important:
 
       print('Successfully parsed analysis result');
       return SymptomAnalysisResult(
-        possibleConditions: conditions.isNotEmpty ? conditions : _getDefaultConditions(symptoms),
-        recommendations: recommendations.isNotEmpty ? recommendations : _getDefaultRecommendations(),
-        urgentSigns: urgentSigns.isNotEmpty ? urgentSigns : _getDefaultUrgentSigns(),
+        possibleConditions: conditions,
+        recommendations: recommendations,
+        urgentSigns: urgentSigns,
         suggestedSpecialist: data['suggestedSpecialist']?.toString() ?? 'General Practitioner',
         confidence: data['confidence']?.toString() ?? 'Medium',
         disclaimer:
@@ -269,54 +277,33 @@ Important:
     } catch (e) {
       print('Error parsing Gemini response: $e');
       print('Response was: $response');
-      // Return fallback result
-      return _getFallbackResult(symptoms);
+      // Instead of returning fallback, throw error to inform user
+      throw Exception('Failed to parse AI response. Please try again.');
     }
   }
 
-  /// Get default conditions as fallback
+  /// Get default conditions as fallback - REMOVED
+  /// No longer providing hardcoded conditions
   static List<PossibleCondition> _getDefaultConditions(List<String> symptoms) {
-    return [
-      PossibleCondition(
-        name: 'Multiple Possible Conditions',
-        probability: 'Medium',
-        description: 'Based on your symptoms, several conditions are possible. Please consult a healthcare provider for accurate diagnosis.',
-      ),
-    ];
+    throw Exception('Unable to analyze symptoms. Please try again.');
   }
 
-  /// Get default recommendations as fallback
+  /// Get default recommendations as fallback - REMOVED
+  /// No longer providing hardcoded recommendations
   static List<String> _getDefaultRecommendations() {
-    return [
-      'Monitor your symptoms closely',
-      'Rest and stay well hydrated',
-      'Maintain good hygiene practices',
-      'Consult a healthcare provider if symptoms persist or worsen',
-    ];
+    throw Exception('Unable to generate recommendations. Please try again.');
   }
 
-  /// Get default urgent signs as fallback
+  /// Get default urgent signs as fallback - REMOVED
+  /// No longer providing hardcoded urgent signs
   static List<String> _getDefaultUrgentSigns() {
-    return [
-      'Symptoms rapidly worsening',
-      'High fever (>103°F or 39.4°C)',
-      'Severe pain or discomfort',
-      'Difficulty breathing',
-      'Loss of consciousness or confusion',
-    ];
+    throw Exception('Unable to generate urgent signs. Please try again.');
   }
 
-  /// Get fallback result when parsing fails
+  /// Get fallback result when parsing fails - REMOVED
+  /// Instead of returning hardcoded results, we now throw an error to inform the user
   static SymptomAnalysisResult _getFallbackResult(List<String> symptoms) {
-    return SymptomAnalysisResult(
-      possibleConditions: _getDefaultConditions(symptoms),
-      recommendations: _getDefaultRecommendations(),
-      urgentSigns: _getDefaultUrgentSigns(),
-      suggestedSpecialist: 'General Practitioner',
-      confidence: 'Low',
-      disclaimer:
-          'Unable to complete full analysis. This is a preliminary assessment. Please consult with a healthcare professional for proper diagnosis and treatment.',
-    );
+    throw Exception('AI analysis failed. Please try again or consult with a healthcare professional directly.');
   }
 
   /// Upload and analyze images (to be implemented)

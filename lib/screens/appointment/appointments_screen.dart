@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../utils/theme_utils.dart';
 import '../../models/appointment_model.dart';
+import '../../models/doctor_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/appointment_provider.dart';
 import '../../services/firebase/appointment_service.dart';
@@ -1273,6 +1274,13 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
 
   void _contactDoctor(AppointmentModel appointment) async {
     try {
+      // Debug: Print appointment details
+      print('🔍 Contacting doctor for appointment:');
+      print('  - Appointment ID: ${appointment.id}');
+      print('  - Doctor ID: "${appointment.doctorId}"');
+      print('  - Doctor Name: ${appointment.doctorName}');
+      print('  - Patient Name: ${appointment.patientName}');
+      
       // Show loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1287,22 +1295,54 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
                 ),
               ),
               SizedBox(width: 12),
-              Text('Opening chat...'),
+              Text('Finding doctor...'),
             ],
           ),
           backgroundColor: AppColors.primary,
-          duration: Duration(seconds: 2),
+          duration: Duration(seconds: 3),
         ),
       );
 
-      // Get doctor details to get phone number
-      final doctor = await DoctorService.getDoctorById(appointment.doctorId);
+      DoctorModel? doctor;
+      
+      // Try to get doctor by ID first
+      if (appointment.doctorId.isNotEmpty) {
+        print('🔍 Fetching doctor details for ID: ${appointment.doctorId}');
+        doctor = await DoctorService.getDoctorById(appointment.doctorId);
+      }
+      
+      // If doctor not found by ID or ID is empty, try to find by name
+      if (doctor == null && appointment.doctorName.isNotEmpty) {
+        print('🔍 Doctor ID empty or not found, searching by name: ${appointment.doctorName}');
+        final doctors = await DoctorService.searchDoctorsByName(appointment.doctorName);
+        
+        if (doctors.isNotEmpty) {
+          // Find exact match first, then partial match
+          doctor = doctors.firstWhere(
+            (d) => d.fullName.toLowerCase() == appointment.doctorName.toLowerCase(),
+            orElse: () => doctors.first,
+          );
+          print('✅ Found doctor by name: ${doctor.fullName} (ID: ${doctor.uid})');
+          
+          // Update the appointment with the correct doctorId for future use
+          try {
+            await AppointmentService.updateAppointment(
+              appointmentId: appointment.id,
+              updates: {'doctorId': doctor.uid},
+            );
+            print('✅ Updated appointment with correct doctorId');
+          } catch (e) {
+            print('⚠️ Could not update appointment with doctorId: $e');
+          }
+        }
+      }
       
       if (doctor == null) {
+        print('❌ Could not find doctor');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Unable to get doctor information'),
+              content: Text('Unable to find doctor information. Please contact support.'),
               backgroundColor: AppColors.error,
             ),
           );
@@ -1310,12 +1350,15 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
         return;
       }
 
-      // Check if phone number is available
+      print('✅ Doctor found: ${doctor.fullName}');
+      print('📱 Doctor phone: ${doctor.phoneNumber ?? 'Not available'}');
+
+      // Check if doctor has phone number
       if (doctor.phoneNumber == null || doctor.phoneNumber!.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Doctor phone number not available'),
+              content: Text('Doctor contact information is not available'),
               backgroundColor: AppColors.warning,
             ),
           );
@@ -1323,21 +1366,22 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
         return;
       }
 
-      // Get current user for patient name
-      final user = ref.read(currentUserModelProvider);
-      final patientName = user?.fullName ?? 'Patient';
+      // Format appointment time for WhatsApp message
+      final appointmentTime = DateTime(
+        appointment.appointmentDate.year,
+        appointment.appointmentDate.month,
+        appointment.appointmentDate.day,
+        int.parse(appointment.timeSlot.split(':')[0]),
+        int.parse(appointment.timeSlot.split(':')[1].split(' ')[0]),
+      );
 
-      // Format appointment date and time
-      final appointmentDate = _formatDate(appointment.appointmentDate);
-      final appointmentTime = appointment.timeSlot;
-
-      // Open WhatsApp chat with appointment template
+      // Try to open WhatsApp
       final success = await WhatsAppService.openDoctorChat(
-        doctorName: appointment.doctorName,
+        doctorName: doctor.fullName,
         doctorPhone: doctor.phoneNumber!,
-        patientName: patientName,
-        appointmentDate: appointmentDate,
-        appointmentTime: appointmentTime,
+        patientName: appointment.patientName,
+        appointmentDate: _formatDate(appointment.appointmentDate),
+        appointmentTime: appointment.timeSlot,
         clinicName: doctor.clinicName,
       );
 

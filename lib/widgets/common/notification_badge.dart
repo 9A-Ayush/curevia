@@ -9,7 +9,7 @@ class NotificationBadge extends ConsumerWidget {
   final bool showZero;
   final Color? badgeColor;
   final Color? textColor;
-  final double? badgeSize;
+  final double? fontSize;
 
   const NotificationBadge({
     super.key,
@@ -17,52 +17,31 @@ class NotificationBadge extends ConsumerWidget {
     this.showZero = false,
     this.badgeColor,
     this.textColor,
-    this.badgeSize,
+    this.fontSize,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notificationCountAsync = ref.watch(notificationCountProvider);
+    final notificationCount = ref.watch(notificationCountProvider);
 
-    return notificationCountAsync.when(
+    return notificationCount.when(
       data: (count) {
         if (count == 0 && !showZero) {
           return child;
         }
 
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            child,
-            Positioned(
-              right: -6,
-              top: -6,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                constraints: BoxConstraints(
-                  minWidth: badgeSize ?? 20,
-                  minHeight: badgeSize ?? 20,
-                ),
-                decoration: BoxDecoration(
-                  color: badgeColor ?? AppColors.error,
-                  borderRadius: BorderRadius.circular((badgeSize ?? 20) / 2),
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  count > 99 ? '99+' : count.toString(),
-                  style: TextStyle(
-                    color: textColor ?? Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+        return Badge(
+          isLabelVisible: count > 0 || showZero,
+          label: Text(
+            count > 99 ? '99+' : count.toString(),
+            style: TextStyle(
+              color: textColor ?? Colors.white,
+              fontSize: fontSize ?? 10,
+              fontWeight: FontWeight.bold,
             ),
-          ],
+          ),
+          backgroundColor: badgeColor ?? AppColors.error,
+          child: child,
         );
       },
       loading: () => child,
@@ -71,181 +50,139 @@ class NotificationBadge extends ConsumerWidget {
   }
 }
 
-/// Simple notification dot indicator
-class NotificationDot extends ConsumerWidget {
-  final Widget child;
-  final Color? dotColor;
-  final double? dotSize;
+/// Widget that displays a notification icon with badge
+class NotificationIconWithBadge extends ConsumerWidget {
+  final IconData icon;
+  final IconData? activeIcon;
+  final Color? iconColor;
+  final double? iconSize;
+  final VoidCallback? onTap;
+  final bool showZero;
+  final Color? badgeColor;
 
-  const NotificationDot({
+  const NotificationIconWithBadge({
     super.key,
-    required this.child,
-    this.dotColor,
-    this.dotSize,
+    required this.icon,
+    this.activeIcon,
+    this.iconColor,
+    this.iconSize,
+    this.onTap,
+    this.showZero = false,
+    this.badgeColor,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notificationCountAsync = ref.watch(notificationCountProvider);
+    final notificationCount = ref.watch(notificationCountProvider);
 
-    return notificationCountAsync.when(
+    return notificationCount.when(
       data: (count) {
-        if (count == 0) {
-          return child;
-        }
+        final iconWidget = Icon(
+          icon,
+          color: iconColor,
+          size: iconSize,
+        );
 
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            child,
-            Positioned(
-              right: -2,
-              top: -2,
-              child: Container(
-                width: dotSize ?? 12,
-                height: dotSize ?? 12,
-                decoration: BoxDecoration(
-                  color: dotColor ?? AppColors.error,
-                  shape: BoxShape.circle,
-                  border: Border.all(
+        final badgedIcon = count > 0 || showZero
+            ? Badge(
+                isLabelVisible: count > 0 || showZero,
+                label: Text(
+                  count > 99 ? '99+' : count.toString(),
+                  style: const TextStyle(
                     color: Colors.white,
-                    width: 1,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
+                backgroundColor: badgeColor ?? AppColors.error,
+                child: iconWidget,
+              )
+            : iconWidget;
+
+        if (onTap != null) {
+          return InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: badgedIcon,
             ),
-          ],
-        );
+          );
+        }
+
+        return badgedIcon;
       },
-      loading: () => child,
-      error: (_, __) => child,
+      loading: () => Icon(
+        icon,
+        color: iconColor,
+        size: iconSize,
+      ),
+      error: (_, __) => Icon(
+        icon,
+        color: iconColor,
+        size: iconSize,
+      ),
     );
   }
 }
 
-/// Notification icon button with badge
-class NotificationIconButton extends ConsumerWidget {
+/// Floating action button with notification badge
+class NotificationFAB extends ConsumerWidget {
   final VoidCallback onPressed;
   final IconData icon;
-  final Color? iconColor;
-  final double? iconSize;
-  final Color? badgeColor;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
   final String? tooltip;
 
-  const NotificationIconButton({
+  const NotificationFAB({
     super.key,
     required this.onPressed,
     this.icon = Icons.notifications,
-    this.iconColor,
-    this.iconSize,
-    this.badgeColor,
+    this.backgroundColor,
+    this.foregroundColor,
     this.tooltip,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return NotificationBadge(
-      badgeColor: badgeColor,
-      child: IconButton(
+    final notificationCount = ref.watch(notificationCountProvider);
+
+    return notificationCount.when(
+      data: (count) {
+        return Badge(
+          isLabelVisible: count > 0,
+          label: Text(
+            count > 99 ? '99+' : count.toString(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: AppColors.error,
+          child: FloatingActionButton(
+            onPressed: onPressed,
+            backgroundColor: backgroundColor,
+            foregroundColor: foregroundColor,
+            tooltip: tooltip ?? 'Notifications',
+            child: Icon(icon),
+          ),
+        );
+      },
+      loading: () => FloatingActionButton(
         onPressed: onPressed,
-        icon: Icon(
-          icon,
-          color: iconColor,
-          size: iconSize,
-        ),
+        backgroundColor: backgroundColor,
+        foregroundColor: foregroundColor,
         tooltip: tooltip ?? 'Notifications',
+        child: Icon(icon),
+      ),
+      error: (_, __) => FloatingActionButton(
+        onPressed: onPressed,
+        backgroundColor: backgroundColor,
+        foregroundColor: foregroundColor,
+        tooltip: tooltip ?? 'Notifications',
+        child: Icon(icon),
       ),
     );
-  }
-}
-
-/// Notification list tile with unread indicator
-class NotificationListTile extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final bool isRead;
-  final VoidCallback? onTap;
-  final Widget? leading;
-  final Widget? trailing;
-  final DateTime? timestamp;
-
-  const NotificationListTile({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    required this.isRead,
-    this.onTap,
-    this.leading,
-    this.trailing,
-    this.timestamp,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      leading: leading,
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-              ),
-            ),
-          ),
-          if (!isRead)
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-            ),
-        ],
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            subtitle,
-            style: TextStyle(
-              color: isRead ? Colors.grey[600] : Colors.grey[800],
-            ),
-          ),
-          if (timestamp != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              _formatTimestamp(timestamp!),
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[500],
-              ),
-            ),
-          ],
-        ],
-      ),
-      trailing: trailing,
-      tileColor: isRead ? null : Colors.blue.withValues(alpha: 0.05),
-    );
-  }
-
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else {
-      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
-    }
   }
 }

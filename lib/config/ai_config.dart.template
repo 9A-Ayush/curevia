@@ -1,13 +1,15 @@
 /// Configuration for AI services
+/// IMPORTANT: Copy this file to ai_config.dart and replace with your actual API keys
+/// DO NOT commit ai_config.dart to version control
 class AIConfig {
-  // Gemini API configuration
-  static const String _geminiApiKey = 'AIzaSyART4Lq6v_vfLesaYTTSQSiyeVFLkSNldA';
+  // Gemini API configuration - Replace with your actual API key
+  static const String _geminiApiKey = 'YOUR_GEMINI_API_KEY_HERE';
   
   /// Get Gemini API key
   static String get geminiApiKey => _geminiApiKey;
   
   /// Check if Gemini is configured
-  static bool get isGeminiConfigured => true;
+  static bool get isGeminiConfigured => _geminiApiKey != 'YOUR_GEMINI_API_KEY_HERE';
   
   /// Gemini model configurations
   static const String geminiModel = 'gemini-2.5-flash';

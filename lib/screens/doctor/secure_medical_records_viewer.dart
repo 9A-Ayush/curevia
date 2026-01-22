@@ -109,12 +109,21 @@ class _SecureMedicalRecordsViewerState extends ConsumerState<SecureMedicalRecord
         ),
       ]);
 
+      // Get patient vitals if shared
+      Map<String, dynamic> vitals = {};
+      if (sharing.sharedVitals.isNotEmpty) {
+        vitals = sharing.sharedVitals;
+      } else {
+        // Get all patient vitals if none specifically selected
+        vitals = await SecureMedicalSharingService.getPatientVitals(sharing.patientId);
+      }
+
       setState(() {
         _sharing = sharing;
         _documents = futures[0] as List<MedicalDocument>;
         _allergies = futures[1] as List<PatientAllergy>;
         _medications = futures[2] as List<PatientMedication>;
-        _vitals = sharing.sharedVitals;
+        _vitals = vitals;
         _hasAccess = true;
         _isLoading = false;
       });
@@ -827,8 +836,18 @@ class _SecureMedicalRecordsViewerState extends ConsumerState<SecureMedicalRecord
         return 'Weight (kg):';
       case 'height':
         return 'Height (cm):';
+      case 'bloodType':
+        return 'Blood Type:';
+      case 'age':
+        return 'Age:';
+      case 'respiratoryRate':
+        return 'Respiratory Rate:';
+      case 'oxygenSaturation':
+        return 'Oxygen Saturation:';
+      case 'bmi':
+        return 'BMI:';
       default:
-        return '$key:';
+        return '${key.replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(1)}')}:';
     }
   }
 

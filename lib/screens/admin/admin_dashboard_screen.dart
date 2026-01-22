@@ -6,10 +6,13 @@ import '../../utils/theme_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/admin/admin_theme_settings_widget.dart';
 import '../../widgets/common/notification_badge.dart';
+import 'admin_notifications_screen.dart';
 import 'doctor_verification_screen.dart';
 import 'users_management_screen.dart';
 import 'appointments_management_screen.dart';
 import 'analytics_screen.dart';
+import '../debug/doctor_debug_screen.dart';
+import '../debug/appointment_debug_screen.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -323,6 +326,21 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               Row(
                 children: [
                   IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AdminNotificationsScreen(),
+                        ),
+                      );
+                    },
+                    icon: Icon(
+                      Icons.notifications_outlined,
+                      color: ThemeUtils.getTextOnPrimaryColor(context),
+                    ),
+                    tooltip: 'Notifications',
+                  ),
+                  IconButton(
                     onPressed: _loadStats,
                     icon: Icon(
                       Icons.refresh, 
@@ -340,9 +358,62 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         _showThemeSettings();
                       } else if (value == 'logout') {
                         _showLogoutDialog();
+                      } else if (value == 'debug_doctors') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const DoctorDebugScreen(),
+                          ),
+                        );
+                      } else if (value == 'debug_appointments') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AppointmentDebugScreen(),
+                          ),
+                        );
                       }
                     },
                     itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'debug_doctors',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.bug_report_outlined,
+                              color: ThemeUtils.getTextPrimaryColor(context),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Debug Doctors',
+                              style: TextStyle(
+                                color: ThemeUtils.getTextPrimaryColor(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'debug_appointments',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_month_outlined,
+                              color: ThemeUtils.getTextPrimaryColor(context),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Debug Appointments',
+                              style: TextStyle(
+                                color: ThemeUtils.getTextPrimaryColor(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
                       PopupMenuItem(
                         value: 'theme',
                         child: Row(

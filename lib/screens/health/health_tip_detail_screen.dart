@@ -387,18 +387,45 @@ class HealthTipDetailScreen extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 24),
-          CustomButton(
-            text: 'Set Reminder',
-            onPressed: () => _setReminder(context),
-            icon: Icons.notifications_outlined,
+          // Enhanced Set Reminder Button
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: (tip['color'] as Color? ?? AppColors.primary).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: CustomButton(
+              text: 'Set Daily Reminder',
+              onPressed: () {
+                print('Set Reminder button pressed'); // Debug output
+                _setReminder(context);
+              },
+              icon: Icons.notifications_outlined,
+              backgroundColor: tip['color'] as Color? ?? AppColors.primary,
+              textColor: Colors.white,
+            ),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
-            onPressed: () => _shareHealthTip(context),
+            onPressed: () {
+              print('Share button pressed'); // Debug output
+              _shareHealthTip(context);
+            },
             icon: const Icon(Icons.share),
             label: const Text('Share with Friends'),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(double.infinity, 48),
+              side: BorderSide(
+                color: tip['color'] as Color? ?? AppColors.primary,
+                width: 1.5,
+              ),
+              foregroundColor: tip['color'] as Color? ?? AppColors.primary,
             ),
           ),
         ],
@@ -425,29 +452,163 @@ class HealthTipDetailScreen extends StatelessWidget {
   }
 
   void _setReminder(BuildContext context) {
+    // Add haptic feedback to confirm button press
+    HapticFeedback.lightImpact();
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Set Reminder'),
-        content: const Text(
-          'Would you like to receive daily reminders about this health tip?',
+        title: Row(
+          children: [
+            Icon(
+              Icons.notifications_active,
+              color: tip['color'] as Color? ?? AppColors.primary,
+            ),
+            const SizedBox(width: 8),
+            const Text('Set Health Reminder'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Get daily reminders for: "${tip['title']}"',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: (tip['color'] as Color? ?? AppColors.primary).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.schedule,
+                    size: 20,
+                    color: tip['color'] as Color? ?? AppColors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Daily at 9:00 AM',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              Navigator.pop(context);
+            },
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              Navigator.pop(context);
+              
+              // Show success feedback
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Daily reminder set for "${tip['title']}"',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: AppColors.success,
+                  duration: const Duration(seconds: 3),
+                  behavior: SnackBarBehavior.floating,
+                  action: SnackBarAction(
+                    label: 'View Settings',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      // Navigate to notification settings
+                      _showNotificationSettings(context);
+                    },
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.notifications_active),
+            label: const Text('Set Reminder'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: tip['color'] as Color? ?? AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNotificationSettings(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Notification Settings'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SwitchListTile(
+              title: const Text('Health Tips Reminders'),
+              subtitle: const Text('Daily health tips at 9:00 AM'),
+              value: true,
+              onChanged: (value) {
+                // Handle notification toggle
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      value 
+                        ? 'Health reminders enabled' 
+                        : 'Health reminders disabled',
+                    ),
+                  ),
+                );
+              },
+            ),
+            SwitchListTile(
+              title: const Text('Appointment Reminders'),
+              subtitle: const Text('Upcoming appointment notifications'),
+              value: true,
+              onChanged: (value) {
+                // Handle appointment notifications
+              },
+            ),
+            SwitchListTile(
+              title: const Text('Wellness Check-ins'),
+              subtitle: const Text('Weekly wellness reminders'),
+              value: false,
+              onChanged: (value) {
+                // Handle wellness notifications
+              },
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Daily reminder set!'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-            child: const Text('Set Reminder'),
+            child: const Text('Close'),
           ),
         ],
       ),

@@ -32,6 +32,8 @@ class AppointmentModel {
   final bool? isFollowUp;
   final String? followUpFor; // Previous appointment ID
   final Map<String, dynamic>? additionalInfo;
+  final bool? isRated; // Whether appointment has been rated
+  final String? ratingId; // Reference to rating document
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -66,6 +68,8 @@ class AppointmentModel {
     this.isFollowUp,
     this.followUpFor,
     this.additionalInfo,
+    this.isRated,
+    this.ratingId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -103,6 +107,8 @@ class AppointmentModel {
       isFollowUp: map['isFollowUp'],
       followUpFor: map['followUpFor'],
       additionalInfo: map['additionalInfo'],
+      isRated: map['isRated'],
+      ratingId: map['ratingId'],
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
@@ -141,6 +147,8 @@ class AppointmentModel {
       'isFollowUp': isFollowUp,
       'followUpFor': followUpFor,
       'additionalInfo': additionalInfo,
+      'isRated': isRated,
+      'ratingId': ratingId,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -178,6 +186,8 @@ class AppointmentModel {
     bool? isFollowUp,
     String? followUpFor,
     Map<String, dynamic>? additionalInfo,
+    bool? isRated,
+    String? ratingId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -212,6 +222,8 @@ class AppointmentModel {
       isFollowUp: isFollowUp ?? this.isFollowUp,
       followUpFor: followUpFor ?? this.followUpFor,
       additionalInfo: additionalInfo ?? this.additionalInfo,
+      isRated: isRated ?? this.isRated,
+      ratingId: ratingId ?? this.ratingId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -292,6 +304,16 @@ class AppointmentModel {
       default:
         return consultationType;
     }
+  }
+
+  /// Check if appointment can be rated
+  bool get canBeRated {
+    return status == 'completed' && (isRated != true);
+  }
+
+  /// Check if appointment is already rated
+  bool get hasRating {
+    return isRated == true && ratingId != null;
   }
 
   @override

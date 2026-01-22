@@ -320,7 +320,7 @@ class _AppointmentDebugScreenState extends State<AppointmentDebugScreen> {
     });
 
     try {
-      final results = await AppointmentDiagnostic.getAppointmentDataSummary();
+      final results = await AppointmentDiagnostic.runComprehensiveDiagnostic();
       setState(() {
         _diagnosticResults = results;
       });
@@ -343,7 +343,7 @@ class _AppointmentDebugScreenState extends State<AppointmentDebugScreen> {
     });
 
     try {
-      final results = await AppointmentDiagnostic.runCompleteCheck(autoFix: true);
+      final results = await AppointmentDiagnostic.runComprehensiveDiagnostic();
       setState(() {
         _diagnosticResults = results;
       });

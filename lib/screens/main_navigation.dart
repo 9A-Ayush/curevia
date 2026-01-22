@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/auth_provider.dart';
-import '../providers/navigation_provider.dart';
-import '../utils/theme_utils.dart';
+import 'package:provider/provider.dart' as provider;
+import 'package:curevia/providers/auth_provider.dart';
+import 'package:curevia/providers/navigation_provider.dart';
+import 'package:curevia/providers/rating_provider.dart';
+import 'package:curevia/utils/theme_utils.dart';
 import 'home/home_screen.dart';
 import 'consultation/video_consultation_screen.dart';
 import 'appointment/appointments_screen.dart';
@@ -23,7 +25,7 @@ class NavigationItem {
   });
 }
 
-/// Main navigation screen with bottom navigation bar
+/// Main navigation screen with bottom navigation bar and swipe support
 class MainNavigation extends ConsumerStatefulWidget {
   const MainNavigation({super.key});
 
@@ -31,14 +33,20 @@ class MainNavigation extends ConsumerStatefulWidget {
   ConsumerState<MainNavigation> createState() => _MainNavigationState();
 }
 
-class _MainNavigationState extends ConsumerState<MainNavigation> {
+class _MainNavigationState extends ConsumerState<MainNavigation>
+    with TickerProviderStateMixin {
   late PageController _pageController;
+  late AnimationController _swipeAnimationController;
+  late Animation<double> _swipeAnimation;
   DateTime? _lastBackPressed;
   
   final List<Widget> _screens = [
     const HomeScreen(),
     const VideoConsultationScreen(),
-    const AppointmentsScreen(),
+    provider.ChangeNotifierProvider(
+      create: (context) => RatingProvider(),
+      child: const AppointmentsScreen(),
+    ),
     const HealthScreen(),
     const ProfileScreen(),
   ];
@@ -75,12 +83,47 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    _swipeAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _swipeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _swipeAnimationController,
+      curve: Curves.easeInOut,
+    ));
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _swipeAnimationController.dispose();
     super.dispose();
+  }
+
+  void _navigateToPage(int index) {
+    if (index >= 0 && index < _screens.length) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      ref.read(navigationProvider.notifier).setCurrentIndex(index);
+      
+      // Trigger swipe animation for visual feedback
+      _swipeAnimationController.forward().then((_) {
+        _swipeAnimationController.reverse();
+      });
+    }
+  }
+
+  void _onPageChanged(int index) {
+    ref.read(navigationProvider.notifier).setCurrentIndex(index);
+    
+    // Haptic feedback for page changes
+    HapticFeedback.lightImpact();
   }
 
   Future<bool> _onWillPop() async {
@@ -88,12 +131,7 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
     
     // If not on home tab, go to home first
     if (currentIndex != 0) {
-      ref.read(navigationProvider.notifier).setCurrentIndex(0);
-      _pageController.animateToPage(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      _navigateToPage(0);
       return false;
     }
     
@@ -102,9 +140,20 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
     if (_lastBackPressed == null || now.difference(_lastBackPressed!) > const Duration(seconds: 2)) {
       _lastBackPressed = now;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Press back again to exit'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Press back again to exit'),
+            ],
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: ThemeUtils.getPrimaryColor(context),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
       return false;
@@ -140,12 +189,41 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
         }
       },
       child: Scaffold(
-        body: PageView(
-          controller: _pageController,
-          onPageChanged: (index) {
-            ref.read(navigationProvider.notifier).setCurrentIndex(index);
-          },
-          children: _screens,
+        body: Column(
+          children: [
+            // Swipe indicator (optional visual feedback)
+            AnimatedBuilder(
+              animation: _swipeAnimation,
+              builder: (context, child) {
+                return Container(
+                  height: 2,
+                  width: double.infinity,
+                  child: LinearProgressIndicator(
+                    value: _swipeAnimation.value,
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      ThemeUtils.getPrimaryColor(context).withOpacity(0.3),
+                    ),
+                  ),
+                );
+              },
+            ),
+            
+            // Main content with swipe navigation
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: _onPageChanged,
+                itemCount: _screens.length,
+                itemBuilder: (context, index) {
+                  return AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: _screens[index],
+                  );
+                },
+              ),
+            ),
+          ],
         ),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
@@ -170,15 +248,9 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
 
                   return Expanded(
                     child: GestureDetector(
-                      onTap: () {
-                        ref.read(navigationProvider.notifier).setCurrentIndex(index);
-                        _pageController.animateToPage(
-                          index,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      },
-                      child: Container(
+                      onTap: () => _navigateToPage(index),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 8,
@@ -193,16 +265,20 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              isSelected ? item.activeIcon : item.icon,
-                              color: isSelected
-                                  ? ThemeUtils.getPrimaryColor(context)
-                                  : ThemeUtils.getTextSecondaryColor(context),
-                              size: 24,
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              child: Icon(
+                                isSelected ? item.activeIcon : item.icon,
+                                key: ValueKey(isSelected),
+                                color: isSelected
+                                    ? ThemeUtils.getPrimaryColor(context)
+                                    : ThemeUtils.getTextSecondaryColor(context),
+                                size: 24,
+                              ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              item.label,
+                            AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 200),
                               style: TextStyle(
                                 color: isSelected
                                     ? ThemeUtils.getPrimaryColor(context)
@@ -212,9 +288,12 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
                                     ? FontWeight.w600
                                     : FontWeight.normal,
                               ),
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                              child: Text(
+                                item.label,
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
                             ),
                           ],
                         ),

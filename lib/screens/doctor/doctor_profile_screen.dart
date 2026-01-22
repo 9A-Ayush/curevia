@@ -524,9 +524,6 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          _buildActionRow('Edit Profile', Icons.edit, () {
-            _showEditProfileDialog();
-          }),
           _buildActionRow('Change Password', Icons.lock_outline, () {
             _showChangePasswordDialog();
           }),
@@ -550,94 +547,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     );
   }
 
-  void _showEditProfileDialog() {
-    final user = ref.read(authProvider).userModel;
-    final TextEditingController nameController =
-        TextEditingController(text: user?.fullName ?? '');
-    final TextEditingController bioController =
-        TextEditingController(text: _doctorProfile?['bio'] ?? '');
-    final TextEditingController specialtyController =
-        TextEditingController(text: _doctorProfile?['specialty'] ?? '');
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Profile'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: specialtyController,
-                decoration: const InputDecoration(
-                  labelText: 'Specialty',
-                  prefixIcon: Icon(Icons.medical_services),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: bioController,
-                decoration: const InputDecoration(
-                  labelText: 'Bio',
-                  prefixIcon: Icon(Icons.description),
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-
-              try {
-                if (user != null) {
-                  await DoctorService.updateDoctorProfile(
-                    doctorId: user.uid,
-                    profileData: {
-                      'fullName': nameController.text,
-                      'specialty': specialtyController.text,
-                      'bio': bioController.text,
-                      'updatedAt': DateTime.now().toIso8601String(),
-                    },
-                  );
-
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Profile updated successfully'),
-                      ),
-                    );
-                    _loadDoctorProfile();
-                  }
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error updating profile: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showChangePasswordDialog() {
     final TextEditingController currentPasswordController =

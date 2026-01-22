@@ -7,7 +7,6 @@ import '../../widgets/doctor/doctor_card.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../utils/theme_utils.dart';
 import 'doctor_detail_screen.dart';
-import '../debug/doctor_debug_screen.dart';
 
 /// Find doctors screen for patients
 class FindDoctorsScreen extends ConsumerStatefulWidget {
@@ -65,21 +64,6 @@ class _FindDoctorsScreenState extends ConsumerState<FindDoctorsScreen> {
         backgroundColor: ThemeUtils.getPrimaryColor(context),
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          // Debug button - remove this in production
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const DoctorDebugScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.bug_report),
-            tooltip: 'Debug Doctors',
-          ),
-        ],
       ),
       body: Column(
         children: [

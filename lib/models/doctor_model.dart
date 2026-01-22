@@ -18,6 +18,8 @@ class DoctorModel extends UserModel {
   final double? consultationFee;
   final double? rating;
   final int? totalReviews;
+  final double? averageRating; // New field for calculated average
+  final int? totalRatings; // New field for total number of ratings
   final List<String>? languages;
   final Map<String, dynamic>? availability; // Day-wise time slots
   final bool? isAvailableOnline;
@@ -69,6 +71,8 @@ class DoctorModel extends UserModel {
     this.consultationFee,
     this.rating,
     this.totalReviews,
+    this.averageRating,
+    this.totalRatings,
     this.languages,
     this.availability,
     this.isAvailableOnline,
@@ -126,6 +130,8 @@ class DoctorModel extends UserModel {
       consultationFee: doctorData['consultationFee']?.toDouble(),
       rating: doctorData['rating']?.toDouble(),
       totalReviews: doctorData['totalReviews'],
+      averageRating: doctorData['averageRating']?.toDouble(),
+      totalRatings: doctorData['totalRatings'],
       languages: List<String>.from(doctorData['languages'] ?? []),
       availability: doctorData['availability'],
       isAvailableOnline: doctorData['isAvailableOnline'],
@@ -183,6 +189,8 @@ class DoctorModel extends UserModel {
       consultationFee: map['consultationFee']?.toDouble(),
       rating: map['rating']?.toDouble(),
       totalReviews: map['totalReviews'],
+      averageRating: map['averageRating']?.toDouble(),
+      totalRatings: map['totalRatings'],
       languages: List<String>.from(map['languages'] ?? []),
       availability: map['availability'],
       isAvailableOnline: map['isAvailableOnline'],
@@ -228,6 +236,8 @@ class DoctorModel extends UserModel {
       'consultationFee': consultationFee,
       'rating': rating,
       'totalReviews': totalReviews,
+      'averageRating': averageRating,
+      'totalRatings': totalRatings,
       'languages': languages,
       'availability': availability,
       'isAvailableOnline': isAvailableOnline,
@@ -267,8 +277,11 @@ class DoctorModel extends UserModel {
 
   /// Get formatted rating text
   String get ratingText {
-    if (rating == null) return 'No ratings yet';
-    return '${rating!.toStringAsFixed(1)} (${totalReviews ?? 0} reviews)';
+    final displayRating = averageRating ?? rating;
+    final displayCount = totalRatings ?? totalReviews ?? 0;
+    
+    if (displayRating == null) return 'No ratings yet';
+    return '${displayRating.toStringAsFixed(1)} (${displayCount} rating${displayCount == 1 ? '' : 's'})';
   }
 
   /// Get formatted consultation fee
@@ -430,6 +443,8 @@ class DoctorModel extends UserModel {
     double? consultationFee,
     double? rating,
     int? totalReviews,
+    double? averageRating,
+    int? totalRatings,
     List<String>? languages,
     Map<String, dynamic>? availability,
     bool? isAvailableOnline,
@@ -481,6 +496,8 @@ class DoctorModel extends UserModel {
       consultationFee: consultationFee ?? this.consultationFee,
       rating: rating ?? this.rating,
       totalReviews: totalReviews ?? this.totalReviews,
+      averageRating: averageRating ?? this.averageRating,
+      totalRatings: totalRatings ?? this.totalRatings,
       languages: languages ?? this.languages,
       availability: availability ?? this.availability,
       isAvailableOnline: isAvailableOnline ?? this.isAvailableOnline,

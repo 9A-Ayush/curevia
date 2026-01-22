@@ -160,11 +160,13 @@ class SecureMedicalSharingService {
 
       if (sharing.sharedRecordIds.isEmpty) return [];
 
-      // Get documents with additional security check
+      // Get documents from both medical_documents collection and user's medical_records subcollection
       final documents = <MedicalDocument>[];
+      
       for (final recordId in sharing.sharedRecordIds) {
         try {
-          final doc = await _firestore
+          // First try medical_documents collection
+          var doc = await _firestore
               .collection('medical_documents')
               .doc(recordId)
               .get();
@@ -175,16 +177,178 @@ class SecureMedicalSharingService {
             if (document.patientId == sharing.patientId) {
               documents.add(document);
             }
+          } else {
+            // Try user's medical_records subcollection
+            doc = await _firestore
+                .collection('users')
+                .doc(sharing.patientId)
+                .collection('medical_records')
+                .doc(recordId)
+                .get();
+
+            if (doc.exists) {
+              final recordData = doc.data()!;
+              
+              // Convert medical record to medical document format
+              final document = MedicalDocument(
+                id: doc.id,
+                patientId: sharing.patientId,
+                fileName: recordData['title'] ?? 'Medical Record',
+                originalFileName: recordData['title'] ?? 'Medical Record',
+                fileUrl: recordData['attachments']?.isNotEmpty == true 
+                    ? recordData['attachments'][0] 
+                    : '',
+                cloudinaryPublicId: recordData['cloudinaryPublicId'] ?? '',
+                fileType: _getFileTypeFromUrl(recordData['attachments']?.isNotEmpty == true 
+                    ? recordData['attachments'][0] 
+                    : ''),
+                documentType: _getDocumentTypeFromUrl(recordData['attachments']?.isNotEmpty == true 
+                    ? recordData['attachments'][0] 
+                    : ''),
+                category: _getCategoryFromType(recordData['type'] ?? 'general'),
+                description: recordData['notes'] ?? recordData['diagnosis'] ?? '',
+                uploadedAt: recordData['recordDate'] != null 
+                    ? (recordData['recordDate'] as Timestamp).toDate()
+                    : recordData['createdAt'] != null
+                        ? (recordData['createdAt'] as Timestamp).toDate()
+                        : DateTime.now(),
+                fileSizeBytes: 0, // Not available from medical records
+                metadata: {
+                  'type': recordData['type'] ?? 'general',
+                  'doctorName': recordData['doctorName'] ?? '',
+                  'diagnosis': recordData['diagnosis'] ?? '',
+                  'treatment': recordData['treatment'] ?? '',
+                  'prescription': recordData['prescription'] ?? '',
+                },
+              );
+              
+              documents.add(document);
+            }
           }
         } catch (e) {
           print('Error fetching document $recordId: $e');
         }
       }
 
+      // Sort by upload date (newest first)
+      documents.sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
+
       return documents;
     } catch (e) {
       print('Error getting shared documents: $e');
       return [];
+    }
+  }
+
+  /// Helper method to determine document type from URL
+  static DocumentType _getDocumentTypeFromUrl(String url) {
+    if (url.isEmpty) return DocumentType.text;
+    
+    final extension = url.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return DocumentType.pdf;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'bmp':
+      case 'webp':
+        return DocumentType.image;
+      case 'mp4':
+      case 'avi':
+      case 'mov':
+      case 'wmv':
+        return DocumentType.video;
+      case 'mp3':
+      case 'wav':
+      case 'aac':
+        return DocumentType.audio;
+      default:
+        return DocumentType.text;
+    }
+  }
+
+  /// Helper method to get category from medical record type
+  static DocumentCategory _getCategoryFromType(String type) {
+    switch (type.toLowerCase()) {
+      case 'lab_report':
+      case 'lab':
+        return DocumentCategory.labReport;
+      case 'prescription':
+        return DocumentCategory.prescription;
+      case 'imaging':
+      case 'xray':
+      case 'mri':
+        return DocumentCategory.mri;
+      case 'ct':
+        return DocumentCategory.ctScan;
+      case 'consultation':
+      case 'checkup':
+        return DocumentCategory.consultation;
+      case 'vaccination':
+        return DocumentCategory.vaccination;
+      case 'discharge':
+        return DocumentCategory.discharge;
+      default:
+        return DocumentCategory.general;
+    }
+  }
+
+  /// Helper method to get file type from URL
+  static String _getFileTypeFromUrl(String url) {
+    if (url.isEmpty) return 'unknown';
+    
+    final extension = url.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return 'pdf';
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'bmp':
+      case 'webp':
+        return 'image';
+      case 'mp4':
+      case 'avi':
+      case 'mov':
+      case 'wmv':
+        return 'video';
+      case 'mp3':
+      case 'wav':
+      case 'aac':
+        return 'audio';
+      case 'txt':
+      case 'doc':
+      case 'docx':
+        return 'document';
+      default:
+        return 'unknown';
+    }
+  }
+
+  /// Helper method to get MIME type from URL
+  static String _getMimeTypeFromUrl(String url) {
+    if (url.isEmpty) return 'text/plain';
+    
+    final extension = url.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'mp4':
+        return 'video/mp4';
+      case 'mp3':
+        return 'audio/mpeg';
+      default:
+        return 'application/octet-stream';
     }
   }
 
@@ -200,28 +364,21 @@ class SecureMedicalSharingService {
         appointmentId: '',
       );
 
-      if (sharing == null || sharing.sharedAllergies.isEmpty) return [];
+      if (sharing == null) return [];
 
-      final allergies = <PatientAllergy>[];
-      for (final allergyId in sharing.sharedAllergies) {
-        try {
-          final doc = await _firestore
-              .collection(_allergiesCollection)
-              .doc(allergyId)
-              .get();
-
-          if (doc.exists) {
-            final allergy = PatientAllergy.fromFirestore(doc);
-            if (allergy.patientId == sharing.patientId) {
-              allergies.add(allergy);
-            }
-          }
-        } catch (e) {
-          print('Error fetching allergy $allergyId: $e');
-        }
+      // Get all patient allergies (from profile and medical records)
+      final allAllergies = await getPatientAllergies(sharing.patientId);
+      
+      // If specific allergies were selected, filter them
+      if (sharing.sharedAllergies.isNotEmpty) {
+        return allAllergies.where((allergy) => 
+          sharing.sharedAllergies.contains(allergy.id) ||
+          sharing.sharedAllergies.contains(allergy.allergen.toLowerCase())
+        ).toList();
       }
-
-      return allergies;
+      
+      // If no specific selection, return all allergies
+      return allAllergies;
     } catch (e) {
       print('Error getting shared allergies: $e');
       return [];
@@ -240,28 +397,21 @@ class SecureMedicalSharingService {
         appointmentId: '',
       );
 
-      if (sharing == null || sharing.sharedMedications.isEmpty) return [];
+      if (sharing == null) return [];
 
-      final medications = <PatientMedication>[];
-      for (final medicationId in sharing.sharedMedications) {
-        try {
-          final doc = await _firestore
-              .collection(_medicationsCollection)
-              .doc(medicationId)
-              .get();
-
-          if (doc.exists) {
-            final medication = PatientMedication.fromFirestore(doc);
-            if (medication.patientId == sharing.patientId) {
-              medications.add(medication);
-            }
-          }
-        } catch (e) {
-          print('Error fetching medication $medicationId: $e');
-        }
+      // Get all patient medications (from medical records)
+      final allMedications = await getPatientMedications(sharing.patientId);
+      
+      // If specific medications were selected, filter them
+      if (sharing.sharedMedications.isNotEmpty) {
+        return allMedications.where((medication) => 
+          sharing.sharedMedications.contains(medication.id) ||
+          sharing.sharedMedications.contains(medication.medicationName.toLowerCase())
+        ).toList();
       }
-
-      return medications;
+      
+      // If no specific selection, return all medications
+      return allMedications;
     } catch (e) {
       print('Error getting shared medications: $e');
       return [];
@@ -369,6 +519,7 @@ class SecureMedicalSharingService {
   static Future<List<PatientAllergy>> getPatientAllergies(String patientId) async {
     try {
       final allergies = <PatientAllergy>[];
+      final allergenSet = <String>{}; // To avoid duplicates
 
       // Get allergies from user profile
       final userDoc = await _firestore
@@ -381,18 +532,21 @@ class SecureMedicalSharingService {
         final profileAllergies = List<String>.from(userData['allergies'] ?? []);
         
         for (final allergen in profileAllergies) {
-          allergies.add(PatientAllergy(
-            id: 'profile_${allergen.hashCode}',
-            patientId: patientId,
-            allergen: allergen,
-            severity: 'mild', // Default since not specified in profile
-            reaction: 'Not specified',
-            firstOccurrence: null,
-            notes: 'From user profile',
-            isActive: true,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          ));
+          if (allergen.trim().isNotEmpty && !allergenSet.contains(allergen.toLowerCase())) {
+            allergenSet.add(allergen.toLowerCase());
+            allergies.add(PatientAllergy(
+              id: 'profile_${allergen.hashCode}',
+              patientId: patientId,
+              allergen: allergen,
+              severity: 'mild', // Default since not specified in profile
+              reaction: 'Not specified',
+              firstOccurrence: null,
+              notes: 'From user profile',
+              isActive: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ));
+          }
         }
       }
 
@@ -402,6 +556,7 @@ class SecureMedicalSharingService {
           .doc(patientId)
           .collection('medical_records')
           .orderBy('recordDate', descending: true)
+          .limit(50) // Get recent records
           .get();
 
       for (final doc in medicalRecordsSnapshot.docs) {
@@ -409,30 +564,85 @@ class SecureMedicalSharingService {
         final notes = (data['notes'] ?? '').toString().toLowerCase();
         final diagnosis = (data['diagnosis'] ?? '').toString().toLowerCase();
         final treatment = (data['treatment'] ?? '').toString().toLowerCase();
+        final prescription = (data['prescription'] ?? '').toString().toLowerCase();
         
         // Look for allergy mentions in medical records
-        final allergyKeywords = ['allergy', 'allergic', 'reaction', 'intolerance'];
-        final commonAllergens = ['penicillin', 'peanut', 'shellfish', 'latex', 'dust', 'pollen'];
+        final allergyKeywords = ['allergy', 'allergic', 'reaction', 'intolerance', 'hypersensitive'];
+        final commonAllergens = [
+          'penicillin', 'amoxicillin', 'aspirin', 'ibuprofen', 'sulfa',
+          'peanut', 'tree nut', 'shellfish', 'fish', 'egg', 'milk', 'soy', 'wheat',
+          'latex', 'dust', 'pollen', 'mold', 'pet dander', 'bee sting',
+          'codeine', 'morphine', 'contrast dye', 'iodine'
+        ];
         
+        final fullText = '$notes $diagnosis $treatment $prescription';
+        
+        // Check for explicit allergy mentions
         for (final allergen in commonAllergens) {
-          final fullText = '$notes $diagnosis $treatment';
           if (fullText.contains(allergen) && 
-              allergyKeywords.any((keyword) => fullText.contains(keyword))) {
+              allergyKeywords.any((keyword) => fullText.contains(keyword)) &&
+              !allergenSet.contains(allergen)) {
             
-            // Check if we already have this allergen
-            final exists = allergies.any((a) => 
-              a.allergen.toLowerCase().contains(allergen));
+            allergenSet.add(allergen);
+            final recordDate = data['recordDate'] != null 
+                ? (data['recordDate'] as Timestamp).toDate()
+                : data['createdAt'] != null
+                    ? (data['createdAt'] as Timestamp).toDate()
+                    : DateTime.now();
             
-            if (!exists) {
-              final recordDate = (data['recordDate'] as Timestamp).toDate();
+            // Determine severity based on context
+            String severity = 'mild';
+            if (fullText.contains('severe') || fullText.contains('anaphylaxis') || 
+                fullText.contains('emergency') || fullText.contains('epipen')) {
+              severity = 'severe';
+            } else if (fullText.contains('moderate') || fullText.contains('swelling') ||
+                       fullText.contains('difficulty breathing')) {
+              severity = 'moderate';
+            }
+            
+            allergies.add(PatientAllergy(
+              id: '${doc.id}_$allergen',
+              patientId: patientId,
+              allergen: allergen.toUpperCase(),
+              severity: severity,
+              reaction: _extractReactionFromText(fullText, allergen),
+              firstOccurrence: recordDate,
+              notes: 'Found in medical record: ${data['title'] ?? 'Medical Record'}',
+              isActive: true,
+              createdAt: recordDate,
+              updatedAt: recordDate,
+            ));
+          }
+        }
+
+        // Look for general allergy patterns
+        final allergyPatterns = [
+          RegExp(r'allergic to (\w+)', caseSensitive: false),
+          RegExp(r'allergy: (\w+)', caseSensitive: false),
+          RegExp(r'(\w+) allergy', caseSensitive: false),
+          RegExp(r'reaction to (\w+)', caseSensitive: false),
+        ];
+
+        for (final pattern in allergyPatterns) {
+          final matches = pattern.allMatches(fullText);
+          for (final match in matches) {
+            final allergen = match.group(1)?.toLowerCase() ?? '';
+            if (allergen.length > 2 && !allergenSet.contains(allergen) &&
+                !['the', 'and', 'for', 'with', 'was', 'had'].contains(allergen)) {
+              
+              allergenSet.add(allergen);
+              final recordDate = data['recordDate'] != null 
+                  ? (data['recordDate'] as Timestamp).toDate()
+                  : DateTime.now();
+              
               allergies.add(PatientAllergy(
-                id: '${doc.id}_$allergen',
+                id: '${doc.id}_${allergen.hashCode}',
                 patientId: patientId,
                 allergen: allergen.toUpperCase(),
-                severity: 'moderate', // Assume moderate if mentioned in medical record
+                severity: 'moderate',
                 reaction: 'Mentioned in medical record',
                 firstOccurrence: recordDate,
-                notes: 'Found in medical record: ${data['title'] ?? 'Medical Record'}',
+                notes: 'Extracted from: ${data['title'] ?? 'Medical Record'}',
                 isActive: true,
                 createdAt: recordDate,
                 updatedAt: recordDate,
@@ -458,19 +668,39 @@ class SecureMedicalSharingService {
     }
   }
 
+  /// Helper method to extract reaction description from text
+  static String _extractReactionFromText(String text, String allergen) {
+    final reactions = [
+      'rash', 'hives', 'swelling', 'itching', 'breathing difficulty',
+      'nausea', 'vomiting', 'diarrhea', 'anaphylaxis', 'shock'
+    ];
+    
+    final foundReactions = <String>[];
+    for (final reaction in reactions) {
+      if (text.contains(reaction)) {
+        foundReactions.add(reaction);
+      }
+    }
+    
+    return foundReactions.isNotEmpty 
+        ? foundReactions.join(', ')
+        : 'Allergic reaction';
+  }
+
   /// Get patient medications - Extract from medical records
   static Future<List<PatientMedication>> getPatientMedications(String patientId) async {
     try {
       final medications = <PatientMedication>[];
+      final medicationSet = <String>{}; // To avoid duplicates
 
       // Get medications from medical records
       final medicalRecordsSnapshot = await _firestore
           .collection('users')
           .doc(patientId)
           .collection('medical_records')
-          .where('type', whereIn: ['prescription', 'consultation', 'checkup'])
+          .where('type', whereIn: ['prescription', 'consultation', 'checkup', 'followup'])
           .orderBy('recordDate', descending: true)
-          .limit(20) // Get recent records that might have prescriptions
+          .limit(30) // Get recent records that might have prescriptions
           .get();
 
       for (final doc in medicalRecordsSnapshot.docs) {
@@ -478,35 +708,58 @@ class SecureMedicalSharingService {
         final prescription = data['prescription']?.toString() ?? '';
         final treatment = data['treatment']?.toString() ?? '';
         final notes = data['notes']?.toString() ?? '';
-        final recordDate = (data['recordDate'] as Timestamp).toDate();
+        final recordDate = data['recordDate'] != null 
+            ? (data['recordDate'] as Timestamp).toDate()
+            : data['createdAt'] != null
+                ? (data['createdAt'] as Timestamp).toDate()
+                : DateTime.now();
         final doctorName = data['doctorName'] ?? 'Unknown Doctor';
         
         // Parse prescription text for medications
         final medicationText = '$prescription $treatment $notes';
         if (medicationText.trim().isNotEmpty) {
           
-          // Common medication patterns
+          // Enhanced medication patterns
           final medicationPatterns = [
-            RegExp(r'(\w+)\s+(\d+\s*mg)\s+(.*?(?:daily|twice|once|morning|evening|night))', caseSensitive: false),
-            RegExp(r'(\w+)\s+tablet\s+(.*?(?:daily|twice|once))', caseSensitive: false),
-            RegExp(r'(\w+)\s+(\d+\s*ml)\s+(.*?(?:daily|twice|once))', caseSensitive: false),
+            // Pattern: "Medication 500mg twice daily"
+            RegExp(r'(\w+)\s+(\d+\s*mg)\s+(.*?(?:daily|twice|once|morning|evening|night|bid|tid|qid))', caseSensitive: false),
+            // Pattern: "Medication tablet twice daily"
+            RegExp(r'(\w+)\s+tablet\s+(.*?(?:daily|twice|once|morning|evening|night|bid|tid|qid))', caseSensitive: false),
+            // Pattern: "Medication 5ml three times"
+            RegExp(r'(\w+)\s+(\d+\s*ml)\s+(.*?(?:daily|twice|once|times|morning|evening|night))', caseSensitive: false),
+            // Pattern: "Take Medication as needed"
+            RegExp(r'take\s+(\w+)\s+(.*?(?:needed|directed|prescribed))', caseSensitive: false),
+            // Pattern: "Medication: dosage instructions"
+            RegExp(r'(\w+):\s*([^,\n]+)', caseSensitive: false),
+            // Pattern: "1. Medication - instructions"
+            RegExp(r'\d+\.\s*(\w+)\s*[-–]\s*([^,\n]+)', caseSensitive: false),
           ];
+          
+          bool foundStructuredMedication = false;
           
           for (final pattern in medicationPatterns) {
             final matches = pattern.allMatches(medicationText);
             for (final match in matches) {
-              final medicationName = match.group(1) ?? '';
-              final dosage = match.group(2) ?? '';
-              final frequency = match.group(3) ?? '';
+              final medicationName = match.group(1)?.trim() ?? '';
+              final dosageOrInstructions = match.group(2)?.trim() ?? '';
               
-              if (medicationName.length > 2) { // Filter out very short matches
+              if (medicationName.length > 2 && 
+                  !medicationSet.contains(medicationName.toLowerCase()) &&
+                  !_isCommonWord(medicationName)) {
+                
+                medicationSet.add(medicationName.toLowerCase());
+                foundStructuredMedication = true;
+                
+                // Parse dosage and frequency
+                final parsedMedication = _parseMedicationDetails(dosageOrInstructions);
+                
                 medications.add(PatientMedication(
                   id: '${doc.id}_${medicationName.hashCode}',
                   patientId: patientId,
                   medicationName: medicationName,
-                  dosage: dosage,
-                  frequency: frequency,
-                  route: 'oral', // Default
+                  dosage: parsedMedication['dosage'] ?? dosageOrInstructions,
+                  frequency: parsedMedication['frequency'] ?? 'As directed',
+                  route: parsedMedication['route'] ?? 'oral',
                   startDate: recordDate,
                   endDate: null, // Assume ongoing unless specified
                   prescribedBy: doctorName,
@@ -520,45 +773,208 @@ class SecureMedicalSharingService {
             }
           }
           
-          // If no structured medications found, create a general entry
-          if (medications.isEmpty && prescription.trim().isNotEmpty) {
-            medications.add(PatientMedication(
-              id: '${doc.id}_general',
-              patientId: patientId,
-              medicationName: 'Prescribed Medication',
-              dosage: 'As prescribed',
-              frequency: 'As directed',
-              route: 'oral',
-              startDate: recordDate,
-              endDate: null,
-              prescribedBy: doctorName,
-              reason: data['diagnosis'] ?? 'Medical treatment',
-              notes: prescription.length > 100 ? '${prescription.substring(0, 100)}...' : prescription,
-              isActive: true,
-              createdAt: recordDate,
-              updatedAt: recordDate,
-            ));
+          // Look for common medication names even without structured format
+          if (!foundStructuredMedication) {
+            final commonMedications = [
+              'paracetamol', 'acetaminophen', 'ibuprofen', 'aspirin', 'amoxicillin',
+              'azithromycin', 'ciprofloxacin', 'metformin', 'insulin', 'omeprazole',
+              'atorvastatin', 'amlodipine', 'lisinopril', 'metoprolol', 'warfarin',
+              'prednisone', 'albuterol', 'levothyroxine', 'gabapentin', 'tramadol'
+            ];
+            
+            for (final medName in commonMedications) {
+              if (medicationText.toLowerCase().contains(medName) &&
+                  !medicationSet.contains(medName)) {
+                
+                medicationSet.add(medName);
+                medications.add(PatientMedication(
+                  id: '${doc.id}_${medName.hashCode}',
+                  patientId: patientId,
+                  medicationName: medName.toUpperCase(),
+                  dosage: 'As prescribed',
+                  frequency: 'As directed',
+                  route: 'oral',
+                  startDate: recordDate,
+                  endDate: null,
+                  prescribedBy: doctorName,
+                  reason: data['diagnosis'] ?? 'Medical treatment',
+                  notes: 'Mentioned in: ${data['title'] ?? 'Medical Record'}',
+                  isActive: true,
+                  createdAt: recordDate,
+                  updatedAt: recordDate,
+                ));
+              }
+            }
+          }
+          
+          // If still no structured medications found but prescription text exists, create a general entry
+          if (!foundStructuredMedication && prescription.trim().isNotEmpty && prescription.length > 10) {
+            final generalId = '${doc.id}_general';
+            if (!medicationSet.contains(generalId)) {
+              medicationSet.add(generalId);
+              medications.add(PatientMedication(
+                id: generalId,
+                patientId: patientId,
+                medicationName: 'Prescribed Medication',
+                dosage: 'As prescribed',
+                frequency: 'As directed',
+                route: 'oral',
+                startDate: recordDate,
+                endDate: null,
+                prescribedBy: doctorName,
+                reason: data['diagnosis'] ?? 'Medical treatment',
+                notes: prescription.length > 100 ? '${prescription.substring(0, 100)}...' : prescription,
+                isActive: true,
+                createdAt: recordDate,
+                updatedAt: recordDate,
+              ));
+            }
           }
         }
       }
 
-      // Remove duplicates and sort by date
-      final uniqueMedications = <String, PatientMedication>{};
-      for (final med in medications) {
-        final key = '${med.medicationName}_${med.dosage}';
-        if (!uniqueMedications.containsKey(key) || 
-            uniqueMedications[key]!.startDate.isBefore(med.startDate)) {
-          uniqueMedications[key] = med;
-        }
-      }
+      // Sort by date (newest first)
+      medications.sort((a, b) => b.startDate.compareTo(a.startDate));
       
-      final result = uniqueMedications.values.toList();
-      result.sort((a, b) => b.startDate.compareTo(a.startDate));
-      
-      return result;
+      return medications;
     } catch (e) {
       print('Error getting patient medications: $e');
       return [];
+    }
+  }
+
+  /// Helper method to check if a word is too common to be a medication
+  static bool _isCommonWord(String word) {
+    final commonWords = [
+      'the', 'and', 'for', 'with', 'was', 'had', 'take', 'tablet', 'capsule',
+      'daily', 'twice', 'once', 'morning', 'evening', 'night', 'after', 'before',
+      'food', 'meal', 'water', 'dose', 'medication', 'medicine', 'drug', 'pill'
+    ];
+    return commonWords.contains(word.toLowerCase()) || word.length < 3;
+  }
+
+  /// Helper method to parse medication details from instruction text
+  static Map<String, String> _parseMedicationDetails(String instructions) {
+    final result = <String, String>{};
+    final text = instructions.toLowerCase();
+    
+    // Extract dosage
+    final dosagePattern = RegExp(r'(\d+\s*(?:mg|ml|g|mcg|units?))', caseSensitive: false);
+    final dosageMatch = dosagePattern.firstMatch(text);
+    if (dosageMatch != null) {
+      result['dosage'] = dosageMatch.group(1) ?? '';
+    }
+    
+    // Extract frequency
+    if (text.contains('once') || text.contains('daily') && !text.contains('twice')) {
+      result['frequency'] = 'Once daily';
+    } else if (text.contains('twice') || text.contains('bid')) {
+      result['frequency'] = 'Twice daily';
+    } else if (text.contains('three times') || text.contains('tid')) {
+      result['frequency'] = 'Three times daily';
+    } else if (text.contains('four times') || text.contains('qid')) {
+      result['frequency'] = 'Four times daily';
+    } else if (text.contains('as needed') || text.contains('prn')) {
+      result['frequency'] = 'As needed';
+    } else if (text.contains('morning')) {
+      result['frequency'] = 'Morning';
+    } else if (text.contains('evening') || text.contains('night')) {
+      result['frequency'] = 'Evening';
+    }
+    
+    // Extract route
+    if (text.contains('injection') || text.contains('inject')) {
+      result['route'] = 'injection';
+    } else if (text.contains('topical') || text.contains('apply')) {
+      result['route'] = 'topical';
+    } else if (text.contains('inhale') || text.contains('inhaler')) {
+      result['route'] = 'inhalation';
+    } else if (text.contains('drops') || text.contains('eye')) {
+      result['route'] = 'ophthalmic';
+    } else {
+      result['route'] = 'oral';
+    }
+    
+    return result;
+  }
+
+  /// Get patient vitals from profile and medical records
+  static Future<Map<String, dynamic>> getPatientVitals(String patientId) async {
+    try {
+      final vitals = <String, dynamic>{};
+
+      // Get vitals from user profile
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(patientId)
+          .get();
+
+      if (userDoc.exists) {
+        final userData = userDoc.data()!;
+        
+        // Basic vitals from profile
+        if (userData['height'] != null) {
+          vitals['height'] = '${userData['height']} cm';
+        }
+        if (userData['weight'] != null) {
+          vitals['weight'] = '${userData['weight']} kg';
+        }
+        if (userData['bloodType'] != null) {
+          vitals['bloodType'] = userData['bloodType'];
+        }
+        if (userData['dateOfBirth'] != null) {
+          final dob = (userData['dateOfBirth'] as Timestamp).toDate();
+          final age = DateTime.now().difference(dob).inDays ~/ 365;
+          vitals['age'] = '$age years';
+        }
+      }
+
+      // Get recent vitals from medical records
+      final medicalRecordsSnapshot = await _firestore
+          .collection('users')
+          .doc(patientId)
+          .collection('medical_records')
+          .orderBy('recordDate', descending: true)
+          .limit(10)
+          .get();
+
+      for (final doc in medicalRecordsSnapshot.docs) {
+        final data = doc.data();
+        final recordVitals = data['vitals'] as Map<String, dynamic>? ?? {};
+        
+        // Add vitals from medical records (most recent takes precedence)
+        for (final entry in recordVitals.entries) {
+          if (!vitals.containsKey(entry.key) && entry.value != null) {
+            vitals[entry.key] = entry.value;
+          }
+        }
+        
+        // Parse vitals from notes if structured vitals not available
+        final notes = data['notes']?.toString() ?? '';
+        if (notes.isNotEmpty) {
+          final vitalPatterns = {
+            'bloodPressure': RegExp(r'bp:?\s*(\d+/\d+)', caseSensitive: false),
+            'heartRate': RegExp(r'hr:?\s*(\d+)', caseSensitive: false),
+            'temperature': RegExp(r'temp:?\s*(\d+\.?\d*)', caseSensitive: false),
+            'respiratoryRate': RegExp(r'rr:?\s*(\d+)', caseSensitive: false),
+            'oxygenSaturation': RegExp(r'spo2:?\s*(\d+)%?', caseSensitive: false),
+          };
+          
+          for (final entry in vitalPatterns.entries) {
+            if (!vitals.containsKey(entry.key)) {
+              final match = entry.value.firstMatch(notes);
+              if (match != null) {
+                vitals[entry.key] = match.group(1);
+              }
+            }
+          }
+        }
+      }
+
+      return vitals;
+    } catch (e) {
+      print('Error getting patient vitals: $e');
+      return {};
     }
   }
 

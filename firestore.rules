@@ -148,6 +148,15 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
     
+    // Ratings collection - patients can create ratings for their completed appointments
+    match /ratings/{ratingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isPatient() && 
+                   request.auth.uid == resource.data.patientId;
+      allow update: if isAdmin(); // Only admins can moderate ratings
+      allow delete: if isAdmin(); // Only admins can delete ratings
+    }
+    
     // Default rule for any other collections - allow authenticated users
     match /{document=**} {
       allow read, write: if isAuthenticated();

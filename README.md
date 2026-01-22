@@ -294,12 +294,48 @@ Before running the app, you need to set up the following files that are **NOT in
 #### **Setup Instructions:**
 1. **Create `.env` file** in root directory with your API keys:
    ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
-   RAZORPAY_KEY_ID=your_razorpay_key_id
-   RAZORPAY_KEY_SECRET=your_razorpay_secret
+   # Firebase Configuration
+   FIREBASE_API_KEY=your_firebase_api_key_here
+   FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   FIREBASE_PROJECT_ID=your_project_id
+   FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+   FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   FIREBASE_APP_ID=your_app_id
+
+   # Google Maps API
+   GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+
+   # Google Cloud Vision API (for OCR and image analysis)
+   GOOGLE_CLOUD_VISION_API_KEY=your_vision_api_key_here
+
+   # Firestore API Key (for database operations)
+   FIRESTORE_API_KEY=your_firestore_api_key_here
+
+   # Cloudinary Configuration
    CLOUDINARY_CLOUD_NAME=your_cloudinary_name
    CLOUDINARY_API_KEY=your_cloudinary_key
    CLOUDINARY_API_SECRET=your_cloudinary_secret
+
+   # Agora Configuration
+   AGORA_APP_ID=your_agora_app_id
+   AGORA_APP_CERTIFICATE=your_agora_certificate
+
+   # Razorpay Configuration
+   RAZORPAY_KEY_ID=your_razorpay_key_id
+   RAZORPAY_KEY_SECRET=your_razorpay_secret
+   RAZORPAY_PLAN_ID=your_razorpay_plan_id
+
+   # AI API Configuration (for symptom checker)
+   Gemni_API_KEY=your_gemini_api_key_here
+   AI_API_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+
+   # OpenFDA API (for medicine information)
+   OPENFDA_API_KEY=your_openfda_api_key_here
+
+   # App Configuration
+   APP_NAME=Curevia
+   APP_VERSION=1.0.0
+   DEBUG_MODE=true
    ```
 
 2. **Configure AI Services**:
@@ -357,12 +393,21 @@ The notification system automatically initializes when the app starts with enhan
 
 ## 🆕 Recent Updates
 
-### **v1.4.0 - Enhanced Security & Documentation** (Latest - January 19, 2026)
-- � **Documentation Update** - Comprehensive README refresh with latest features and security guidelines
-- �️ **Security Best Practices** - Added critical security notes for API keys and environment files
+### **v1.5.0 - Enhanced Configuration & Security** (Latest - January 22, 2026)
+- 🔧 **Environment Configuration** - Updated comprehensive .env file with all required API keys and services
+- 🛡️ **Enhanced Security** - Strengthened .gitignore protection for sensitive configuration files
+- 🔐 **API Integration** - Complete configuration for Firebase, Google Cloud, Cloudinary, Agora, and Razorpay services
+- 🤖 **AI Services** - Updated Google Gemini API configuration for enhanced symptom checker functionality
+- 📧 **Email Service** - Maintained separation of email service folder for security compliance
+- 🚀 **Production Ready** - All services configured and ready for deployment with proper security measures
+- 📝 **Documentation** - Updated setup instructions with latest configuration requirements
+
+### **v1.4.0 - Enhanced Security & Documentation** (January 19, 2026)
+- 📚 **Documentation Update** - Comprehensive README refresh with latest features and security guidelines
+- 🛡️ **Security Best Practices** - Added critical security notes for API keys and environment files
 - 🔐 **Environment Protection** - Enhanced .gitignore and security documentation for sensitive data
 - 📝 **Developer Guidelines** - Clear instructions for secure development and deployment practices
-- � **Repository Sync** - Updated GitHub repository with latest codebase improvements
+- 🔄 **Repository Sync** - Updated GitHub repository with latest codebase improvements
 
 ### **v1.3.0 - Production Ready & Enhanced Reliability** (January 16, 2026)
 - 🔧 **Compilation Fixes** - Resolved all build errors, app now compiles successfully

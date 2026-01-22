@@ -9,6 +9,9 @@ import '../../services/doctor/doctor_service.dart';
 import '../../services/firebase/appointment_service.dart';
 import '../../services/notifications/payment_notification_service.dart';
 import '../../widgets/common/custom_button.dart';
+import 'create_prescription_screen.dart';
+import '../debug/doctor_appointment_seeding_screen.dart';
+import '../../utils/appointment_diagnostic.dart';
 
 /// Doctor appointments screen for managing appointments
 class DoctorAppointmentsScreen extends ConsumerStatefulWidget {
@@ -1116,6 +1119,30 @@ class _DoctorAppointmentsScreenState
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
+              leading: const Icon(Icons.search, color: Colors.blue),
+              title: const Text('Check Database'),
+              subtitle: const Text('Diagnose appointment data issues'),
+              onTap: () {
+                Navigator.pop(context);
+                _runDatabaseDiagnostic();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_circle, color: Colors.green),
+              title: const Text('Seed Sample Appointments'),
+              subtitle: const Text('Create test appointments for development'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DoctorAppointmentSeedingScreen(),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
               leading: const Icon(Icons.notifications),
               title: const Text('Test Payment Notifications'),
               onTap: () {
@@ -1194,6 +1221,122 @@ class _DoctorAppointmentsScreenState
           backgroundColor: Colors.green,
         ),
       );
+    }
+  }
+
+  Future<void> _runDatabaseDiagnostic() async {
+    final user = ref.read(currentUserModelProvider);
+    if (user == null) return;
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Running diagnostic...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Run diagnostic for this doctor
+      final doctorResults = await AppointmentDiagnostic.checkDoctorAppointments(user.uid);
+      final allResults = await AppointmentDiagnostic.checkAllAppointments();
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show results
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Database Diagnostic Results'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Your Appointments:',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Total: ${doctorResults['totalAppointments'] ?? 0}'),
+                  Text('Today: ${doctorResults['todayAppointments'] ?? 0}'),
+                  Text('Upcoming: ${doctorResults['upcomingAppointments'] ?? 0}'),
+                  Text('Status: ${doctorResults['statusBreakdown'] ?? {}}'),
+                  const SizedBox(height: 16),
+                  Text(
+                    'System-wide:',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Total appointments: ${allResults['totalAppointments'] ?? 0}'),
+                  Text('Unique doctors: ${allResults['uniqueDoctors'] ?? 0}'),
+                  Text('Unique patients: ${allResults['uniquePatients'] ?? 0}'),
+                  const SizedBox(height: 16),
+                  if (doctorResults['totalAppointments'] == 0) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                      ),
+                      child: const Text(
+                        'No appointments found for your account. This explains why the appointments screen is empty. You can use the seeding tool to create test appointments.',
+                        style: TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+              if (doctorResults['totalAppointments'] == 0)
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DoctorAppointmentSeedingScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text('Create Test Data'),
+                ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+      
+      // Show error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Diagnostic failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -1368,18 +1511,13 @@ class _DoctorAppointmentsScreenState
 
   /// Handle prescription creation/viewing
   void _handlePrescription(AppointmentModel appointment) {
-    Navigator.pushNamed(
+    Navigator.push(
       context,
-      '/doctor/create-prescription',
-      arguments: {
-        'appointmentId': appointment.id,
-        'patientId': appointment.patientId,
-        'patientName': appointment.patientName,
-        'doctorId': appointment.doctorId,
-        'doctorName': appointment.doctorName,
-        'doctorSpecialty': appointment.doctorSpecialty,
-        'isEdit': appointment.status == 'completed',
-      },
+      MaterialPageRoute(
+        builder: (context) => CreatePrescriptionScreen(
+          appointment: appointment,
+        ),
+      ),
     ).then((_) {
       // Refresh the stream providers after prescription is created
       final user = ref.read(currentUserModelProvider);

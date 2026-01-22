@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../constants/app_colors.dart';
-import '../../utils/theme_utils.dart';
-import '../../models/appointment_model.dart';
-import '../../models/doctor_model.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/appointment_provider.dart';
-import '../../services/firebase/appointment_service.dart';
-import '../../services/firebase/doctor_service.dart';
-import '../../services/maps_service.dart';
-import '../../services/whatsapp_service.dart';
-import '../../services/secure_medical_sharing_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart' as provider;
+import 'package:curevia/constants/app_colors.dart';
+import 'package:curevia/utils/theme_utils.dart';
+import 'package:curevia/models/appointment_model.dart';
+import 'package:curevia/models/doctor_model.dart';
+import 'package:curevia/providers/auth_provider.dart';
+import 'package:curevia/providers/appointment_provider.dart';
+import 'package:curevia/providers/rating_provider.dart';
+import 'package:curevia/services/firebase/appointment_service.dart';
+import 'package:curevia/services/firebase/doctor_service.dart';
+import 'package:curevia/services/maps_service.dart';
+import 'package:curevia/services/whatsapp_service.dart';
+import 'package:curevia/services/secure_medical_sharing_service.dart';
+import 'package:curevia/widgets/common/rating_dialog.dart';
+import 'package:curevia/widgets/common/rating_display.dart';
 import '../patient/find_doctors_screen.dart';
 import '../patient/reschedule_appointment_screen.dart';
 import '../../screens/emergency/emergency_screen.dart';
@@ -819,6 +824,12 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
                 ],
               ),
             ],
+            
+            // Rating section for completed appointments
+            if (appointment.status == 'completed') ...[
+              const SizedBox(height: 16),
+              _buildRatingSection(appointment),
+            ],
           ],
         ),
       ),
@@ -1089,6 +1100,9 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
                       backgroundColor: AppColors.success,
                     ),
                   );
+
+                  // Show rating prompt to patient automatically
+                  _showAutomaticRatingPrompt(appointment);
                 }
               } catch (e) {
                 if (mounted) {
@@ -1305,47 +1319,103 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
 
       DoctorModel? doctor;
       
-      // Try to get doctor by ID first
+      // Try to get doctor by ID first (only if ID is not empty)
       if (appointment.doctorId.isNotEmpty) {
         print('🔍 Fetching doctor details for ID: ${appointment.doctorId}');
-        doctor = await DoctorService.getDoctorById(appointment.doctorId);
+        try {
+          doctor = await DoctorService.getDoctorById(appointment.doctorId);
+          if (doctor != null) {
+            print('✅ Found doctor by ID: ${doctor.fullName}');
+          } else {
+            print('⚠️ Doctor not found by ID, will try name search');
+          }
+        } catch (e) {
+          print('⚠️ Error fetching doctor by ID: $e, will try name search');
+        }
       }
       
       // If doctor not found by ID or ID is empty, try to find by name
       if (doctor == null && appointment.doctorName.isNotEmpty) {
-        print('🔍 Doctor ID empty or not found, searching by name: ${appointment.doctorName}');
-        final doctors = await DoctorService.searchDoctorsByName(appointment.doctorName);
-        
-        if (doctors.isNotEmpty) {
-          // Find exact match first, then partial match
-          doctor = doctors.firstWhere(
-            (d) => d.fullName.toLowerCase() == appointment.doctorName.toLowerCase(),
-            orElse: () => doctors.first,
+        print('🔍 Searching by name: ${appointment.doctorName}');
+        try {
+          final doctors = await DoctorService.searchDoctors(
+            searchQuery: appointment.doctorName,
+            limit: 10,
           );
-          print('✅ Found doctor by name: ${doctor.fullName} (ID: ${doctor.uid})');
           
-          // Update the appointment with the correct doctorId for future use
-          try {
-            await AppointmentService.updateAppointment(
-              appointmentId: appointment.id,
-              updates: {'doctorId': doctor.uid},
+          if (doctors.isNotEmpty) {
+            // Find exact match first, then partial match
+            doctor = doctors.firstWhere(
+              (d) => d.fullName.toLowerCase() == appointment.doctorName.toLowerCase(),
+              orElse: () => doctors.first,
             );
-            print('✅ Updated appointment with correct doctorId');
-          } catch (e) {
-            print('⚠️ Could not update appointment with doctorId: $e');
+            print('✅ Found doctor by name: ${doctor.fullName} (ID: ${doctor.uid})');
+            
+            // Update the appointment with the correct doctorId for future use
+            try {
+              await AppointmentService.updateAppointment(
+                appointmentId: appointment.id,
+                updates: {'doctorId': doctor.uid},
+              );
+              print('✅ Updated appointment with correct doctorId');
+            } catch (e) {
+              print('⚠️ Could not update appointment with doctorId: $e');
+            }
+          } else {
+            print('⚠️ No doctors found by name search');
           }
+        } catch (e) {
+          print('⚠️ Error searching doctors by name: $e');
         }
       }
       
+      // If still no doctor found, try alternative search methods
+      if (doctor == null && appointment.doctorName.isNotEmpty) {
+        print('🔍 Trying alternative search methods...');
+        try {
+          // Try searching in users collection with doctor role
+          final usersQuery = await FirebaseFirestore.instance
+              .collection('users')
+              .where('role', isEqualTo: 'doctor')
+              .where('fullName', isEqualTo: appointment.doctorName)
+              .limit(1)
+              .get();
+          
+          if (usersQuery.docs.isNotEmpty) {
+            final userData = usersQuery.docs.first.data();
+            // Create a minimal doctor model from user data
+            doctor = DoctorModel(
+              uid: usersQuery.docs.first.id,
+              email: userData['email'] ?? '',
+              fullName: userData['fullName'] ?? appointment.doctorName,
+              role: 'doctor',
+              phoneNumber: userData['phoneNumber'],
+              profileImageUrl: userData['profileImageUrl'],
+              createdAt: (userData['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+              updatedAt: (userData['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+              isActive: userData['isActive'] ?? true,
+              isVerified: userData['isVerified'] ?? false,
+              specialty: userData['specialty'],
+              clinicName: userData['clinicName'],
+            );
+            print('✅ Found doctor in users collection: ${doctor.fullName}');
+          }
+        } catch (e) {
+          print('⚠️ Error searching in users collection: $e');
+        }
+      }
+      
+      // If still no doctor found, show error
       if (doctor == null) {
-        print('❌ Could not find doctor');
+        print('❌ Doctor not found');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Unable to find doctor information. Please contact support.'),
+            SnackBar(
+              content: Text('Unable to find doctor information for ${appointment.doctorName}'),
               backgroundColor: AppColors.error,
             ),
           );
+          _showDoctorNotFoundDialog(appointment);
         }
         return;
       }
@@ -1365,15 +1435,6 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
         }
         return;
       }
-
-      // Format appointment time for WhatsApp message
-      final appointmentTime = DateTime(
-        appointment.appointmentDate.year,
-        appointment.appointmentDate.month,
-        appointment.appointmentDate.day,
-        int.parse(appointment.timeSlot.split(':')[0]),
-        int.parse(appointment.timeSlot.split(':')[1].split(' ')[0]),
-      );
 
       // Try to open WhatsApp
       final success = await WhatsAppService.openDoctorChat(
@@ -1934,5 +1995,425 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
         ],
       ),
     );
+  }
+
+  /// Show dialog when doctor information is not found
+  void _showDoctorNotFoundDialog(AppointmentModel appointment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: AppColors.warning),
+            const SizedBox(width: 8),
+            const Text('Doctor Not Found'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'We couldn\'t find contact information for Dr. ${appointment.doctorName}.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.info.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.info.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Appointment Details:',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text('Doctor: ${appointment.doctorName}'),
+                  Text('Date: ${_formatDate(appointment.appointmentDate)}'),
+                  Text('Time: ${appointment.timeSlot}'),
+                  Text('Type: ${appointment.consultationType}'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'What would you like to do?',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Navigate to find doctors screen to book with a different doctor
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FindDoctorsScreen(),
+                ),
+              );
+            },
+            child: const Text('Find Another Doctor'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Show contact support options
+              _showContactSupportDialog(appointment);
+            },
+            child: const Text('Contact Support'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show contact support dialog
+  void _showContactSupportDialog(AppointmentModel appointment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Contact Support'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Our support team can help you contact the doctor or reschedule your appointment.',
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.success.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.phone, color: AppColors.success, size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Support Helpline',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text('+91 9876543210'),
+                  const Text('Available 24/7'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.email, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Email Support',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text('support@curevia.com'),
+                  const Text('Response within 2 hours'),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              // Open WhatsApp with support number
+              final user = ref.read(currentUserModelProvider);
+              final patientName = user?.fullName ?? 'Patient';
+              
+              final message = '''
+Hello Curevia Support,
+
+I need help with my appointment:
+- Appointment ID: ${appointment.id}
+- Doctor: ${appointment.doctorName}
+- Date: ${_formatDate(appointment.appointmentDate)}
+- Time: ${appointment.timeSlot}
+- Patient: $patientName
+
+Issue: Unable to contact doctor. Please help me reach the doctor or reschedule.
+
+Thank you!
+              '''.trim();
+              
+              await WhatsAppService.openChat(
+                phoneNumber: '+919876543210', // Support number
+                message: message,
+              );
+            },
+            child: const Text('WhatsApp Support'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build rating section for completed appointments
+  Widget _buildRatingSection(AppointmentModel appointment) {
+    final user = ref.watch(currentUserModelProvider);
+    if (user == null || user.role != 'patient') {
+      return const SizedBox.shrink();
+    }
+
+    return provider.Consumer<RatingProvider>(
+      builder: (context, ratingProvider, child) {
+        return FutureBuilder<bool>(
+          future: ratingProvider.canRateAppointment(appointment.id, user.uid),
+          builder: (context, canRateSnapshot) {
+            if (!canRateSnapshot.hasData) {
+              return const SizedBox.shrink();
+            }
+
+            final canRate = canRateSnapshot.data!;
+
+            if (!canRate) {
+              // Check if already rated
+              return FutureBuilder(
+                future: ratingProvider.getRatingForAppointment(appointment.id),
+                builder: (context, ratingSnapshot) {
+                  if (!ratingSnapshot.hasData) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final existingRating = ratingSnapshot.data;
+                  if (existingRating == null) {
+                    return const SizedBox.shrink();
+                  }
+
+                  // Show existing rating
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.withOpacity(0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.green[700], size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'You rated this appointment',
+                              style: TextStyle(
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            RatingDisplay.compact(
+                              averageRating: existingRating.rating.toDouble(),
+                              totalRatings: 1,
+                            ),
+                            if (existingRating.hasReview) ...[
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  existingRating.reviewText!,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            }
+
+            // Show rating button
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.star_rate, color: Colors.amber[700], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'How was your appointment with Dr. ${appointment.doctorName}?',
+                      style: TextStyle(
+                        color: Colors.amber[700],
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => _showRatingDialog(appointment, user),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber[700],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Rate',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Show rating dialog for completed appointment
+  void _showRatingDialog(AppointmentModel appointment, user) {
+    showRatingDialog(
+      context: context,
+      patientId: user.uid,
+      doctorId: appointment.doctorId,
+      appointmentId: appointment.id,
+      patientName: user.fullName ?? 'Patient',
+      doctorName: appointment.doctorName,
+      patientProfileImage: user.profileImageUrl,
+      onRatingSubmitted: () {
+        // Refresh appointments to show updated rating status
+        ref.invalidate(pastAppointmentsProvider(user.uid));
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.star, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('Thank you for rating Dr. ${appointment.doctorName}!'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+    );
+  }
+
+  /// Show automatic rating prompt after appointment completion
+  void _showAutomaticRatingPrompt(AppointmentModel appointment) {
+    // Wait a moment for the completion message to show
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+
+      // Show a prompt asking if patient wants to rate the appointment
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.star_rate, color: Colors.amber[600], size: 28),
+              const SizedBox(width: 8),
+              const Text('Rate Your Experience'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Your appointment with Dr. ${appointment.doctorName} is now complete.',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Would you like to rate your experience and help other patients?',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Maybe Later'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                // Get current user and show rating dialog
+                final user = ref.read(currentUserModelProvider);
+                if (user != null && user.role == 'patient') {
+                  _showRatingDialog(appointment, user);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber[600],
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.star, size: 18),
+              label: const Text('Rate Now'),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
